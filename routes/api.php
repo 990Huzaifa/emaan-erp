@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\PermissionController;
 
 
@@ -22,8 +23,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
-Route::apiResource('permission',PermissionController::class)->only('index','store');
-Route::apiResource('role',RoleController::class)->only('index','store');
+Route::apiResource('user',UserController::class)->only('index','show','store');
 
-Route::get('role-has-permissions/{id}',[RoleController::class,'addPermissionToRole']);
-Route::post('role/{id}/permission',[RoleController::class,'syncPermission']);
+Route::apiResource('permission',PermissionController::class)->only('index','store');
+// Route::apiResource('role',RoleController::class)->only('index','store');
+
+// Route::get('role-has-permissions/{id}',[RoleController::class,'addPermissionToRole']);
+// Route::post('role/{id}/permission',[RoleController::class,'syncPermission']);

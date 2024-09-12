@@ -54,4 +54,5 @@ class PermissionController extends Controller
             return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
         }
     }
+
 }
