@@ -7,16 +7,29 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
-use PHPUnit\Framework\Constraint\IsEmpty;
+use Spatie\Permission\Exceptions\UnauthorizedException;
 
 class UserController extends Controller
 {
+
+    protected $user;
+
     public function index(Request $request):JsonResponse
     {
         try{
+            $user = Auth::user();
+
+            // return response()->json($user);
+            
+            if (!$user->can('list user')){
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
             $perPage = $request->query('per_page', 10);
 
             $data = User::paginate($perPage);

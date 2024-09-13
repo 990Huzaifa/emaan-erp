@@ -19,16 +19,26 @@ use App\Http\Controllers\PermissionController;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-    
-});
+// Auth Routes
 
 Route::post('login',[AuthController::class,'login']);
 
-Route::apiResource('user',UserController::class)->only('index','store','show','update');
 
-Route::apiResource('permission',PermissionController::class)->only('index','store');
+
+
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::apiResource('user',UserController::class)->only('index','store','show','update');
+
+    Route::apiResource('permission',PermissionController::class)->only('index','store');
+
+    
+});
+
+
+
+
 // Route::apiResource('role',RoleController::class)->only('index','store');
 
 // Route::get('role-has-permissions/{id}',[RoleController::class,'addPermissionToRole']);
