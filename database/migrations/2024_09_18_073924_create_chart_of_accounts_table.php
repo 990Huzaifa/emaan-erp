@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('vendors', function (Blueprint $table) {
+        Schema::create('chart_of_accounts', function (Blueprint $table) {
             $table->id();
+            $table->string('code');
+            $table->string('parent_code');
             $table->string('name');
-            $table->string('phone')->nullable();
-            $table->string('city');
-            $table->string('telephone')->nullable();
-            $table->string('email')->nullable();
-            $table->string('avatar')->nullable();
-            $table->longText('address')->nullable();
-            $table->boolean('is_active')->default(1);
+            $table->string('level1');
+            $table->string('level2');
+            $table->string('level3');
+            $table->string('level4');
             $table->timestamps();
         });
     }
@@ -30,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('vendors');
+        Schema::dropIfExists('chart_of_accounts');
     }
 };

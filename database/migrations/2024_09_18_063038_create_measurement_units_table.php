@@ -11,15 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('accounts', function (Blueprint $table) {
+        Schema::create('measurement_units', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('business_id');
-            $table->foreign('business_id')->references('businesses')->onUpdate('cascade')->onDelete('cascade');
             $table->string('name');
-            $table->string('name');
-            $table->string('phone')->nullable();
-            $table->string('logo')->nullable();
-            $table->longText('address')->nullable();
+            $table->string('slug');
             $table->timestamps();
         });
     }
@@ -29,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('accounts');
+        Schema::dropIfExists('measurement_units');
     }
 };
