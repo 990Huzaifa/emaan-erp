@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             MeasurementUnitSeeder::class,
             PermissionsTableSeeder::class,
+            AdminSeeder::class,
             // Other seeders can be added here
         ]);
         // \App\Models\User::factory(10)->create();
