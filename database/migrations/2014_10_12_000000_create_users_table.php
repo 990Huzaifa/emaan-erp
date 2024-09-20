@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('business_id');
-            $table->foreign('business_id')->references('businesses')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
             $table->string('email',225)->unique();
             $table->string('password');
             $table->timestamp('email_verified_at')->nullable();
