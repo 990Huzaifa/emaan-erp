@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\CityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -22,7 +24,7 @@ use App\Http\Controllers\PermissionController;
 // Auth Routes
 
 Route::post('login',[AuthController::class,'login']);
-
+Route::get('/cities',[CityController::class,'index']);
 
 
 
@@ -30,9 +32,8 @@ Route::post('login',[AuthController::class,'login']);
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
-
+    Route::apiResource('business',BusinessController::class)->only('index','store','show','update');
     Route::apiResource('permission',PermissionController::class)->only('index','store');
-
     
 });
 

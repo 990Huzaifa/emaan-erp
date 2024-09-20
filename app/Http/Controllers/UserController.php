@@ -50,6 +50,7 @@ class UserController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
+                    'city'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
                     'password'=>'required|string',
                     'permissions'=>'required|array'
@@ -57,6 +58,9 @@ class UserController extends Controller
             ],[
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
+
+                'city.required'=>'City is Required',
+                'city.string'=>'City is must be a string',
 
                 'email.required' => 'Email is required.',
                 'email.email' => 'Please provide a valid email address.',
@@ -73,6 +77,8 @@ class UserController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $user = User::create([
                 'name'=>$request->name,
+                'business_id'=>$request->business_id,
+                'city'=>$request->city,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
