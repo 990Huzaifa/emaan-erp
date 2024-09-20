@@ -36,8 +36,8 @@ class AuthController extends Controller
                 $accessToken = $user->createToken('authToken')->plainTextToken;
                 // $permissionNames  = $user->getAllPermissions();
                 $permissionNames = $user->getAllPermissions()->pluck('name');
-                // $permission=['user'=>$permissionNames];
-                return response()->json([$user,$accessToken, $permissionNames]);
+                $permission=['user'=>$permissionNames];
+                return response()->json([$accessToken, $user, $permission]);
             
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

@@ -1,12 +1,13 @@
 <?php
 
-use App\Http\Controllers\BusinessController;
-use App\Http\Controllers\CityController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CityController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PermissionController;
 
 
@@ -32,6 +33,7 @@ Route::apiResource('business', BusinessController::class)->only(['index', 'store
 Route::middleware('auth:sanctum')->group(function () {
 
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
+    Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::apiResource('permission',PermissionController::class)->only('index','store');
     
 });
