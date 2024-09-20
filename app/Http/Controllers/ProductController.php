@@ -3,30 +3,40 @@
 namespace App\Http\Controllers;
 
 use Exception;
-use App\Models\City;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Database\QueryException;
 
-class CityController extends Controller
+class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try{
-            $data = City::all();
+            $user = Auth::user();
+
+            // return response()->json($user);
+            
+            if (!$user->can('list product')){
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+            $perPage = $request->query('per_page', 10);
+
+            $data = Product::paginate($perPage);
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data);
 
         }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], $e->getCode() ?:400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
@@ -41,7 +51,7 @@ class CityController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         //
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -16,23 +17,37 @@ class CustomerController extends Controller
      */
     protected $user;
     
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        //
-    }
+        try{
+            $user = Auth::user();
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+            // return response()->json($user);
+            
+            if (!$user->can('list customers')){
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+            $perPage = $request->query('per_page', 10);
+
+            $data = Customer::paginate($perPage);
+
+            if ($data->isEmpty()) throw new Exception('No data found', 404);
+            return response()->json($data);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -120,7 +135,7 @@ class CustomerController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -145,12 +160,12 @@ class CustomerController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         try {
             $user = Auth::user();
         
-            if (!$user->can('update customers')){
+            if (!$user->can('edit customers')){
                 return response()->json([
                     'error' => 'User does not have the required permission.'
                 ], 403);
@@ -230,7 +245,7 @@ class CustomerController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id): JsonResponse
     {
         try{
             $user = Auth::user();

@@ -15,12 +15,13 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('product_categories')->onDelete('cascade');
-            $table->string('name');
+            $table->unsignedBigInteger('sub_category_id');
+            $table->foreign('sub_category_id')->references('id')->on('product_sub_categories')->onDelete('cascade');
+            $table->string('title');
             $table->string('sku');
             $table->string('description')->nullable();
             $table->longText('image')->nullable();
-            $table->decimal('price', 8, 2);
-            $table->string('unit')->nullable();
+            $table->string('added_by');
             $table->boolean('is_active')->default(1);
             $table->timestamps();
         });

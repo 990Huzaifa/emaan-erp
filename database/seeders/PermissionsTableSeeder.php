@@ -14,18 +14,22 @@ class PermissionsTableSeeder extends Seeder
     public function run(): void
     {
         $permissions = [
+            'list users',
             'view users',
             'create users',
             'edit users',
             'delete users',
+            'list customers',
             'view customers',
             'create customers',
             'edit customers',
             'delete customers',
+            'list products',
             'view products',
             'create products',
             'edit products',
             'delete products',
+            'list permissions',
             'view permissions',
             'create permissions',
             'edit permissions',
