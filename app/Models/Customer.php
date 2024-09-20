@@ -13,7 +13,13 @@ class Customer extends Model
         'name',
         'city',
         'cnic',
+        'logo',
+        'email',
         'c_code',
         'business_id',
+        'website',
+        'address',
+        'telephone',
+        'mobile',
     ];
 }

@@ -49,10 +49,11 @@ class CustomerController extends Controller
                     'city'=>'required|string',
                     'email' => 'nullable|email',
                     'cnic'=>'required|string|max:14|unique:customers,cnic',
-                    'avatar' => 'nullable|image',
+                    'logo' => 'nullable|image',
                     'website' => 'nullable|url',
                     'address' => 'nullable|string|max:255',
                     'telephone' => 'nullable|string|max:20',
+                    'mobile' => 'nullable|string|max:12',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -68,7 +69,7 @@ class CustomerController extends Controller
                 'city.required'=>'City is Required',
                 'city.string'=>'City is must be a string',
 
-                'avatar.image' => 'Avatar must be an image file',
+                'logo.image' => 'logo must be an image file',
 
                 'website.url' => 'Website must be valid url',
 
@@ -78,14 +79,17 @@ class CustomerController extends Controller
                 'telephone.string' => 'Telephone number must be a string.',
                 'telephone.max' => 'Telephone number cannot exceed 20 characters.',
 
+                'mobile.string' => 'Mobile number must be a string.',
+                'mobile.max' => 'Mobile number cannot exceed 12 characters.',
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $avatar = null;
-            if ($request->hasFile('avatar')) {
-                $image = $request->file('avatar');
-                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('customer-avatar'), $image_name);
-                $avatar = 'customer-avatar/' . $image_name;
+            $logo = null;
+            if ($request->hasFile('logo')) {
+                $image = $request->file('logo');
+                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('customer-logo'), $image_name);
+                $logo = 'customer-logo/' . $image_name;
             }
             do {
                 $c_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
@@ -101,7 +105,7 @@ class CustomerController extends Controller
                 'mobile' => $request->mobile ?? null,
                 'website' => $request->website ?? null,
                 'address' => $request->address ?? null,
-                'avatar' => $avatar,
+                'logo' => $logo,
             ]);
         
             return response()->json($customer);
@@ -159,10 +163,11 @@ class CustomerController extends Controller
                     'city'=>'required|string',
                     'email' => 'nullable|email',
                     'cnic'=>'required|string|max:14',
-                    'avatar' => 'nullable|image',
+                    'logo' => 'nullable|image',
                     'website' => 'nullable|url',
                     'address' => 'nullable|string|max:255',
                     'telephone' => 'nullable|string|max:20',
+                    'mobile' => 'nullable|string|max:12',
 
 
             ],[
@@ -179,7 +184,7 @@ class CustomerController extends Controller
                 'city.required'=>'City is Required',
                 'city.string'=>'City is must be a string',
 
-                'avatar.image' => 'Avatar must be an image file',
+                'logo.image' => 'logo must be an image file',
 
                 'website.url' => 'Website must be valid url',
 
@@ -189,14 +194,17 @@ class CustomerController extends Controller
                 'telephone.string' => 'Telephone number must be a string.',
                 'telephone.max' => 'Telephone number cannot exceed 20 characters.',
 
+                'mobile.string' => 'Mobile number must be a string.',
+                'mobile.max' => 'Mobile number cannot exceed 12 characters.',
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $avatar = $customer->avatar;
-            if ($request->hasFile('avatar')) {
-                $image = $request->file('avatar');
-                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('customer-avatar'), $image_name);
-                $avatar = 'customer-avatar/' . $image_name;
+            $logo = $customer->logo;
+            if ($request->hasFile('logo')) {
+                $image = $request->file('logo');
+                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('customer-logo'), $image_name);
+                $logo = 'customer-logo/' . $image_name;
             }
             $customer->update([
                 'name'=>$request->name,
@@ -207,7 +215,7 @@ class CustomerController extends Controller
                 'mobile' => $request->mobile ?? null,
                 'website' => $request->website ?? null,
                 'address' => $request->address ?? null,
-                'avatar' => $avatar,
+                'logo' => $logo,
             ]);
             return response()->json($customer);
 
