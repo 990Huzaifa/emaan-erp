@@ -18,7 +18,6 @@ class AuthController extends Controller
                 $request->all(),[
                     'email'=>'required|string|email',
                     'password'=>'required|string',
-                    'type'=> 'required|string|in:admin,user',
     
             ],[
                 'name.required'=>'Name is Required',
@@ -29,10 +28,6 @@ class AuthController extends Controller
     
                 'password.required' => 'Password is required.',
                 'password.string' => 'Password must be a string.',
-
-                'type.required' => 'Login type is required.',
-                'type.string' => 'Login type must be a string.',
-                'type.in' => 'Login type Invalid.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             
@@ -45,10 +40,10 @@ class AuthController extends Controller
                 return response()->json([$user,$accessToken, $permissionNames]);
             
         }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], $e->getCode() ?:400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 }
