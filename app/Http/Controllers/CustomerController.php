@@ -147,7 +147,7 @@ class CustomerController extends Controller
             }
 
             $customer = Customer::find($id);
-        
+            if (empty($customer)) throw new Exception('No Customer found', 404);
             return response()->json($customer);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

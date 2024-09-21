@@ -14,20 +14,21 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('business_id');
-            $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
             $table->string('email',225)->unique();
-            $table->string('password');
+            $table->string('password')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('phone',20)->nullable();
-            $table->string('cnic');
+            $table->string('cnic')->nullable();
             $table->string('avatar')->nullable();
             $table->string('department')->nullable();
             $table->string('designation')->nullable();
             $table->string('joining_date')->nullable();
             $table->string('address')->nullable();
+            $table->longText('cnic_images')->nullable();
             $table->string('city');
-            $table->string('status')->default(1)->comment('1 = Active, 0 = Inactive');
+            $table->longText('setup_code')->nullable();
+            $table->boolean('is_verify')->default(1)->comment('1 = verified, 0 = not-verified');
+            $table->boolean('status')->default(1)->comment('1 = Active, 0 = Inactive');
             $table->rememberToken();
             $table->timestamps();
         });

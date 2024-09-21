@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserMail;
 use Exception;
 use App\Models\User;
 use App\Models\Business;
 use Illuminate\Http\Request;
+use App\Models\UserHasBusiness;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Validator;
@@ -50,15 +53,13 @@ class BusinessController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        try{            
+        try{          
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'cnic'=>'required|string|max:14|unique:users,cnic',
                     'city'=>'required|string',
                     'business_name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
-                    'password'=>'required|string',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -67,19 +68,10 @@ class BusinessController extends Controller
                 'city.required'=>'City is Required',
                 'city.string'=>'City is must be a string',
 
-                'cnic.required' => 'CNIC is required.',
-                'cnic.max' => 'CNIC cannot exceed 18 characters.',
-                'cnic.unique' => 'This CNIC is already in use.',
-                'cnic.string'=>'CNIC is must be a string',
-
                 'email.required' => 'Email is required.',
                 'email.email' => 'Please provide a valid email address.',
                 'email.max' => 'Email cannot exceed 255 characters.',
                 'email.unique' => 'This email address is already in use.',
-
-                'password.required' => 'Password is required.',
-                'password.string' => 'Password must be a string.',
-                'password.min' => 'Password must be at least 8 characters long.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
@@ -89,20 +81,26 @@ class BusinessController extends Controller
                 'email' => $request->email,
             ]);
             
-            
+            $setupCode = $this->generateSetupCode();            
             $user = User::create([
                 'name'=>$request->name,
                 'city'=>$request->city,
-                'cnic'=>$request->cnic,
-                'business_id'=>$business->id,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'setup_code' => $setupCode,
+            ]);
+            $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
+            $uhb = UserHasBusiness::create([
+                'business_id'=>$business->id,
+                'user_id'=>$user->id,
             ]);
             $allPermissions = Permission::all();
-            $user->syncPermissions($allPermissions);
+            $uhb->syncPermissions($allPermissions);
+            Mail::to('princehuzaifa990@gmail.com')->send(new UserMail([
+                'url' => $setupUrl
+            ])); 
             DB::commit();
         
-            return response()->json($user);
+            return response()->json(['message'=>'Mail has been sent to business Admin']);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()],400);
@@ -143,5 +141,16 @@ class BusinessController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    private function generateSetupCode($length = 12)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $charactersLength = strlen($characters);
+        $randomString = '';
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[random_int(0, $charactersLength - 1)];
+        }
+        return $randomString;
     }
 }

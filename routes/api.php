@@ -24,6 +24,7 @@ use App\Http\Controllers\PermissionController;
 
 // Auth Routes
 
+Route::get('setup/{code}/{id}', [AuthController::class, 'setup'])->name('setup-account');
 Route::post('login',[AuthController::class,'login']);
 Route::get('/cities',[CityController::class,'index']);
 
@@ -35,7 +36,8 @@ Route::apiResource('business', BusinessController::class)->only(['index', 'store
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-
+    
+    Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::apiResource('permission',PermissionController::class)->only('index','store');
