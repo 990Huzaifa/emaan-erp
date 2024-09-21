@@ -27,8 +27,12 @@ use App\Http\Controllers\PermissionController;
 Route::post('login',[AuthController::class,'login']);
 Route::get('/cities',[CityController::class,'index']);
 
+Route::middleware(['admin.auth'])->group(function () {
+
+    
 Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
 
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 

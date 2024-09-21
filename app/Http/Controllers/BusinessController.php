@@ -50,9 +50,7 @@ class BusinessController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        try{
-
-            
+        try{            
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',

@@ -43,7 +43,7 @@ class AuthController extends Controller
                 // $permissionNames  = $user->getAllPermissions();
                 $permissionNames = $user->getAllPermissions()->pluck('name');
                 // $permission=['user'=>$permissionNames];
-                return response()->json([$user,$accessToken, $permissionNames]);
+                return response()->json([$accessToken,$user, $permissionNames]);
             }elseif ($request->type == 'admin') {
                 $admin = Admin::where('email',$request->email)->first();
                 if (empty($admin) || !Hash::check($request->password, $admin->password)) throw new Exception('Invalid login credentials.', 404);
