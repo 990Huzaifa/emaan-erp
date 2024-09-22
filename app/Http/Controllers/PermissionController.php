@@ -22,10 +22,10 @@ class PermissionController extends Controller
             return response()->json($data);
 
         }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], $e->getCode() ?:400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
@@ -48,10 +48,10 @@ class PermissionController extends Controller
 
             return response()->json($permission);
         }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], $e->getCode() ?:400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 

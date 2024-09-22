@@ -83,7 +83,6 @@ class AuthController extends Controller
         }
     }
     public function setup(Request $request,$code, $id): JsonResponse
-
     {
         try{
             $user = User::findOrFail($id);
@@ -103,7 +102,6 @@ class AuthController extends Controller
                 $front_image->move(public_path('user-cnic'), $front_image_name);
                 $cnic_front = 'user-cnic/' . $front_image_name;
             }
-            
             if ($request->hasFile('cnic_back')) {
                 $back_image = $request->file('cnic_back');
                 $back_image_name = 'cnic_' . $id . '_back.' . $back_image->getClientOriginalExtension();
@@ -123,12 +121,9 @@ class AuthController extends Controller
             return response()->json(['success'=>'setup code verified'],200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
-
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
         
     }
-
-
 }
