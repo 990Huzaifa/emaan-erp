@@ -2,7 +2,6 @@
 
 use Carbon\Carbon;
 
-
 function generateSku(string $title, string $categoryId): string
 {
     // Get the first three letters of the title
@@ -16,4 +15,15 @@ function generateSku(string $title, string $categoryId): string
 
     // Combine parts to form SKU
     return $titlePart . '-' . $categoryPart . '-' . $randomNumber;
+}
+
+function generateSetupCode($length = 12)
+{
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[random_int(0, $charactersLength - 1)];
+    }
+    return $randomString;
 }

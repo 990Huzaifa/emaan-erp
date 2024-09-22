@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('joining_date')->nullable();
             $table->string('address')->nullable();
             $table->longText('cnic_images')->nullable();
-            $table->string('city');
+            $table->string('city')->nullable();
             $table->longText('setup_code')->nullable();
             $table->boolean('is_verify')->default(1)->comment('1 = verified, 0 = not-verified');
             $table->boolean('status')->default(1)->comment('1 = Active, 0 = Inactive');

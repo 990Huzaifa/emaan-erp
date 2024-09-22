@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\User;
+use App\Mail\UserMail;
 use Illuminate\Http\Request;
+use App\Models\UserHasBusiness;
 use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Exceptions\UnauthorizedException;
@@ -50,10 +53,9 @@ class UserController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'city'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
-                    'password'=>'required|string',
-                    'permissions'=>'required|array'
+                    'permissions'=>'required|array',
+                    'business_ids'=>'required|array'
 
             ],[
                 'name.required'=>'Name is Required',
@@ -75,21 +77,37 @@ class UserController extends Controller
                 'permissions.array' => 'Roles must be type array.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            // dd($request->all());
+            $setupCode = generateSetupCode(); 
             $user = User::create([
                 'name'=>$request->name,
-                'business_id'=>$request->business_id,
-                'city'=>$request->city,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
+                'city' => $request->city,
+                'setup_code' => $setupCode,
             ]);
-            $user->syncPermissions($request->permissions);
+            $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
+            // sync permissions to user according to business
+            foreach ($request->permissions as $businessId => $permissions) {
+                $uhb = UserHasBusiness::create([
+                    'business_id' => $businessId,
+                    'user_id' => $user->id,
+                ]);
+    
+                $uhb->syncPermissions($permissions);
+            }
+            // sending mail to business admin
+            Mail::to('princehuzaifa990@gmail.com')->send(new UserMail([
+                'url' => $setupUrl
+            ])); 
+        
+            
         
             return response()->json($user);
         }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], $e->getCode() ?:400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], $e->getCode() ?: 400);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 

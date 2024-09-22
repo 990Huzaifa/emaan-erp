@@ -37,8 +37,8 @@ Route::apiResource('business', BusinessController::class)->only(['index', 'store
 
 Route::middleware('auth:sanctum')->group(function () {
     
-    Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
+    Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::apiResource('permission',PermissionController::class)->only('index','store');
     

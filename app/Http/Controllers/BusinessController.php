@@ -26,20 +26,15 @@ class BusinessController extends Controller
     {
         try{
             $user = Auth::user();
-
-            
             if (!$user->can('list product')){
                 return response()->json([
                     'error' => 'User does not have the required permission.'
                 ], 403);
             }
             $perPage = $request->query('per_page', 10);
-
             $data = Business::paginate($perPage);
-
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data);
-
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -75,13 +70,14 @@ class BusinessController extends Controller
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
+            // creating business
             $business = Business::create([
                 'name'=> $request->business_name,
                 'city'=> $request->city,
                 'email' => $request->email,
             ]);
-            
-            $setupCode = $this->generateSetupCode();            
+            $setupCode = generateSetupCode();   
+            // creating user of business  
             $user = User::create([
                 'name'=>$request->name,
                 'city'=>$request->city,
@@ -89,17 +85,18 @@ class BusinessController extends Controller
                 'setup_code' => $setupCode,
             ]);
             $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
+            // sync permissions to user according to business
             $uhb = UserHasBusiness::create([
                 'business_id'=>$business->id,
                 'user_id'=>$user->id,
             ]);
             $allPermissions = Permission::all();
             $uhb->syncPermissions($allPermissions);
+            // sending mail to business admin
             Mail::to('princehuzaifa990@gmail.com')->send(new UserMail([
                 'url' => $setupUrl
             ])); 
             DB::commit();
-        
             return response()->json(['message'=>'Mail has been sent to business Admin']);
         }catch(QueryException $e){
             DB::rollBack();
@@ -143,14 +140,4 @@ class BusinessController extends Controller
         //
     }
 
-    private function generateSetupCode($length = 12)
-    {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $charactersLength = strlen($characters);
-        $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[random_int(0, $charactersLength - 1)];
-        }
-        return $randomString;
-    }
 }

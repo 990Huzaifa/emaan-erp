@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -81,20 +82,53 @@ class AuthController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+    public function setup(Request $request,$code, $id): JsonResponse
 
-    public function setup($code, $id)
     {
+        try{
+            $user = User::findOrFail($id);
+            if ($user->setup_code !== $code) throw new Exception('Invalid setup code', 400);
+            $avatar = null;
+            $cnic_front = null;
+            $cnic_back = null;
+            if ($request->hasFile('avatar')) {
+                $image = $request->file('avatar');
+                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('user-avatar'), $image_name);
+                $avatar = 'user-avatar/' . $image_name;
+            }
+            if ($request->hasFile('cnic_front')) {
+                $front_image = $request->file('cnic_front');
+                $front_image_name = 'cnic_' . $id . '_front.' . $front_image->getClientOriginalExtension();
+                $front_image->move(public_path('user-cnic'), $front_image_name);
+                $cnic_front = 'user-cnic/' . $front_image_name;
+            }
+            
+            if ($request->hasFile('cnic_back')) {
+                $back_image = $request->file('cnic_back');
+                $back_image_name = 'cnic_' . $id . '_back.' . $back_image->getClientOriginalExtension();
+                $back_image->move(public_path('user-cnic'), $back_image_name);
+                $cnic_back = 'user-cnic/' . $back_image_name;
+            }
+            $user->update([
+                'city'=>$request->city,
+                'phone'=>$request->phone,
+                'address' => $request->address,
+                'joining_date' => Date::now(),
+                'cnic'=>$request->cnic,
+                'cnic-images'=>[$cnic_front, $cnic_back],
+                'avatar' => $avatar,
+                'password' => Hash::make($request->password),
+            ]);
+            return response()->json(['success'=>'setup code verified'],200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
 
-        dd('helo');
-        // Verify the setup code and user ID
-        $user = User::findOrFail($id);
-        if ($user->setup_code !== $code) {
-            return redirect()->route('home')->with('error', 'Invalid setup code.');
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        // Proceed with account setup
-        // ...
-
-        return view('auth.setup', compact('user'));
+        
     }
+
+
 }
