@@ -82,6 +82,7 @@ class BusinessController extends Controller
                 'name'=>$request->name,
                 'city'=>$request->city,
                 'email' => $request->email,
+                'password' => Hash::make($request->password),
                 'setup_code' => $setupCode,
             ]);
             $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
