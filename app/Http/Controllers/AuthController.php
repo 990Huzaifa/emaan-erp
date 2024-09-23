@@ -55,7 +55,7 @@ class AuthController extends Controller
                 $admin = Admin::where('email',$request->email)->first();
                 if (empty($admin) || !Hash::check($request->password, $admin->password)) throw new Exception('Invalid login credentials.', 404);
                 $accessToken = $admin->createToken('authToken')->plainTextToken;
-                return response()->json([$admin,$accessToken]);
+                return response()->json(["access_token"=>$this->accessToken,"data"=>$admin]);
             }else{
                 return response()->json(['Type error' => 'Invalid login type'], 400);
             }
