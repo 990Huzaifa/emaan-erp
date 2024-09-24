@@ -25,6 +25,11 @@ class User extends Authenticatable
         'city',
         'password',
         'setup_code',
+        'cnic_images',
+        'avatar',
+        'department',
+        'designation',
+        'joining_date',
     ];
 
     /**
