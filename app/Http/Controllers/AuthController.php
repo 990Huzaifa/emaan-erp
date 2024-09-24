@@ -83,7 +83,7 @@ class AuthController extends Controller
     {
         try{
             $user = User::findOrFail($id);
-            if ($user->setup_code !== $code) throw new Exception('Invalid setup code', 400);
+            if (empty($user->setup_code) || $user->setup_code !== $code) throw new Exception('Invalid setup code', 400);
             if (Carbon::now()->greaterThan($user->setup_code_expiry))  throw new Exception('Setup code has expired', 400);
             $avatar = null;
             $cnic_front = null;
