@@ -44,6 +44,7 @@ class AuthController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $user = User::where('email',$request->email)->first();
             if (empty($user)) throw new Exception('Account not found.', 404);
+            if($user->role == 'user' || $user->is_verify == 0) throw new Exception('Account not verified.', 404);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
             $this->accessToken = $user->createToken('authToken')->plainTextToken;
 
