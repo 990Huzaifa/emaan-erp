@@ -24,7 +24,7 @@ use App\Http\Controllers\PermissionController;
 
 // Auth Routes
 
-Route::get('setup/{code}/{id}', [AuthController::class, 'setup'])->name('setup-account');
+Route::post('setup/{code}/{id}', [AuthController::class, 'setup'])->name('setup-account');
 Route::post('login',[AuthController::class,'login']);
 Route::get('/cities',[CityController::class,'index']);
 
