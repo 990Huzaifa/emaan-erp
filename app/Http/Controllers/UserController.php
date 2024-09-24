@@ -167,4 +167,43 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function updateStatus(Request $request, $id):JsonResponse{
+        try{
+            $user = User::findOrFail($id);
+            if (empty($user)) throw new Exception('No User found', 404);
+            $validator = Validator::make(
+                $request->all(),[
+                    'name'=>'required|string'
+    
+            ],[
+                'name.required'=>'Name is Required',
+                'name.string'=>'Name is must be a string',
+    
+                'email.required' => 'Email is required.',
+                'email.email' => 'Please provide a valid email address.',
+                'email.max' => 'Email cannot exceed 255 characters.',
+                'email.unique' => 'This email address is already in use.',
+    
+                'password.required' => 'Password is required.',
+                'password.string' => 'Password must be a string.',
+                'password.min' => 'Password must be at least 8 characters long.',
+    
+                'permissions.required' => 'Roles is required.',
+                'permissions.array' => 'Roles must be type array.',
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            $user->update([
+                'name'=>$request->name
+            ]);
+            $user->syncPermissions($request->permissions);
+
+            return response()->json($user);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }
