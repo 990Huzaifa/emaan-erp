@@ -61,9 +61,8 @@ class BusinessController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'name'=>'required|string',
                     'city'=>'required|string',
-                    'business_name'=>'required|string',
+                    'name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
 
             ],[
@@ -82,7 +81,7 @@ class BusinessController extends Controller
             DB::beginTransaction();
             // creating business
             $business = Business::create([
-                'name'=> $request->business_name,
+                'name'=> $request->name,
                 'city'=> $request->city,
                 'email' => $request->email,
             ]);
