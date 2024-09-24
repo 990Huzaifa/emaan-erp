@@ -28,15 +28,11 @@ Route::get('setup/{code}/{id}', [AuthController::class, 'setup'])->name('setup-a
 Route::post('login',[AuthController::class,'login']);
 Route::get('/cities',[CityController::class,'index']);
 
-Route::middleware(['admin.auth'])->group(function () {
-
-    
-Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
-
-});
+Route::middleware(['admin.auth'])->group(function () {});
 
 Route::middleware('auth:sanctum')->group(function () {
     
+    Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');

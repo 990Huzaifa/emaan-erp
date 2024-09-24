@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class BusinessController extends Controller
 {
@@ -26,7 +27,7 @@ class BusinessController extends Controller
     {
         try{
             $user = Auth::user();
-            if (!$user->can('list product')){
+            if (!$user->can('list businesses')){
                 return response()->json([
                     'error' => 'User does not have the required permission.'
                 ], 403);
@@ -48,7 +49,16 @@ class BusinessController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        try{          
+        try{
+            $user = Auth::user();
+            if($user->role == 'user'){
+                if (!$user->can('create businesses')){
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                } 
+            }
+
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
@@ -84,6 +94,7 @@ class BusinessController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'setup_code' => $setupCode,
+                'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
             $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
             // sync permissions to user according to business
@@ -95,6 +106,7 @@ class BusinessController extends Controller
             $uhb->syncPermissions($allPermissions);
             // sending mail to business admin
             Mail::to('princehuzaifa990@gmail.com')->send(new UserMail([
+                'message'=>'Please setup your account by clicking on the below link',
                 'url' => $setupUrl
             ])); 
             DB::commit();

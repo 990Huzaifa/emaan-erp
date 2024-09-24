@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Admin;
 use Illuminate\Http\Request;
@@ -41,23 +42,18 @@ class AuthController extends Controller
                 'type.in' => 'Login type Invalid.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            if($request->type == 'user'){
-                $user = User::where('email',$request->email)->first();
-                if (empty($user)) throw new Exception('Account not found.', 404);
-                if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
-                $this->accessToken = $user->createToken('authToken')->plainTextToken;
-                // $permissionNames  = $user->getAllPermissions();
-                // $permissionNames = $user->getAllPermissions()->pluck('name');
-                // $permission=['user'=>$permissionNames];
+            $user = User::where('email',$request->email)->first();
+            if (empty($user)) throw new Exception('Account not found.', 404);
+            if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
+            $this->accessToken = $user->createToken('authToken')->plainTextToken;
+
+            if($user->role == 'user'){
                 $businesses = UserHasBusiness::where('user_id',$user->id)->get();
                 return response()->json(["access_token"=>$this->accessToken,"data"=>$user,'businesses'=>$businesses ]);
-            }elseif ($request->type == 'admin') {
-                $admin = Admin::where('email',$request->email)->first();
-                if (empty($admin) || !Hash::check($request->password, $admin->password)) throw new Exception('Invalid login credentials.', 404);
-                $accessToken = $admin->createToken('authToken')->plainTextToken;
-                return response()->json(["access_token"=>$this->accessToken,"data"=>$admin]);
+            }elseif ($user->role == 'admin') {
+                return response()->json(["access_token"=>$this->accessToken,"data"=>$user]);
             }else{
-                return response()->json(['Type error' => 'Invalid login type'], 400);
+                return response()->json(['error' => 'Invalid login'], 400);
             }
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -82,11 +78,13 @@ class AuthController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+    
     public function setup(Request $request,$code, $id): JsonResponse
     {
         try{
             $user = User::findOrFail($id);
             if ($user->setup_code !== $code) throw new Exception('Invalid setup code', 400);
+            if (Carbon::now()->greaterThan($user->setup_code_expiry))  throw new Exception('Setup code has expired', 400);
             $avatar = null;
             $cnic_front = null;
             $cnic_back = null;
