@@ -25,7 +25,8 @@ return new class extends Migration
             $table->string('joining_date')->nullable();
             $table->string('address')->nullable();
             $table->longText('cnic_images')->nullable();
-            $table->string('city')->nullable();
+            $table->unsignedBigInteger('city_id');
+            $table->foreign('city_id')->references('id')->on('cities')->onUpdate('cascade')->onDelete('cascade');
             $table->longText('setup_code')->nullable();
             $table->longText('setup_code_expiry')->nullable();
             $table->boolean('is_verify')->default(0)->comment('1 = verified, 0 = not-verified');
