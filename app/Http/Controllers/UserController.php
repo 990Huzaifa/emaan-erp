@@ -54,7 +54,6 @@ class UserController extends Controller
                 $request->all(),[
                     'name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
-                    'permissions'=>'required|array',
                     'business_ids'=>'required|array'
 
             ],[
@@ -69,12 +68,8 @@ class UserController extends Controller
                 'email.max' => 'Email cannot exceed 255 characters.',
                 'email.unique' => 'This email address is already in use.',
 
-                'password.required' => 'Password is required.',
-                'password.string' => 'Password must be a string.',
-                'password.min' => 'Password must be at least 8 characters long.',
-
-                'permissions.required' => 'Roles is required.',
-                'permissions.array' => 'Roles must be type array.',
+                'business_ids.required' => 'Business_ids is required.',
+                'business_ids.array' => 'Business_ids must be type array.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             // dd($request->all());
