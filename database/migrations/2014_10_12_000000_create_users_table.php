@@ -28,7 +28,7 @@ return new class extends Migration
             $table->string('city')->nullable();
             $table->longText('setup_code')->nullable();
             $table->longText('setup_code_expiry')->nullable();
-            $table->boolean('is_verify')->default(1)->comment('1 = verified, 0 = not-verified');
+            $table->boolean('is_verify')->default(0)->comment('1 = verified, 0 = not-verified');
             $table->boolean('status')->default(1)->comment('1 = Active, 0 = Inactive');
             $table->string('role')->default('user');
             $table->rememberToken();
