@@ -15,6 +15,6 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         $pwd = Hash::make('admin');
-        User::firstOrCreate(['name' => 'super admin', 'email' => 'admin@gmail.com','password' => $pwd, "role"=>'admin',"is_verify"=>1,"status"=>1,"city_id"=>1]);
+        User::firstOrCreate(['name' => 'super admin', 'u_code'=> 'Ab1230001', 'email' => 'admin@gmail.com','password' => $pwd, "role"=>'admin',"is_verify"=>1,"status"=>1,"city_id"=>1]);
     }
 }
