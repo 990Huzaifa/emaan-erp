@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('avatar')->nullable();
             $table->longText('address')->nullable();
+            $table->decimal('opening_balance',8,2)->default(0);
             $table->boolean('is_active')->default(1);
             $table->timestamps();
         });

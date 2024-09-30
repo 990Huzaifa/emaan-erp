@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email',225)->unique();
+            $table->string('u_code',225)->unique();
             $table->string('password')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('phone',20)->nullable();
@@ -32,6 +33,7 @@ return new class extends Migration
             $table->boolean('is_verify')->default(0)->comment('1 = verified, 0 = not-verified');
             $table->boolean('status')->default(1)->comment('1 = Active, 0 = Inactive');
             $table->string('role')->default('user');
+            $table->integer('max_business_create')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

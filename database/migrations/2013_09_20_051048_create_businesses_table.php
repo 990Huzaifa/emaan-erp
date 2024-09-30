@@ -18,6 +18,8 @@ return new class extends Migration
             $table->unsignedBigInteger('city_id');
             $table->foreign('city_id')->references('id')->on('cities')->onUpdate('cascade')->onDelete('cascade');
             $table->string('logo')->nullable();
+            $table->decimal('cash',8,2)->default(0);
+            $table->decimal('bank',8,2)->default(0);
             $table->longText('address')->nullable();
             $table->timestamps();
         });
