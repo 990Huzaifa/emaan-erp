@@ -61,7 +61,7 @@ class BusinessController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'city'=>'required|string',
+                    'city_id'=>'required|numeric',
                     'name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
 
@@ -69,8 +69,8 @@ class BusinessController extends Controller
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
 
-                'city.required'=>'City is Required',
-                'city.string'=>'City is must be a string',
+                'city_id.required'=>'City is Required',
+                'city_id.numeric'=>'City is must be a numeric',
 
                 'email.required' => 'Email is required.',
                 'email.email' => 'Please provide a valid email address.',
@@ -82,16 +82,19 @@ class BusinessController extends Controller
             // creating business
             $business = Business::create([
                 'name'=> $request->name,
-                'city'=> $request->city,
+                'city_id'=> $request->city_id,
                 'email' => $request->email,
             ]);
             $setupCode = generateSetupCode();   
-            // creating user of business  
+            // creating user of business
+            do {
+                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (User::where('u_code', $u_code)->exists());  
             $user = User::create([
                 'name'=>$request->name,
-                'city'=>$request->city,
+                'u_code'=>$u_code,
+                'city_id'=>$request->city_id,
                 'email' => $request->email,
-                'password' => Hash::make($request->password),
                 'setup_code' => $setupCode,
                 'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);

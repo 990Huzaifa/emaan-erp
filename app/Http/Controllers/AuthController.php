@@ -25,7 +25,6 @@ class AuthController extends Controller
                 $request->all(),[
                     'email'=>'required|string|email',
                     'password'=>'required|string',
-                    'type'=> 'required|string|in:admin,user',
     
             ],[
                 'name.required'=>'Name is Required',
@@ -47,8 +46,6 @@ class AuthController extends Controller
             if($user->role == 'user' || $user->is_verify == 0) throw new Exception('Account not verified.', 404);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
             $token = $user->createToken('authToken');
-            $token->accessToken->business_id = $request->business_id;
-            $token->accessToken->save();
             $this->accessToken = $token->plainTextToken;
 
             if($user->role == 'user'){

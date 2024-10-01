@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\VendorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -30,12 +31,13 @@ Route::get('/cities',[CityController::class,'index']);
 
 Route::middleware(['admin.auth'])->group(function () {});
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'set.mail.config'])->group(function () {
     
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
+    Route::apiResource('vendor',VendorController::class)->only('index','store','show','update');
     Route::apiResource('permission',PermissionController::class)->only('index','store');
     
 });

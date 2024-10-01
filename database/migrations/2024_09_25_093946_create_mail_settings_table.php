@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('mail_settings', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('business_id');
+            $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
             $table->string('mail_mailer');
             $table->string('mail_host');
             $table->string('mail_port');
@@ -20,6 +22,7 @@ return new class extends Migration
             $table->string('mail_password');
             $table->string('mail_encryption');
             $table->string('mail_from');
+            $table->string('mail_from_name');
             $table->timestamps();
         });
     }
