@@ -35,6 +35,8 @@ class PermissionsTableSeeder extends Seeder
             'create permissions',
             'edit permissions',
             'delete permissions',
+            'edit mail',
+            'view mail',
         ];
 
         // Loop through each permission and create it

@@ -17,11 +17,15 @@ return new class extends Migration
             $table->foreign('category_id')->references('id')->on('product_categories')->onDelete('cascade');
             $table->unsignedBigInteger('sub_category_id');
             $table->foreign('sub_category_id')->references('id')->on('product_sub_categories')->onDelete('cascade');
+            $table->unsignedBigInteger('measurement_unit_id');
+            $table->foreign('measurement_unit_id')->references('id')->on('measurement_units')->onDelete('cascade');
             $table->string('title');
             $table->string('sku');
             $table->string('description')->nullable();
             $table->longText('image')->nullable();
             $table->string('added_by');
+            $table->decimal('purchase_price',10,2)->default(0.00);
+            $table->decimal('sale_price',10,2)->default(0.00);
             $table->boolean('is_active')->default(1);
             $table->timestamps();
         });

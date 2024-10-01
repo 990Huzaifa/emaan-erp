@@ -17,9 +17,11 @@ return new class extends Migration
             $table->foreign('product_id')->references('id')->on('products')->onUpdate('cascade')->onDelete('cascade');
             $table->unsignedBigInteger('vendor_id');
             $table->foreign('vendor_id')->references('id')->on('vendors')->onUpdate('cascade')->onDelete('cascade');
-            $table->decimal('quantity', 8, 2);
-            $table->decimal('unit_price', 8, 2);
-            $table->decimal('total_price', 8, 2);
+            $table->decimal('quantity', 8, 2)->default(0.00);
+            $table->decimal('unit_price', 8, 2)->default(0.00);
+            $table->decimal('total_price', 8, 2)->default(0.00);
+            $table->decimal('purchase_price',10,2)->default(0.00);
+            $table->decimal('sale_price',10,2)->default(0.00);
             $table->date('expiry_date');
             $table->boolean('status')->default(1)->comment('1 = Available, 0 = Sold');
             $table->timestamps();

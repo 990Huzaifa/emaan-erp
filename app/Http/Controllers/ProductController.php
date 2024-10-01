@@ -69,6 +69,8 @@ class ProductController extends Controller
                     'added_by'=>'required|string',
                     'category_id'=>'required|string',
                     'sub_category_id'=>'required|string',
+                    'purchase_price'=>'required|string',
+                    'sale_price'=>'required|numeric',
     
     
             ],[
