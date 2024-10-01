@@ -16,13 +16,15 @@ return new class extends Migration
             $table->string('v_code');
             $table->string('name');
             $table->string('phone')->nullable();
-            $table->string('city');
+            $table->unsignedBigInteger('city_id');
+            $table->foreign('city_id')->references('id')->on('cities')->onUpdate('cascade')->onDelete('cascade');
             $table->string('telephone')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();
             $table->string('avatar')->nullable();
             $table->longText('address')->nullable();
-            $table->decimal('opening_balance',8,2)->default(0);
+            $table->decimal('opening_credit_balance',15,2)->default(0.00);
+            $table->decimal('opening_debit_balance',15,2)->default(0.00);
             $table->boolean('is_active')->default(1);
             $table->timestamps();
         });

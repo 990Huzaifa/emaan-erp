@@ -113,7 +113,7 @@ class CustomerController extends Controller
                 'name'=>$request->name,
                 'c_code'=>$c_code,
                 'business_id'=>$user->business_id,
-                'city'=>$request->city,
+                'city_id'=>$request->city_id,
                 'cnic'=>$request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,

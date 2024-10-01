@@ -60,9 +60,6 @@ class UserController extends Controller
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
 
-                'city.required'=>'City is Required',
-                'city.string'=>'City is must be a string',
-
                 'email.required' => 'Email is required.',
                 'email.email' => 'Please provide a valid email address.',
                 'email.max' => 'Email cannot exceed 255 characters.',
@@ -72,12 +69,14 @@ class UserController extends Controller
                 'business_ids.array' => 'Business_ids must be type array.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            // dd($request->all());
+            do {
+                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (User::where('u_code', $u_code)->exists());
             $setupCode = generateSetupCode(); 
             $user = User::create([
                 'name'=>$request->name,
+                'u_code'=>$u_code,
                 'email' => $request->email,
-                'city' => $request->city,
                 'setup_code' => $setupCode,
             ]);
             $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
@@ -91,7 +90,7 @@ class UserController extends Controller
                 $uhb->syncPermissions($permissions);
             }
             // sending mail to business admin
-            Mail::to('princehuzaifa990@gmail.com')->send(new UserMail([
+            Mail::to($request->email)->send(new UserMail([
                 'url' => $setupUrl
             ])); 
         

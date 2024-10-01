@@ -29,12 +29,14 @@ class VendorController extends Controller
                 $request->all(),[
                     'name'=>'required|string',
                     'email'=>'nullable|email|string',
-                    'city'=>'required|string',
+                    'city_id'=>'required|exists:cities,id',
                     'telephone'=>'nullable|string',
                     'phone'=>'required|string',
                     'website'=>'nullable|string',
-                    'avatar'=>'nullable|string',
+                    'avatar'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                     'address'=>'required|string',
+                    'opening_credit_balance'=>'nullable|numeric',
+                    'opening_debit_balance'=>'nullable|numeric',
 
             ],[
                 'name.required'     => 'Name is required.',
@@ -45,8 +47,7 @@ class VendorController extends Controller
                 'email.max'         => 'Email cannot exceed 255 characters.',
 
                 'city.required'     => 'City is required.',
-                'city.string'       => 'City must be a string.',
-                'city.max'          => 'City cannot exceed 255 characters.',
+                'city.exists'       => 'City does not exist.',
 
                 'telephone.string'  => 'Telephone must be a string.',
                 'telephone.max'     => 'Telephone cannot exceed 20 characters.',
@@ -65,11 +66,31 @@ class VendorController extends Controller
                 'address.required'  => 'Address is required.',
                 'address.string'    => 'Address must be a string.',
                 'address.max'       => 'Address cannot exceed 500 characters.',
+
+                'opening_credit_balance.numeric' => 'Opening credit balance must be a number.',
+                'opening_debit_balance.numeric' => 'Opening debit balance must be a number.',
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            $avatar=null;
+            if ($request->hasFile('avatar')) {
+                $image = $request->file('avatar');
+                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('vendor-avatar'), $image_name);
+                $avatar = 'vendor-avatar/' . $image_name;
+            }
             $user = Vendor::create([
                 'name'=>$request->name,
                 'email' => $request->email,
+                'city_id' => $request->city_id,
+                'telephone' => $request->telephone ?? null,
+                'phone' => $request->phone,
+                'website' => $request->website ?? null,
+                'avatar' => $avatar,
+                'address' => $request->address,
+                'opening_credit_balance' => $request->opening_credit_balance ?? 0,
+                'opening_debit_balance' => $request->opening_debit_balance ?? 0,
+
             ]);
             $user->syncPermissions($request->permissions);
         

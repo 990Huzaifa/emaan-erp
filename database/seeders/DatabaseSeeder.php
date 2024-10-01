@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Database\Seeders\COASeeder;
 use Illuminate\Database\Seeder;
 use Database\Seeders\CitySeeder;
 use Database\Seeders\AdminSeeder;
@@ -18,6 +19,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             CitySeeder::class,
+            COASeeder::class,
             MeasurementUnitSeeder::class,
             PermissionsTableSeeder::class,
             AdminSeeder::class,
