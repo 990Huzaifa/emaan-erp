@@ -5,22 +5,24 @@ namespace App\Http\Controllers;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
-use App\Models\ProductCategory;
-use Illuminate\Http\JsonResponse;
-use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 
-class ProductCategoryController extends Controller
+class COAController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
     {
         try{
             $user = Auth::user();
-            $businessId = $request->input('business_id');
+            $businessId = $user->login_business;
+
+            // Check if the user has the required permission
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'list product caetgory')) {
+                if (!$user->hasBusinessPermission($businessId, 'list chart of account')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -28,7 +30,7 @@ class ProductCategoryController extends Controller
             }
             $perPage = $request->query('per_page', 10);
 
-            $data = ProductCategory::paginate($perPage);
+            $data = ChartOfAccount::paginate($perPage);
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data);
@@ -42,20 +44,21 @@ class ProductCategoryController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         try{
             $user = Auth::user();
-            $businessId = $request->input('business_id');
+            $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'create product caetgory')) {
+                if (!$user->hasBusinessPermission($businessId, 'create chart of account')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
+            // dd('test-done');
 
             $validator = Validator::make(
                 $request->all(),[
@@ -73,6 +76,8 @@ class ProductCategoryController extends Controller
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             // Split the parent code into levels
+            $check = ChartOfAccount::where('code',$request->parent_code)->first();
+            if(empty($check)) throw new Exception('Invalid chart of account', 400);
             $parentCodeParts = explode('-', $request->parent_code);
             $numLevels = count($parentCodeParts);
             // generate code
@@ -111,18 +116,14 @@ class ProductCategoryController extends Controller
             $coa = ChartOfAccount::create([
                 'code'=>$newCode,
                 'name'=>$request->name,
-                'parent_code'=>$newCode,
+                'parent_code'=>$baseCode,
                 'level1' => $level1,
                 'level2' => $level2,
                 'level3' => $level3,
                 'level4' => $level4,
             ]);
-
-            $category = ProductCategory::create([
-                'name' => $request->name,
-            ]);
-
-            return response()->json($category);
+        
+            return response()->json($coa);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -132,21 +133,34 @@ class ProductCategoryController extends Controller
     }
 
     /**
-     * Show the form for List a new resource.
+     * Display the specified resource.
      */
-    public function list(): JsonResponse
+    public function show(string $id)
     {
-        try{
-            $data = ProductCategory::all();
+        //
+    }
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
 
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
 
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
     }
 }

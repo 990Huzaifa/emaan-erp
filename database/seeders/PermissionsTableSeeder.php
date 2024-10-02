@@ -25,6 +25,11 @@ class PermissionsTableSeeder extends Seeder
             'create customers',
             'edit customers',
             'delete customers',
+            'list vendors',
+            'view vendors',
+            'create vendors',
+            'edit vendors',
+            'delete vendors',
             'list products',
             'view products',
             'create products',
@@ -37,6 +42,10 @@ class PermissionsTableSeeder extends Seeder
             'delete permissions',
             'edit mail',
             'view mail',
+            'create chart of account',
+            'view chart of account',
+            'edit chart of account',
+            'list chart of account'
         ];
 
         // Loop through each permission and create it

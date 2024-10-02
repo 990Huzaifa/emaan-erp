@@ -26,8 +26,7 @@ return new class extends Migration
             $table->foreign('city_id')->references('id')->on('cities')->onUpdate('cascade')->onDelete('cascade');
             $table->string('logo')->nullable();
             $table->longText('address')->nullable();
-            $table->decimal('opening_credit_balance',15,2)->default(0.00);
-            $table->decimal('opening_debit_balance',15,2)->default(0.00);
+            $table->decimal('opening_balance',15,2)->default(0.00);
             $table->boolean('is_active')->default(1);
             $table->timestamps();
         });

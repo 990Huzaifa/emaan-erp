@@ -3,9 +3,10 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Models\UserHasBusiness;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasPermissions;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasPermissions;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -29,9 +30,7 @@ class User extends Authenticatable
         'setup_code_expiry',
         'cnic_images',
         'avatar',
-        'department',
-        'designation',
-        'joining_date',
+        'login_business',
     ];
 
     /**
@@ -52,4 +51,15 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    public function hasBusinessPermission($businessId, $permission)
+    {
+        // Get the user-business relationship
+        $userHasBusiness = UserHasBusiness::where('user_id', $this->id)
+                                           ->where('business_id', $businessId)
+                                           ->first();
+
+        // Check if the relationship exists and if the permission is assigned
+        return $userHasBusiness && $userHasBusiness->hasPermissionTo($permission);
+    }
 }

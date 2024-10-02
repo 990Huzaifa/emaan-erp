@@ -43,7 +43,7 @@ class AuthController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $user = User::where('email',$request->email)->first();
             if (empty($user)) throw new Exception('Account not found.', 404);
-            if($user->role == 'user' || $user->is_verify == 0) throw new Exception('Account not verified.', 404);
+            if($user->role == 'user' && $user->is_verify == 0) throw new Exception('Account not verified.', 404);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
             $token = $user->createToken('authToken');
             $this->accessToken = $token->plainTextToken;
@@ -71,6 +71,9 @@ class AuthController extends Controller
             $business = UserHasBusiness::where('user_id',$user->id)->where('business_id',$id)->first();
             if (empty($business)) throw new Exception('No Register Business found', 404);
             $permissionNames = $business->getAllPermissions()->pluck('name');
+            $user->update([
+                'login_business'=>$id,
+            ]);
             return response()->json(['permissions'=>$permissionNames],200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -107,17 +110,17 @@ class AuthController extends Controller
                 $back_image->move(public_path('user-cnic'), $back_image_name);
                 $cnic_back = 'user-cnic/' . $back_image_name;
             }
+            $cnic_images = [$cnic_front, $cnic_back];
             $user->update([
-                'city'=>$request->city,
+                'city_id'=>$request->city_id,
                 'phone'=>$request->phone,
                 'address' => $request->address,
-                'joining_date' => Date::now(),
                 'cnic'=>$request->cnic,
-                'cnic-images'=>[$cnic_front, $cnic_back],
+                'cnic_images'=> $cnic_images,
                 'avatar' => $avatar,
                 'password' => Hash::make($request->password),
             ]);
-            return response()->json(['success'=>'setup code verified'],200);
+            return response()->json(['success'=>'Profile setup successfully.'],200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){

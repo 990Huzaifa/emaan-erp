@@ -21,9 +21,6 @@ return new class extends Migration
             $table->string('phone',20)->nullable();
             $table->string('cnic')->nullable();
             $table->string('avatar')->nullable();
-            $table->string('department')->nullable();
-            $table->string('designation')->nullable();
-            $table->string('joining_date')->nullable();
             $table->string('address')->nullable();
             $table->longText('cnic_images')->nullable();
             $table->unsignedBigInteger('city_id');
@@ -34,6 +31,7 @@ return new class extends Migration
             $table->boolean('status')->default(1)->comment('1 = Active, 0 = Inactive');
             $table->string('role')->default('user');
             $table->integer('max_business_create')->nullable();
+            $table->string('login_business')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

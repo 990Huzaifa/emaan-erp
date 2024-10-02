@@ -28,4 +28,15 @@ class UserHasBusiness extends Model
     {
         return $this->business->name ?? '';
     }
+
+    public static function userHasBusinessPermission($userId, $businessId, $permission)
+    {
+        // Get the user-business relationship
+        $userHasBusiness = self::where('user_id', $userId)
+                                ->where('business_id', $businessId)
+                                ->first();
+
+        // Check if the relationship exists and if the permission is assigned
+        return $userHasBusiness && $userHasBusiness->hasPermissionTo($permission);
+    }
 }

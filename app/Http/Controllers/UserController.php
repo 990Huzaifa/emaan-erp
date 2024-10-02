@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Mail\UserMail;
 use Illuminate\Http\Request;
@@ -25,13 +26,15 @@ class UserController extends Controller
     {
         try{
             $user = Auth::user();
+            $businessId = $user->login_business;
 
-            // return response()->json($user);
-            
-            if (!$user->can('list user')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $perPage = $request->query('per_page', 10);
 
@@ -50,6 +53,18 @@ class UserController extends Controller
 
     public function store(Request $request):JsonResponse{
         try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'create users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            dd('test-done');
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
@@ -78,6 +93,7 @@ class UserController extends Controller
                 'u_code'=>$u_code,
                 'email' => $request->email,
                 'setup_code' => $setupCode,
+                'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
             $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
             // sync permissions to user according to business
@@ -107,13 +123,23 @@ class UserController extends Controller
 
     public function show($id):JsonResponse{
         try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'view users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
             $user = User::findOrFail($id);
 
             if (empty($user)) throw new Exception('No User found', 404);
 
-            $permissionNames  = $user->getAllPermissions()->pluck('name');
-            $permission=['user'=>$permissionNames];
-            return response()->json(['data'=>$user, 'permissions' =>$permission],200);
+            
+            return response()->json(['data'=>$user],200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -125,6 +151,18 @@ class UserController extends Controller
 
     public function update(Request $request, $id):JsonResponse{
         try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'edit users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
             $user = User::findOrFail($id);
             if (empty($user)) throw new Exception('No User found', 404);
             $validator = Validator::make(
@@ -164,6 +202,17 @@ class UserController extends Controller
 
     public function updateStatus(Request $request, $id):JsonResponse{
         try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'edit users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
             $user = User::findOrFail($id);
             if (empty($user)) throw new Exception('No User found', 404);
             $validator = Validator::make(
