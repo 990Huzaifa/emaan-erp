@@ -65,7 +65,7 @@ class BusinessController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'city_id'=>'required|numeric',
+                    'city'=>'required|numeric',
                     'name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
 
@@ -73,8 +73,8 @@ class BusinessController extends Controller
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
 
-                'city_id.required'=>'City is Required',
-                'city_id.numeric'=>'City is must be a numeric',
+                'city.required'=>'City is Required',
+                'city.numeric'=>'City is must be a numeric',
 
                 'email.required' => 'Email is required.',
                 'email.email' => 'Please provide a valid email address.',
@@ -84,16 +84,9 @@ class BusinessController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             // creating business
-            $logo = null;
-            if ($request->hasFile('logo')) {
-                $image = $request->file('logo');
-                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('business-logo'), $image_name);
-                $logo = 'business-logo/' . $image_name;
-            }
             $business = Business::create([
                 'name'=> $request->name,
-                'city_id'=> $request->city_id,
+                'city_id'=> $request->city,
                 'email' => $request->email,
             ]);
             $setupCode = generateSetupCode();   
@@ -104,12 +97,13 @@ class BusinessController extends Controller
             $user = User::create([
                 'name'=>$request->name,
                 'u_code'=>$u_code,
-                'city_id'=>$request->city_id,
+                'city_id'=>$request->city,
                 'email' => $request->email,
                 'setup_code' => $setupCode,
                 'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
-            $setupUrl = route('setup-account', ['code' => $setupCode]);
+            // $setupUrl = route('setup-account', ['code' => $setupCode])
+            $setupUrl = 'https://eman-traders-frontend-7q84.vercel.app/setup-user/'.$setupCode;
             // sync permissions to user according to business
             $uhb = UserHasBusiness::create([
                 'business_id'=>$business->id,
@@ -118,7 +112,7 @@ class BusinessController extends Controller
             $allPermissions = Permission::all();
             $uhb->syncPermissions($allPermissions);
             // sending mail to business admin
-            Mail::to('princehuzaifa990@gmail.com')->send(new UserMail([
+            Mail::to($request->email)->send(new UserMail([
                 'message'=>'Please setup your account by clicking on the below link',
                 'url' => $setupUrl
             ])); 
