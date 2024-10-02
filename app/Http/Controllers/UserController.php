@@ -186,12 +186,27 @@ class UserController extends Controller
                 'permissions.array' => 'Roles must be type array.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            $avatar = null;
+            $old_avatar = $user->avatar;
+            if ($request->hasFile('avatar')) {
+                if (!empty($old_avatar)) {
+                    if (file_exists(public_path($old_avatar))) {
+                        unlink(public_path($old_avatar));
+                    }
+                }
+                $image = $request->file('avatar');
+                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('user-avatar'), $image_name);
+                $avatar = 'user-avatar/' . $image_name;
+            }else{
+                $avatar = $old_avatar;
+            }
             $user->update([
-                'name'=>$request->name
+                'name'=>$request->name,
+                'avatar' => $avatar,
+                'phone'=>$request->phone,
+                'address' => $request->address,
             ]);
-            $user->syncPermissions($request->permissions);
-
-            return response()->json($user);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -242,6 +257,36 @@ class UserController extends Controller
             $user->syncPermissions($request->permissions);
 
             return response()->json($user);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function verify(Request $request, $id):JsonResponse{
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'edit users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $data = User::findOrFail($id);
+            if (empty($data)) throw new Exception('No User found', 404);
+
+            $data->update([
+                'is_verify'=>1
+            ]);
+
+            return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 

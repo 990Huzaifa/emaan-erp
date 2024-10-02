@@ -25,7 +25,7 @@ class SetMailConfig
                 $businessId = $request->header('X-Business-ID');
 
             // Retrieve mail settings for the user's business
-            $mailSetting = MailSetting::where('business_id', $businessId)->first();
+            $mailSetting = MailSetting::first();
 
             if ($mailSetting) {
                 $mailConfig = [

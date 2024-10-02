@@ -83,11 +83,11 @@ class AuthController extends Controller
         }
     }
     
-    public function setup(Request $request,$code, $id): JsonResponse
+    public function setup(Request $request,$code): JsonResponse
     {
         try{
-            $user = User::findOrFail($id);
-            if (empty($user->setup_code) || $user->setup_code !== $code) throw new Exception('Invalid setup code', 400);
+            $user = User::where('setup_code',$code)->first();
+            if (empty($user)) throw new Exception('Invalid setup code', 400);
             if (Carbon::now()->greaterThan($user->setup_code_expiry))  throw new Exception('Setup code has expired', 400);
             $avatar = null;
             $cnic_front = null;
@@ -100,13 +100,13 @@ class AuthController extends Controller
             }
             if ($request->hasFile('cnic_front')) {
                 $front_image = $request->file('cnic_front');
-                $front_image_name = 'cnic_' . $id . '_front.' . $front_image->getClientOriginalExtension();
+                $front_image_name = 'cnic_' . $user->id . '_front.' . $front_image->getClientOriginalExtension();
                 $front_image->move(public_path('user-cnic'), $front_image_name);
                 $cnic_front = 'user-cnic/' . $front_image_name;
             }
             if ($request->hasFile('cnic_back')) {
                 $back_image = $request->file('cnic_back');
-                $back_image_name = 'cnic_' . $id . '_back.' . $back_image->getClientOriginalExtension();
+                $back_image_name = 'cnic_' . $user->id . '_back.' . $back_image->getClientOriginalExtension();
                 $back_image->move(public_path('user-cnic'), $back_image_name);
                 $cnic_back = 'user-cnic/' . $back_image_name;
             }

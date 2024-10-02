@@ -98,7 +98,7 @@ class BusinessController extends Controller
                 'setup_code' => $setupCode,
                 'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
-            $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
+            $setupUrl = route('setup-account', ['code' => $setupCode]);
             // sync permissions to user according to business
             $uhb = UserHasBusiness::create([
                 'business_id'=>$business->id,
