@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\COAController;
+use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\VendorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -39,6 +40,7 @@ Route::middleware(['auth:sanctum', 'set.mail.config'])->group(function () {
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::apiResource('chart-of-account',COAController::class)->only('index','store','show','update');
+    Route::apiResource('product-category',ProductCategoryController::class)->only('index','store','show','update');
     Route::apiResource('vendor',VendorController::class)->only('index','store','show','update');
     Route::apiResource('permission',PermissionController::class)->only('index','store');
     

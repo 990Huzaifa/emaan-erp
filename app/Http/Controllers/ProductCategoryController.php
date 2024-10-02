@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BusinessHasAccount;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
@@ -18,9 +19,9 @@ class ProductCategoryController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $request->input('business_id');
+            $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'list product caetgory')) {
+                if (!$user->hasBusinessPermission($businessId, 'list product category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -48,9 +49,9 @@ class ProductCategoryController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $request->input('business_id');
+            $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'create product caetgory')) {
+                if (!$user->hasBusinessPermission($businessId, 'create product category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -111,7 +112,7 @@ class ProductCategoryController extends Controller
             $coa = ChartOfAccount::create([
                 'code'=>$newCode,
                 'name'=>$request->name,
-                'parent_code'=>$newCode,
+                'parent_code'=>$baseCode,
                 'level1' => $level1,
                 'level2' => $level2,
                 'level3' => $level3,
@@ -120,6 +121,11 @@ class ProductCategoryController extends Controller
 
             $category = ProductCategory::create([
                 'name' => $request->name,
+            ]);
+
+            $relation = BusinessHasAccount::create([
+                'business_id' => $businessId,
+                'chart_of_account_id' => $coa->id,
             ]);
 
             return response()->json($category);

@@ -13,6 +13,10 @@ return new class extends Migration
     {
         Schema::create('business_has_accounts', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('business_id');
+            $table->unsignedBigInteger('account_id');
+            $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('chart_of_account_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->timestamps();
         });
     }

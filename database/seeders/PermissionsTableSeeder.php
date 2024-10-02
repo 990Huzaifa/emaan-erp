@@ -45,7 +45,17 @@ class PermissionsTableSeeder extends Seeder
             'create chart of account',
             'view chart of account',
             'edit chart of account',
-            'list chart of account'
+            'list chart of account',
+            'list product category',
+            'create product category',
+            'view product category',
+            'delete product category',
+            'edit product category',
+            'list product sub category',
+            'create product sub category',
+            'view product sub category',
+            'delete product sub category',
+            'edit product sub category',
         ];
 
         // Loop through each permission and create it
