@@ -50,9 +50,9 @@ class AuthController extends Controller
 
             if($user->role == 'user'){
                 $businesses = UserHasBusiness::where('user_id',$user->id)->get();
-                return response()->json(["access_token"=>$this->accessToken,"data"=>$user,'businesses'=>$businesses ]);
+                return response()->json(["access_token"=>$this->accessToken,"userInfo"=>$user,'role'=>'user','businesses'=>$businesses ]);
             }elseif ($user->role == 'admin') {
-                return response()->json(["access_token"=>$this->accessToken,"data"=>$user]);
+                return response()->json(["access_token"=>$this->accessToken,"userInfo"=>$user,'role'=>'admin']);
             }else{
                 return response()->json(['error' => 'Invalid login'], 400);
             }

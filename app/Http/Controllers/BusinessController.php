@@ -27,10 +27,13 @@ class BusinessController extends Controller
     {
         try{
             $user = Auth::user();
-            if (!$user->can('list businesses')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $perPage = $request->query('per_page', 10);
             $data = Business::paginate($perPage);
@@ -51,12 +54,13 @@ class BusinessController extends Controller
     {
         try{
             $user = Auth::user();
-            if($user->role == 'user'){
-                if (!$user->can('create businesses')){
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'create businesses')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
-                } 
+                }
             }
 
             $validator = Validator::make(
@@ -80,6 +84,13 @@ class BusinessController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             // creating business
+            $logo = null;
+            if ($request->hasFile('logo')) {
+                $image = $request->file('logo');
+                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('business-logo'), $image_name);
+                $logo = 'business-logo/' . $image_name;
+            }
             $business = Business::create([
                 'name'=> $request->name,
                 'city_id'=> $request->city_id,

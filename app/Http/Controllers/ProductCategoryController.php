@@ -100,6 +100,7 @@ class ProductCategoryController extends Controller
             $level2 = isset($parentCodeParts[1]) ? $parentCodeParts[1] : '0';
             $level3 = isset($parentCodeParts[2]) ? $parentCodeParts[2] : '0';
             $level4 = isset($parentCodeParts[3]) ? $parentCodeParts[3] : '0';
+            $level5 = isset($parentCodeParts[4]) ? $parentCodeParts[4] : '0';
 
             if ($numLevels == 1) {
                 $level2 = $i;  // New level 2 value
@@ -107,6 +108,8 @@ class ProductCategoryController extends Controller
                 $level3 = $i;  // New level 3 value
             } elseif ($numLevels == 3) {
                 $level4 = $i;  // New level 4 value
+            } elseif ($numLevels == 4) {
+                $level5 = $i;  // New level 5 value
             }
 
             $coa = ChartOfAccount::create([
@@ -117,6 +120,7 @@ class ProductCategoryController extends Controller
                 'level2' => $level2,
                 'level3' => $level3,
                 'level4' => $level4,
+                'level5' => $level5,
             ]);
 
             $category = ProductCategory::create([
