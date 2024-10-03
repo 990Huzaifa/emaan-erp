@@ -36,7 +36,13 @@ Route::middleware(['admin.auth'])->group(function () {});
 Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
+    // user
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
+    Route::get('user/{id}/status',[UserController::class,'updateStatus']);
+    Route::get('user/{id}/verify',[UserController::class,'verify']);
+    Route::get('user/{id}/setup',[UserController::class,'sendSetupMail']);
+
+
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::apiResource('chart-of-account',COAController::class)->only('index','store','show','update');

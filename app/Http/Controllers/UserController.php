@@ -215,7 +215,7 @@ class UserController extends Controller
         }
     }
 
-    public function updateStatus(Request $request, $id):JsonResponse{
+    public function updateStatus( $id):JsonResponse{
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
@@ -230,32 +230,9 @@ class UserController extends Controller
             }
             $user = User::findOrFail($id);
             if (empty($user)) throw new Exception('No User found', 404);
-            $validator = Validator::make(
-                $request->all(),[
-                    'name'=>'required|string'
-    
-            ],[
-                'name.required'=>'Name is Required',
-                'name.string'=>'Name is must be a string',
-    
-                'email.required' => 'Email is required.',
-                'email.email' => 'Please provide a valid email address.',
-                'email.max' => 'Email cannot exceed 255 characters.',
-                'email.unique' => 'This email address is already in use.',
-    
-                'password.required' => 'Password is required.',
-                'password.string' => 'Password must be a string.',
-                'password.min' => 'Password must be at least 8 characters long.',
-    
-                'permissions.required' => 'Roles is required.',
-                'permissions.array' => 'Roles must be type array.',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $user->update([
-                'name'=>$request->name
+                'is_active'=>1,
             ]);
-            $user->syncPermissions($request->permissions);
-
             return response()->json($user);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -265,7 +242,7 @@ class UserController extends Controller
         }
     }
 
-    public function verify(Request $request, $id):JsonResponse{
+    public function verify($id):JsonResponse{
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
@@ -290,6 +267,44 @@ class UserController extends Controller
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function sendSetupMail($id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'create users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $user = User::find($id);
+            if (empty($user)) throw new Exception('Account not found', 404);
+            $setupCode = generateSetupCode();   
+            // creating user of business
+            do {
+                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (User::where('u_code', $u_code)->exists());  
+            $user->update([
+                'setup_code' => $setupCode,
+                'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
+
+            ]);
+            $setupUrl = 'https://eman-traders-frontend-7q84.vercel.app/setup-user/'.$setupCode;
+            Mail::to($user->email)->send(new UserMail([
+                'message'=>'Please setup your account by clicking on the below link',
+                'url' => $setupUrl
+            ])); 
+            return response()->json(['success'=>'Setup mail sent successfully.'],200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
