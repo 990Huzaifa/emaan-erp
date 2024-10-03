@@ -37,8 +37,33 @@ class UserController extends Controller
                 }
             }
             $perPage = $request->query('per_page', 10);
+            $isActive = $request->query('is_active');
+            $searchQuery = $request->query('search');
 
-            $data = User::paginate($perPage);
+            $query = User::orderBy('id', 'desc')->where('role','user');
+            if ($isActive === 'active') {
+                $query = $query->where('is_active', 1);
+            } elseif ($isActive === 'inactive') {
+                $query = $query->where('is_active', 0);
+            }
+            if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
+                if (is_numeric($searchQuery)) {
+                    $query = $query->where('id', $searchQuery);
+                } else {
+                    // Otherwise, search by user name or email
+                    $userIds = User::where('first_name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('last_name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+    
+                    // Filter orders by the found user IDs
+                    $query = $query->whereIn('user_id', $userIds);
+                }
+            }
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data);

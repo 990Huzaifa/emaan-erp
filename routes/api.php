@@ -25,6 +25,11 @@ use App\Http\Controllers\PermissionController;
 |
 */
 
+Route::get('/optimize-clear', function () {
+    Artisan::call('optimize:clear');
+    return 'Optimization cache cleared!';
+});
+
 // Auth Routes
 
 Route::post('setup/{code}', [AuthController::class, 'setup'])->name('setup-account');
