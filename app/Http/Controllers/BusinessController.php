@@ -68,6 +68,8 @@ class BusinessController extends Controller
                     'city'=>'required|numeric',
                     'name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
+                    'password'=>'required|string|min:8',
+                    'confirm_password'=>'required|string|min:8',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -80,8 +82,16 @@ class BusinessController extends Controller
                 'email.email' => 'Please provide a valid email address.',
                 'email.max' => 'Email cannot exceed 255 characters.',
                 'email.unique' => 'This email address is already in use.',
+
+                'password.required' => 'Password is required.',
+                'password.min' => 'Password must be at least 8 characters.',
+
+                'confirm_password.required' => 'Confirm Password is required.',
+                'confirm_password.min' => 'Confirm Password must be at least 8 characters.',
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            if($request->password != $request->confirm_password) throw new Exception('Password Mismatch', 400);
             DB::beginTransaction();
             // creating business
             $business = Business::create([
@@ -99,21 +109,20 @@ class BusinessController extends Controller
                 'u_code'=>$u_code,
                 'city_id'=>$request->city,
                 'email' => $request->email,
-                'setup_code' => $setupCode,
+                'password' => Hash::make($request->password),
             ]);
             // $setupUrl = route('setup-account', ['code' => $setupCode])
-            $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
+            // $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
             // sync permissions to user according to business
             $uhb = UserHasBusiness::create([
                 'business_id'=>$business->id,
                 'user_id'=>$user->id,
             ]);
             $allPermissions = Permission::all();
-            $uhb->syncPermissions(['edit profile']);
+            $uhb->syncPermissions($allPermissions);
             // sending mail to business admin
             Mail::to($request->email)->send(new UserMail([
-                'message'=>'Please setup your account by clicking on the below link',
-                'url' => $setupUrl
+                'message'=>'You are Admin of the business now you have all the access of this business.',
             ])); 
             DB::commit();
             return response()->json(['message'=>'Mail has been sent to business Admin']);

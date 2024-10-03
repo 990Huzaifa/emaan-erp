@@ -40,7 +40,8 @@ class UserController extends Controller
             $isActive = $request->query('is_active');
             $searchQuery = $request->query('search');
 
-            $query = User::orderBy('id', 'desc')->where('role','user');
+            $query = User::orderBy('id', 'desc')->where('role','user')->join('cities', 'users.city_id', '=', 'cities.id')
+            ->select('users.*', 'cities.name as city');
             if ($isActive === 'active') {
                 $query = $query->where('is_active', 1);
             } elseif ($isActive === 'inactive') {
@@ -323,7 +324,8 @@ class UserController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
 
-            $query = User::orderBy('id', 'desc')->where('role','user');
+            $query = User::orderBy('id', 'desc')->where('role','user')->join('cities', 'users.city_id', '=', 'cities.id')
+            ->select('users.*', 'cities.name as city');
             
             if (!empty($searchQuery)) {
                 // Check if the search query is numeric to search by order ID
