@@ -43,7 +43,7 @@ class AuthController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $user = User::where('email',$request->email)->first();
             if (empty($user)) throw new Exception('Account not found.', 404);
-            if($user->role == 'user' && $user->is_verify == 0) throw new Exception('Account not verified.', 404);
+            // if($user->role == 'user' && $user->is_verify == 0) throw new Exception('Account not verified.', 404);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
             $token = $user->createToken('authToken');
             $this->accessToken = $token->plainTextToken;
@@ -89,6 +89,45 @@ class AuthController extends Controller
             $user = User::where('setup_code',$code)->first();
             if (empty($user)) throw new Exception('Invalid setup code', 400);
             if (Carbon::now()->greaterThan($user->setup_code_expiry))  throw new Exception('Setup code has expired', 400);
+            $validator = Validator::make(
+                $request->all(),[
+                    'phone'=>'nullable|string',
+                    'cnic'=>'nullable|string',
+                    'address'=>'nullable|string',
+                    'cnic_back'=> 'nullable|image',
+                    'cnic_front'=> 'nullable|image',
+                    'avatar'=> 'nullable|image',
+                    'password'=> 'required|string|min:8',
+                    'confirm_password'=> 'required|string|min:8',
+            ],[
+                'phone.required'=>'Phone is Required',
+                'phone.string'=>'Phone is must be a string',
+    
+                'cnic.required' => 'CNIC is required.',
+                'cnic.string' => 'CNIC must be type String.',
+
+                'address.required' => 'Address is required.',
+                'address.string' => 'Address must be type String.',
+
+                'cnic_back.required' => 'CNIC Back is required.',
+                'cnic_back.image' => 'CNIC Back must be type image.',
+
+                'cnic_front.required' => 'CNIC Front is required.',
+                'cnic_front.image' => 'CNIC Front must be type image.',
+
+                'avatar.image' => 'Avatar must be type image.',
+
+                'password.required' => 'Password is required.',
+                'password.string' => 'Password must be a string.',
+                'password.min' => 'Password must be at least 8 characters.',
+                
+                'confirm_password.required' => 'Password is required.',
+                'confirm_password.string' => 'Password must be a string.',
+                'confirm_password.min' => 'Password must be at least 8 characters.',
+
+
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $avatar = null;
             $cnic_front = null;
             $cnic_back = null;
@@ -111,14 +150,16 @@ class AuthController extends Controller
                 $cnic_back = 'user-cnic/' . $back_image_name;
             }
             $cnic_images = [$cnic_front, $cnic_back];
+            if($request->password != $request->confirm_password) throw new Exception('Password Mismatch', 400);
             $user->update([
-                'city_id'=>$request->city_id,
-                'phone'=>$request->phone,
-                'address' => $request->address,
-                'cnic'=>$request->cnic,
-                'cnic_images'=> $cnic_images,
+                'city_id'=>$request->city_id ?? $user->city_id,
+                'phone'=>$request->phone ?? null,
+                'address' => $request->address ?? null,
+                'cnic'=>$request->cnic ?? null,
+                'cnic_images'=> $cnic_images ?? null,
                 'avatar' => $avatar,
                 'password' => Hash::make($request->password),
+                'setup_code' => null,
             ]);
             return response()->json(['success'=>'Profile setup successfully.'],200);
         }catch(QueryException $e){

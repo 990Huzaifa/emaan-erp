@@ -43,9 +43,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
     // user
     Route::apiResource('user',UserController::class)->only('index','store','show','update');
-    Route::get('user/{id}/status',[UserController::class,'updateStatus']);
-    Route::get('user/{id}/verify',[UserController::class,'verify']);
-    Route::get('user/{id}/setup',[UserController::class,'sendSetupMail']);
+    Route::get('status/{id}/user',[UserController::class,'updateStatus']);
+    Route::post('verify/{id}/user',[UserController::class,'verify']);
+    Route::get('invite-list/user',[UserController::class,'inviteList']);
+    Route::get('setup/{id}/user',[UserController::class,'sendSetupMail']);
 
 
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);

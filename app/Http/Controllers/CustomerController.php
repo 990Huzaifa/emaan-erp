@@ -61,7 +61,7 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'city'=>'required|string',
+                    'coa_id'=>'required|numeric',
                     'email' => 'nullable|email',
                     'cnic'=>'required|string|max:14|unique:customers,cnic',
                     'logo' => 'nullable|image',
@@ -81,8 +81,8 @@ class CustomerController extends Controller
 
                 'email.email' => 'Please provide a valid email address.',
 
-                'city.required'=>'City is Required',
-                'city.string'=>'City is must be a string',
+                'coa_id.required'=>'COA id is Required',
+                'coa_id.string'=>'COA id is must be a numeric',
 
                 'logo.image' => 'logo must be an image file',
 
@@ -113,7 +113,7 @@ class CustomerController extends Controller
                 'name'=>$request->name,
                 'c_code'=>$c_code,
                 'business_id'=>$user->business_id,
-                'city_id'=>$request->city_id,
+                'chart_of_account_id'=>$request->coa_id,
                 'cnic'=>$request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
@@ -175,7 +175,7 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'city'=>'required|string',
+                    'coa_id'=>'required|numeric',
                     'email' => 'nullable|email',
                     'cnic'=>'required|string|max:14',
                     'logo' => 'nullable|image',
@@ -196,8 +196,8 @@ class CustomerController extends Controller
 
                 'email.email' => 'Please provide a valid email address.',
 
-                'city.required'=>'City is Required',
-                'city.string'=>'City is must be a string',
+                'coa_id.required'=>'COA id is Required',
+                'coa_id.string'=>'COA id is must be a numeric',
 
                 'logo.image' => 'logo must be an image file',
 
@@ -223,7 +223,7 @@ class CustomerController extends Controller
             }
             $customer->update([
                 'name'=>$request->name,
-                'city'=>$request->city,
+                'chart_of_account_id'=>$request->coa_id,
                 'cnic'=>$request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,

@@ -19,8 +19,7 @@ class CityController extends Controller
         try{
             $data = City::all();
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

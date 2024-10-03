@@ -92,7 +92,7 @@ class BusinessController extends Controller
             $setupCode = generateSetupCode();   
             // creating user of business
             do {
-                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $u_code = bin2hex(random_bytes(32)); 
             } while (User::where('u_code', $u_code)->exists());  
             $user = User::create([
                 'name'=>$request->name,
@@ -100,7 +100,6 @@ class BusinessController extends Controller
                 'city_id'=>$request->city,
                 'email' => $request->email,
                 'setup_code' => $setupCode,
-                'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
             // $setupUrl = route('setup-account', ['code' => $setupCode])
             $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
@@ -110,7 +109,7 @@ class BusinessController extends Controller
                 'user_id'=>$user->id,
             ]);
             $allPermissions = Permission::all();
-            $uhb->syncPermissions($allPermissions);
+            $uhb->syncPermissions(['edit profile']);
             // sending mail to business admin
             Mail::to($request->email)->send(new UserMail([
                 'message'=>'Please setup your account by clicking on the below link',

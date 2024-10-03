@@ -17,7 +17,7 @@ function generateSku(string $title, string $categoryId): string
     return $titlePart . '-' . $categoryPart . '-' . $randomNumber;
 }
 
-function generateSetupCode($length = 12)
+function generateSetupCode($length = 64)
 {
     $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $charactersLength = strlen($characters);

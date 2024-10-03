@@ -11,23 +11,65 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionController extends Controller
 {
-    public function index(Request $request):JsonResponse
+    public function index(): JsonResponse
     {
-        try{
-            $perPage = $request->query('per_page', 10);
-
-            $data = Permission::paginate($perPage);
-
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
-
-        }catch(QueryException $e){
+        try {
+            // Fetch all permissions
+            $permissions = Permission::select('id', 'name')->get();
+    
+            // Define the structure for organizing permissions
+            $groupedPermissions = [
+                'Profile' => ['edit profile'],
+                'Businesses' => ['list businesses'],
+                'Users' => ['list users', 'view users', 'create users', 'edit users', 'delete users'],
+                'Customers' => ['list customers', 'view customers', 'create customers', 'edit customers', 'delete customers'],
+                'Vendors' => ['list vendors', 'view vendors', 'create vendors', 'edit vendors', 'delete vendors'],
+                'Products' => ['list products', 'view products', 'create products', 'edit products', 'delete products'],
+                'Permissions' => ['list permissions', 'view permissions', 'create permissions', 'edit permissions', 'delete permissions'],
+                'Mail' => ['edit mail', 'view mail'],
+                'Chart of Account' => ['create chart of account', 'view chart of account', 'edit chart of account', 'list chart of account'],
+                'Product Category' => [
+                    'list product category',
+                    'create product category',
+                    'view product category',
+                    'delete product category',
+                    'edit product category'
+                ],
+                'Product Sub Category' => [
+                    'list product sub category',
+                    'create product sub category',
+                    'view product sub category',
+                    'delete product sub category',
+                    'edit product sub category'
+                ],
+            ];
+    
+            // Prepare an empty array to store structured permissions
+            $structuredPermissions = [];
+    
+            // Loop through each permission group
+            foreach ($groupedPermissions as $group => $permissionsList) {
+                $structuredPermissions[$group] = $permissions
+                    ->whereIn('name', $permissionsList)
+                    ->map(function ($permission) {
+                        return [
+                            'id' => $permission->id,
+                            'name' => $permission->name,
+                        ];
+                    })
+                    ->toArray();
+            }
+    
+            // Return the structured permissions as JSON
+            return response()->json($structuredPermissions, 200);
+    
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 
     public function store(Request $request):JsonResponse
     {

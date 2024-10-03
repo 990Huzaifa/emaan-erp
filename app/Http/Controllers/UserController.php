@@ -26,10 +26,10 @@ class UserController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -52,21 +52,19 @@ class UserController extends Controller
                     $query = $query->where('id', $searchQuery);
                 } else {
                     // Otherwise, search by user name or email
-                    $userIds = User::where('first_name', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('last_name', 'like', '%' . $searchQuery . '%')
+                    $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('email', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
     
                     // Filter orders by the found user IDs
-                    $query = $query->whereIn('user_id', $userIds);
+                    $query = $query->whereIn('id', $userIds);
                 }
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -76,13 +74,14 @@ class UserController extends Controller
         }
     }
 
-    public function store(Request $request):JsonResponse{
+    public function store(Request $request):JsonResponse
+    {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -105,8 +104,8 @@ class UserController extends Controller
                 'email.max' => 'Email cannot exceed 255 characters.',
                 'email.unique' => 'This email address is already in use.',
 
-                'business_ids.required' => 'Business_ids is required.',
-                'business_ids.array' => 'Business_ids must be type array.',
+                'permissions.required' => 'permissions is required.',
+                'permissions.array' => 'permissions must be type array.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             do {
@@ -118,7 +117,6 @@ class UserController extends Controller
                 'u_code'=>$u_code,
                 'email' => $request->email,
                 'setup_code' => $setupCode,
-                'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
             $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
             // sync permissions to user according to business
@@ -130,7 +128,7 @@ class UserController extends Controller
     
                 $uhb->syncPermissions($permissions);
             }
-            // sending mail to business admin
+            // sending mail to user
             Mail::to($request->email)->send(new UserMail([
                 'url' => $setupUrl
             ])); 
@@ -146,25 +144,40 @@ class UserController extends Controller
         }
     }
 
-    public function show($id):JsonResponse{
+    public function show($id):JsonResponse
+    {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            $user = User::findOrFail($id);
+             $userData = User::findOrFail($id);
 
-            if (empty($user)) throw new Exception('No User found', 404);
+            // Fetch the user's associated businesses and permissions
+            $userHasBusinesses = UserHasBusiness::where('user_id', $id)->get();
+            $businessPermissions = [];
+    
+            // Loop through each business and fetch permissions
+            foreach ($userHasBusinesses as $userHasBusiness) {
+                $businessPermissions[] = [
+                    $userHasBusiness->business_id => $userHasBusiness->getAllPermissions()->pluck('name'),  // Assuming getPermissions() returns the permissions
+                ];
+            }
+    
+            // Prepare response data
+            $data = [
+                'user' => $userData,
+                'business_permissions' => $businessPermissions,
+            ];
 
-            
-            return response()->json(['data'=>$user],200);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -174,13 +187,14 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request, $id):JsonResponse{
+    public function update(Request $request, $id):JsonResponse
+    {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -192,46 +206,23 @@ class UserController extends Controller
             if (empty($user)) throw new Exception('No User found', 404);
             $validator = Validator::make(
                 $request->all(),[
-                    'name'=>'required|string'
-    
+                    'permissions'=>'required|array'
             ],[
-                'name.required'=>'Name is Required',
-                'name.string'=>'Name is must be a string',
     
-                'email.required' => 'Email is required.',
-                'email.email' => 'Please provide a valid email address.',
-                'email.max' => 'Email cannot exceed 255 characters.',
-                'email.unique' => 'This email address is already in use.',
-    
-                'password.required' => 'Password is required.',
-                'password.string' => 'Password must be a string.',
-                'password.min' => 'Password must be at least 8 characters long.',
-    
-                'permissions.required' => 'Roles is required.',
-                'permissions.array' => 'Roles must be type array.',
+                'permissions.required' => 'permissions is required.',
+                'permissions.array' => 'permissions must be type array.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $avatar = null;
-            $old_avatar = $user->avatar;
-            if ($request->hasFile('avatar')) {
-                if (!empty($old_avatar)) {
-                    if (file_exists(public_path($old_avatar))) {
-                        unlink(public_path($old_avatar));
-                    }
-                }
-                $image = $request->file('avatar');
-                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('user-avatar'), $image_name);
-                $avatar = 'user-avatar/' . $image_name;
-            }else{
-                $avatar = $old_avatar;
+            
+            // sync permissions to user according to business
+            foreach ($request->permissions as $businessId => $permissions) {
+                $uhb = UserHasBusiness::create([
+                    'business_id' => $businessId,
+                    'user_id' => $id,
+                ]);
+                $uhb->syncPermissions($permissions);
             }
-            $user->update([
-                'name'=>$request->name,
-                'avatar' => $avatar,
-                'phone'=>$request->phone,
-                'address' => $request->address,
-            ]);
+            return response()->json($user,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -240,13 +231,14 @@ class UserController extends Controller
         }
     }
 
-    public function updateStatus( $id):JsonResponse{
+    public function updateStatus( $id):JsonResponse
+    {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -267,28 +259,90 @@ class UserController extends Controller
         }
     }
 
-    public function verify($id):JsonResponse{
+    public function verify(Request $request, $id):JsonResponse
+    {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
+            $validator = Validator::make(
+                $request->all(),[
+                    'permissions'=>'required|array'
 
+            ],[
+
+                'permissions.required' => 'permissions is required.',
+                'permissions.array' => 'permissions must be type array.',
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $data = User::findOrFail($id);
             if (empty($data)) throw new Exception('No User found', 404);
 
             $data->update([
                 'is_verify'=>1
             ]);
-
+            foreach ($request->permissions as $businessId => $permissions) {
+                $uhb = UserHasBusiness::create([
+                    'business_id' => $businessId,
+                    'user_id' => $user->id,
+                ]);
+    
+                $uhb->syncPermissions($permissions);
+            }           
             return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
+    public function inviteList(Request $request):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perPage = $request->query('per_page', 10);
+            $searchQuery = $request->query('search');
+
+            $query = User::orderBy('id', 'desc')->where('role','user');
+            
+            if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
+                if (is_numeric($searchQuery)) {
+                    $query = $query->where('id', $searchQuery);
+                } else {
+                    // Otherwise, search by user name or email
+                    $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+                        $query = $query->whereIn('id', $userIds);
+                }
+            }
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
+
+            return response()->json($data,200);
+
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -301,9 +355,9 @@ class UserController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
