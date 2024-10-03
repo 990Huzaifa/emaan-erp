@@ -55,6 +55,7 @@ return [
     */
 
     'url' => env('APP_URL', 'http://localhost'),
+    'frontend_url' => env('FRONTEND_URL', 'https://eman-traders-frontend-7q84.vercel.app'),
 
     'asset_url' => env('ASSET_URL', '/'),
 

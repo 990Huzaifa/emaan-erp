@@ -103,7 +103,7 @@ class BusinessController extends Controller
                 'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
             ]);
             // $setupUrl = route('setup-account', ['code' => $setupCode])
-            $setupUrl = 'https://eman-traders-frontend-7q84.vercel.app/setup-user/'.$setupCode;
+            $setupUrl = config('app.frontend_url').'setup-user/'.$setupCode;
             // sync permissions to user according to business
             $uhb = UserHasBusiness::create([
                 'business_id'=>$business->id,
