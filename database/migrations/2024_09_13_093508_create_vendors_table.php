@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('v_code');
             $table->string('name');
             $table->string('phone')->nullable();
-            $table->unsignedBigInteger('city_id');
-            $table->foreign('city_id')->references('id')->on('cities')->onUpdate('cascade')->onDelete('cascade');
+            $table->unsignedBigInteger('chart_of_account_id');
+            $table->foreign('chart_of_account_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('telephone')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();

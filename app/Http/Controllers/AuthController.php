@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Exception;
 use Carbon\Carbon;
+use App\Models\Log;
 use App\Models\User;
 use App\Models\Admin;
 use App\Mail\UserMail;
@@ -49,9 +50,13 @@ class AuthController extends Controller
             if (empty($user)) throw new Exception('Account not found.', 404);
             // if($user->role == 'user' && $user->is_verify == 0) throw new Exception('Account not verified.', 404);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
+            $user->tokens()->delete();
             $token = $user->createToken('authToken');
             $this->accessToken = $token->plainTextToken;
-
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User logged in',
+            ]);
             if($user->role == 'user'){
                 $businesses = UserHasBusiness::where('user_id',$user->id)->get();
                 return response()->json(["access_token"=>$this->accessToken,"userInfo"=>$user,'role'=>'user','businesses'=>$businesses ]);
@@ -92,7 +97,6 @@ class AuthController extends Controller
         try{
             $user = User::where('setup_code',$code)->first();
             if (empty($user)) throw new Exception('Invalid setup code', 400);
-            if (Carbon::now()->greaterThan($user->setup_code_expiry))  throw new Exception('Setup code has expired', 400);
             $validator = Validator::make(
                 $request->all(),[
                     'phone'=>'nullable|string',
@@ -159,6 +163,10 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
                 'setup_code' => null,
             ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User setup completed',
+            ]);
             return response()->json(['success'=>'Profile setup successfully.'],200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -202,7 +210,10 @@ class AuthController extends Controller
                 'url' => config('app.frontend_url').'/reset-password/'.$request->email.'/'.$token,
                  'is_url'=>true
             ]));
-
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User forgot password',
+            ]);
             return response()->json([
                 'message' => 'Reset link sent successfully',
             ], 200);
@@ -250,7 +261,10 @@ class AuthController extends Controller
             ]);
 
             PasswordResetToken::where('email', $request->email)->delete();
-
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User reset password',
+            ]);
             return response()->json([
                 'message' => 'Password reset successfully',
             ], 200);

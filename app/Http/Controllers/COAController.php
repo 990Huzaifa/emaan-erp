@@ -126,6 +126,11 @@ class COAController extends Controller
                 'level4' => $level4,
                 'level5' => $level5,
             ]);
+
+            $businessHasAccount = BusinessHasAccount::create([
+                'business_id' => $businessId,
+                'chart_of_account_id' => $coa->id,
+            ]);
         
             return response()->json($coa);
         }catch(QueryException $e){

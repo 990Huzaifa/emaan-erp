@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\UserMail;
 use Exception;
 use App\Models\User;
+use App\Models\Log;
 use App\Models\Business;
 use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
@@ -40,6 +41,10 @@ class BusinessController extends Controller
             ->join('cities','cities.id','=','businesses.city_id')
             ->select('businesses.*','cities.name as city')
             ->paginate($perPage);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User list businesses',
+            ]);
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -142,7 +147,11 @@ class BusinessController extends Controller
                 'message'=>'You are Admin of the business now you have all the access of this business.',
                 'url'=>config('app.frontend_url'),
                 'is_url'=>true,
-            ])); 
+            ]));
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User create business',
+            ]);
             DB::commit();
             return response()->json(['message'=>'Mail has been sent to business Admin']);
         }catch(QueryException $e){
@@ -200,6 +209,10 @@ class BusinessController extends Controller
                 }
             }
             $data = Business::select(['id','name'])->get();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User fetch list of businesses',
+            ]);
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

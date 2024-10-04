@@ -31,6 +31,7 @@ class User extends Authenticatable
         'cnic_images',
         'avatar',
         'login_business',
+        'is_verify',
     ];
 
     /**
