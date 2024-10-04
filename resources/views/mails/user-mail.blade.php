@@ -7,7 +7,9 @@
     <title>Document</title>
 </head>
 <body>
-    verify mail here
-    {{$data['url']}}
+    <p>{{$data['message']}}</p>
+    @if($data['is_url'])
+        <p>{{$data['url']}}</p>
+    @endif
 </body>
 </html>

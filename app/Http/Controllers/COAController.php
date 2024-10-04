@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BusinessHasAccount;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
@@ -18,10 +19,10 @@ class COAController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
+            
             // Check if the user has the required permission
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list chart of account')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -32,8 +33,7 @@ class COAController extends Controller
 
             $data = ChartOfAccount::paginate($perPage);
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -167,4 +167,49 @@ class COAController extends Controller
     {
         //
     }
+
+    public function list()
+    {
+        try {
+            $user = Auth::user();
+
+            // Step 1: Get all ChartOfAccount entries that do not have any relation with BusinessHasAccount
+            $chartOfAccountsWithoutRelation = ChartOfAccount::whereDoesntHave('business_has_accounts')->get();
+
+            // Step 2: Initialize the final data variable
+            $data = $chartOfAccountsWithoutRelation;
+
+            // Step 3: Check if the user is a regular user ('role' is 'user')
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+
+                // Check if the user has permission to list the chart of accounts for the business
+                if (!$user->hasBusinessPermission($businessId, 'list chart of account')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+
+                // Step 4: Get ChartOfAccount records related to the specific business
+                $businessHasAccounts = BusinessHasAccount::where('business_id', $businessId)->pluck('chart_of_account_id');
+                $chartOfAccountsForBusiness = ChartOfAccount::whereIn('id', $businessHasAccounts)->get();
+
+                // Step 5: Append the related accounts to the list of accounts without relation
+                $data = $data->merge($chartOfAccountsForBusiness);
+            } else {
+                // If the user is not a regular user, get all ChartOfAccount records
+                $data = ChartOfAccount::get();
+            }
+
+            // Step 6: Return the final data as a JSON response
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
 }

@@ -25,8 +25,6 @@ class PermissionController extends Controller
                 'Customers' => ['list customers', 'view customers', 'create customers', 'edit customers', 'delete customers'],
                 'Vendors' => ['list vendors', 'view vendors', 'create vendors', 'edit vendors', 'delete vendors'],
                 'Products' => ['list products', 'view products', 'create products', 'edit products', 'delete products'],
-                'Permissions' => ['list permissions', 'view permissions', 'create permissions', 'edit permissions', 'delete permissions'],
-                'Mail' => ['edit mail', 'view mail'],
                 'Chart of Account' => ['create chart of account', 'view chart of account', 'edit chart of account', 'list chart of account'],
                 'Product Category' => [
                     'list product category',

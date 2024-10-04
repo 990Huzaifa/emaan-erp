@@ -35,6 +35,8 @@ Route::get('/optimize-clear', function () {
 Route::post('setup/{code}', [AuthController::class, 'setup'])->name('setup-account');
 Route::post('login',[AuthController::class,'login']);
 Route::get('/cities',[CityController::class,'index']);
+Route::post('forget-password',[AuthController::class,'forgetPassword']);
+Route::post('reset-password',[AuthController::class,'resetPassword']);
 
 Route::middleware(['admin.auth'])->group(function () {});
 
@@ -57,11 +59,3 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('permission',PermissionController::class)->only('index','store');
     
 });
-
-
-
-
-// Route::apiResource('role',RoleController::class)->only('index','store');
-
-// Route::get('role-has-permissions/{id}',[RoleController::class,'addPermissionToRole']);
-// Route::post('role/{id}/permission',[RoleController::class,'syncPermission']);

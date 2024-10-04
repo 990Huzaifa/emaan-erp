@@ -6,12 +6,16 @@ use Exception;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Admin;
+use App\Mail\UserMail;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
 use Illuminate\Http\JsonResponse;
+use App\Models\PasswordResetToken;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 
@@ -100,19 +104,14 @@ class AuthController extends Controller
                     'password'=> 'required|string|min:8',
                     'confirm_password'=> 'required|string|min:8',
             ],[
-                'phone.required'=>'Phone is Required',
                 'phone.string'=>'Phone is must be a string',
     
-                'cnic.required' => 'CNIC is required.',
                 'cnic.string' => 'CNIC must be type String.',
 
-                'address.required' => 'Address is required.',
                 'address.string' => 'Address must be type String.',
 
-                'cnic_back.required' => 'CNIC Back is required.',
                 'cnic_back.image' => 'CNIC Back must be type image.',
 
-                'cnic_front.required' => 'CNIC Front is required.',
                 'cnic_front.image' => 'CNIC Front must be type image.',
 
                 'avatar.image' => 'Avatar must be type image.',
@@ -124,7 +123,6 @@ class AuthController extends Controller
                 'confirm_password.required' => 'Password is required.',
                 'confirm_password.string' => 'Password must be a string.',
                 'confirm_password.min' => 'Password must be at least 8 characters.',
-
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -156,7 +154,7 @@ class AuthController extends Controller
                 'phone'=>$request->phone ?? null,
                 'address' => $request->address ?? null,
                 'cnic'=>$request->cnic ?? null,
-                'cnic_images'=> $cnic_images ?? null,
+                'cnic_images'=> $cnic_images,
                 'avatar' => $avatar,
                 'password' => Hash::make($request->password),
                 'setup_code' => null,
@@ -168,5 +166,98 @@ class AuthController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
         
+    }
+
+    public function forgetPassword(Request $request): JsonResponse
+    {
+        try {
+            $validator = validator(
+                $request->all(),
+                [
+                    'email' => 'required|email|exists:users',
+                ],
+                [
+                    'email.required' => 'Email Address required',
+                    'email.email' => 'Invalid Email',
+                    'email.exists' => 'Invalid Email Address',
+                ]
+            );
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $tokenExist = PasswordResetToken::where('email', $request->email)->exists();
+            if ($tokenExist) PasswordResetToken::where('email', $request->email)->delete();
+
+            $token = Str::random(60);
+            PasswordResetToken::insert([
+                'email' => $request->email,
+                'token' => $token,
+                'created_at' => now()
+            ]);
+
+            $user = User::where('email', $request->email)->first();
+
+            Mail::to($request->email)->send(new UserMail([
+                'message' => 'Hi '.$user->name.', Please click on the link below to reset your password.',
+                'url' => config('app.frontend_url').'/reset-password/'.$request->email.'/'.$token,
+                 'is_url'=>true
+            ]));
+
+            return response()->json([
+                'message' => 'Reset link sent successfully',
+            ], 200);
+        }catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()],400);
+        }
+    }
+
+    public function resetPassword(Request $request): JsonResponse
+    {
+        try{
+            $validator = validator(
+                $request->all(),
+                [
+                    'email' => 'required|email|exists:users',
+                    'token' => 'required|string',
+
+                    'password' => 'required|string|min:8',
+                    'confirm_password' => 'required|string|min:8|same:password',
+                ],
+                [
+                    'email.required' => 'Email Address required',
+                    'email.email' => 'Invalid Email',
+                    'email.exists' => 'Invalid Email Address',
+                    'token.required' => 'Token required',
+
+                    'password.required' => 'Password required',
+                    'password.string' => 'Password must be a string',
+                    'password.min' => 'Password must be at least 8 characters',
+
+                    'confirm_password.required' => 'Confirm Password required',
+                    'confirm_password.string' => 'Confirm Password must be a string',
+                    'confirm_password.min' => 'Confirm Password must be at least 8 characters',
+                    'confirm_password.same' => 'Confirm Password must be same as Password',
+                ]
+            );
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $user = User::where('email', $request->email)->first();
+            $user->update([
+                'password' => Hash::make($request->password),
+            ]);
+
+            PasswordResetToken::where('email', $request->email)->delete();
+
+            return response()->json([
+                'message' => 'Password reset successfully',
+            ], 200);
+        }catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()],400);
+        }
     }
 }

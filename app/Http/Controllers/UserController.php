@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Exceptions\UnauthorizedException;
-
+use DB;
 class UserController extends Controller
 {
 
@@ -40,7 +40,10 @@ class UserController extends Controller
             $isActive = $request->query('is_active');
             $searchQuery = $request->query('search');
 
-            $query = User::orderBy('id', 'desc')->where('role','user')->join('cities', 'users.city_id', '=', 'cities.id')
+            $query = User::orderBy('id', 'desc')
+            ->where('role','user')
+            ->join('cities', 'users.city_id', '=', 'cities.id')
+            ->join('cities', 'users.city_id', '=', 'cities.id')
             ->select('users.*', 'cities.name as city');
             if ($isActive === 'active') {
                 $query = $query->where('is_active', 1);
@@ -55,6 +58,7 @@ class UserController extends Controller
                     // Otherwise, search by user name or email
                     $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
     
@@ -64,6 +68,10 @@ class UserController extends Controller
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
+            $data->getCollection()->transform(function ($user) {
+                $user->business_names = $user->business_names ? explode(', ', $user->business_names) : [];
+                return $user;
+            });
 
             return response()->json($data,200);
 
@@ -89,12 +97,11 @@ class UserController extends Controller
                     ], 403);
                 }
             }
-            dd('test-done');
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
                     'email'=>'required|email|string|unique:users,email',
-                    'business_ids'=>'required|array'
+                    'permissions'=>'required|array'
 
             ],[
                 'name.required'=>'Name is Required',
@@ -119,7 +126,7 @@ class UserController extends Controller
                 'email' => $request->email,
                 'setup_code' => $setupCode,
             ]);
-            $setupUrl = route('setup-account', ['code' => $setupCode, 'id' => $user->id]);
+            $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
             // sync permissions to user according to business
             foreach ($request->permissions as $businessId => $permissions) {
                 $uhb = UserHasBusiness::create([
@@ -131,7 +138,9 @@ class UserController extends Controller
             }
             // sending mail to user
             Mail::to($request->email)->send(new UserMail([
-                'url' => $setupUrl
+                'message'=> 'Please setup your account by clicking on the below link',
+                'url' => $setupUrl,
+                'is_url'=>true,
             ])); 
         
             
@@ -149,7 +158,6 @@ class UserController extends Controller
     {
         try{
             $user = Auth::user();
-            
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
@@ -232,7 +240,7 @@ class UserController extends Controller
         }
     }
 
-    public function updateStatus( $id):JsonResponse
+    public function updateStatus($id):JsonResponse
     {
         try{
             $user = Auth::user();
@@ -248,9 +256,15 @@ class UserController extends Controller
             }
             $user = User::findOrFail($id);
             if (empty($user)) throw new Exception('No User found', 404);
-            $user->update([
-                'is_active'=>1,
-            ]);
+            if($user->is_active == 1){
+                $user->update([
+                    'is_active'=>0,
+                ]);
+            }else{
+                $user->update([
+                    'is_active'=>1,
+                ]);
+            }
             return response()->json($user);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -274,30 +288,12 @@ class UserController extends Controller
                     ], 403);
                 }
             }
-            $validator = Validator::make(
-                $request->all(),[
-                    'permissions'=>'required|array'
-
-            ],[
-
-                'permissions.required' => 'permissions is required.',
-                'permissions.array' => 'permissions must be type array.',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $data = User::findOrFail($id);
             if (empty($data)) throw new Exception('No User found', 404);
 
             $data->update([
                 'is_verify'=>1
-            ]);
-            foreach ($request->permissions as $businessId => $permissions) {
-                $uhb = UserHasBusiness::create([
-                    'business_id' => $businessId,
-                    'user_id' => $user->id,
-                ]);
-    
-                $uhb->syncPermissions($permissions);
-            }           
+            ]);          
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -335,6 +331,7 @@ class UserController extends Controller
                     // Otherwise, search by user name or email
                     $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
                         $query = $query->whereIn('id', $userIds);
@@ -375,13 +372,13 @@ class UserController extends Controller
             } while (User::where('u_code', $u_code)->exists());  
             $user->update([
                 'setup_code' => $setupCode,
-                'setup_code_expiry' => Carbon::now()->addHours(24), // 24 hours
 
             ]);
-            $setupUrl = 'https://eman-traders-frontend-7q84.vercel.app/setup-user/'.$setupCode;
+            $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
             Mail::to($user->email)->send(new UserMail([
                 'message'=>'Please setup your account by clicking on the below link',
-                'url' => $setupUrl
+                'url' => $setupUrl,
+                'is_url'=>true,
             ])); 
             return response()->json(['success'=>'Setup mail sent successfully.'],200);
         }catch(QueryException $e){
@@ -390,4 +387,5 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 }

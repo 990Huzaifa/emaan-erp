@@ -21,24 +21,46 @@ class CustomerController extends Controller
     {
         try{
             $user = Auth::user();
-
-            // return response()->json($user);
             
-            if (!$user->can('list customers')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            // Check if the user has the required permission
+            $query = Customer::orderBy('id', 'desc');
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+                $query = $query->where('business_id',$businessId);
             }
             $perPage = $request->query('per_page', 10);
+            $searchQuery = $request->query('search');
 
-            $data = Customer::paginate($perPage);
+            $query = $query->join('chart_of_accounts', 'customers.chart_of_accounts_id', '=', 'chart_of_accounts.id')
+            ->select('customers.*', 'chart_of_accounts.name as chart_of_account');
+            if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
+                if (is_numeric($searchQuery)) {
+                    $query = $query->where('id', $searchQuery);
+                } else {
+                    // Otherwise, search by Customers name or email
+                    $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('c_code', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+    
+                    // Filter orders by the found Customers IDs
+                    $query = $query->whereIn('id', $customerIds);
+                }
+            }
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
-
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -51,11 +73,15 @@ class CustomerController extends Controller
     {
         try{
             $user = Auth::user();
-        
-            if (!$user->can('create customers')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
 
             $validator = Validator::make(
@@ -139,11 +165,15 @@ class CustomerController extends Controller
     {
         try{
             $user = Auth::user();
-        
-            if (!$user->can('view customers')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
 
             $customer = Customer::find($id);
@@ -164,11 +194,15 @@ class CustomerController extends Controller
     {
         try {
             $user = Auth::user();
-        
-            if (!$user->can('edit customers')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $customer = Customer::find($id);
             if (empty($customer)) throw new Exception('No User found', 404);
@@ -249,11 +283,15 @@ class CustomerController extends Controller
     {
         try{
             $user = Auth::user();
-        
-            if (!$user->can('delete customers')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'delete customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $customer = Customer::find($id);
             if (empty($customer)) throw new Exception('No User found', 404);

@@ -36,9 +36,11 @@ class BusinessController extends Controller
                 }
             }
             $perPage = $request->query('per_page', 10);
-            $data = Business::paginate($perPage);
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            $data = Business::orderBy('id','desc')
+            ->join('cities','cities.id','=','businesses.city_id')
+            ->select('businesses.*','cities.name as city')
+            ->paginate($perPage);
+            return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -54,8 +56,8 @@ class BusinessController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
             if ($user->role == 'user') {
+                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create businesses')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -67,6 +69,7 @@ class BusinessController extends Controller
                 $request->all(),[
                     'city'=>'required|numeric',
                     'name'=>'required|string',
+                    'logo'=>'required|image|mimes:jpeg,png,jpg,gif,svg',
                     'email'=>'required|email|string|unique:users,email',
                     'password'=>'required|string|min:8',
                     'confirm_password'=>'required|string|min:8',
@@ -89,20 +92,32 @@ class BusinessController extends Controller
                 'confirm_password.required' => 'Confirm Password is required.',
                 'confirm_password.min' => 'Confirm Password must be at least 8 characters.',
 
+                'logo.required' => 'Logo is required.',
+                'logo.image' => 'Logo must be an image.',
+                'logo.mimes' => 'Logo must be in jpeg, png, jpg, gif, or svg format.',
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             if($request->password != $request->confirm_password) throw new Exception('Password Mismatch', 400);
             DB::beginTransaction();
             // creating business
+            $logo = null;
+            if ($request->hasFile('logo')) {
+                $image = $request->file('logo');
+                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('business-logo'), $image_name);
+                $logo = 'business-logo/' . $image_name;
+            }
             $business = Business::create([
-                'name'=> $request->name,
+                'name'=> $request->name.'Admin',
                 'city_id'=> $request->city,
                 'email' => $request->email,
+                'logo' => $logo,
             ]);
-            $setupCode = generateSetupCode();   
+            // $setupCode = generateSetupCode();   
             // creating user of business
             do {
-                $u_code = bin2hex(random_bytes(32)); 
+                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (User::where('u_code', $u_code)->exists());  
             $user = User::create([
                 'name'=>$request->name,
@@ -110,6 +125,8 @@ class BusinessController extends Controller
                 'city_id'=>$request->city,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                
+                'is_verify'=>1,
             ]);
             // $setupUrl = route('setup-account', ['code' => $setupCode])
             // $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
@@ -123,6 +140,8 @@ class BusinessController extends Controller
             // sending mail to business admin
             Mail::to($request->email)->send(new UserMail([
                 'message'=>'You are Admin of the business now you have all the access of this business.',
+                'url'=>config('app.frontend_url'),
+                'is_url'=>true,
             ])); 
             DB::commit();
             return response()->json(['message'=>'Mail has been sent to business Admin']);
@@ -166,6 +185,28 @@ class BusinessController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function list(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = Business::select(['id','name'])->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
 }
