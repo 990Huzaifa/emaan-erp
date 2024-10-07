@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use DB;
+use DB; 
 use Exception;
 use Carbon\Carbon;
-use App\Models\Log;
 use App\Models\User;
+use App\Models\Log;
+use Illuminate\Validation\Rule;
 use App\Mail\UserMail;
 use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
-use Illuminate\Validation\Rule;
 use Illuminate\Http\JsonResponse;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
@@ -45,9 +45,9 @@ class UserController extends Controller
 
             $query = User::orderBy('id', 'desc')
             ->where('role','user')
+            ->where('is_verify',1)
             ->join('cities', 'users.city_id', '=', 'cities.id')
-            ->join('cities', 'users.city_id', '=', 'cities.id')
-            ->select('users.*', 'cities.name as city');
+            ->select('users.*', 'cities.name as city'); 
             if ($isActive === 'active') {
                 $query = $query->where('is_active', 1);
             } elseif ($isActive === 'inactive') {
@@ -66,13 +66,28 @@ class UserController extends Controller
                         ->toArray();
     
                     // Filter orders by the found user IDs
-                    $query = $query->whereIn('id', $userIds);
+                    $query = $query->whereIn('users.id', $userIds);
                 }
             }
-            // Execute the query with pagination
             $data = $query->paginate($perPage);
+
+            // Attach the related business names to each user
             $data->getCollection()->transform(function ($user) {
-                $user->business_names = $user->business_names ? explode(', ', $user->business_names) : [];
+                // Fetch business ids and names from businesses table via user_has_businesses
+                $businesses = DB::table('user_has_businesses')
+                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
+                    ->where('user_has_businesses.user_id', $user->id)
+                    ->select('businesses.id', 'businesses.name')
+                    ->get();
+            
+                // Append the business array (with id and name) to the user object
+                $user->business_names = $businesses->map(function($business) {
+                    return [
+                        'id' => $business->id,
+                        'name' => $business->name
+                    ];
+                })->toArray();
+            
                 return $user;
             });
             Log::create([
@@ -105,10 +120,10 @@ class UserController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
-                    'name'=>'required|string',
-                    'city'=>'required|exists:cities,id',
+                    'name'=>'nullable|string',
+                    'city'=>'nullable|exists:cities,id',
                     'email'=>'required|email|string|unique:users,email',
-                    'permissions'=>'required|array'
+                    'permissions'=>'required'
 
             ],[
                 'name.required'=>'Name is Required',
@@ -120,11 +135,18 @@ class UserController extends Controller
                 'email.unique' => 'This email address is already in use.',
 
                 'permissions.required' => 'permissions is required.',
-                'permissions.array' => 'permissions must be type array.',
-
-                'city.required'=>'City is Required',
+                
                 'city.exists'=>'City is not valid',
             ]);
+            $str_permissions = $request->input('permissions');
+
+            // Check if permissions is a JSON string and decode it
+            if (is_string($str_permissions)) {
+                $str_permissions = json_decode($str_permissions, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Permissions format is invalid', 400);
+                }
+            }
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             do {
                 $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
@@ -132,18 +154,22 @@ class UserController extends Controller
             $setupCode = generateSetupCode(); 
             $user = User::create([
                 'name'=>$request->name,
-                'city_id'=>$request->city,
+                'city_id'=>1,
                 'u_code'=>$u_code,
                 'email' => $request->email,
                 'setup_code' => $setupCode,
             ]);
             $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
             // sync permissions to user according to business
-            foreach ($request->permissions as $businessId => $permissions) {
+            foreach ($str_permissions as $businessId => $permissions) {
                 $uhb = UserHasBusiness::create([
                     'business_id' => $businessId,
                     'user_id' => $user->id,
                 ]);
+                // Add "edit profile" permission
+                if (!in_array('edit profile', $permissions)) {
+                    $permissions[] = 'edit profile';
+                }
     
                 $uhb->syncPermissions($permissions);
             }
@@ -157,7 +183,8 @@ class UserController extends Controller
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User create user',
-            ]);
+            ]);    
+            
             return response()->json($user);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -239,7 +266,7 @@ class UserController extends Controller
                     'string',
                     Rule::unique('users')->ignore($user->id), // Exclude current user
                 ],
-                    'permissions'=>'required|array'
+                    'permissions'=>'required'
 
             ],[
                 'name.required'=>'Name is Required',
@@ -251,10 +278,17 @@ class UserController extends Controller
                 'email.unique' => 'The email has already been taken.',
                 
                 'permissions.required' => 'permissions is required.',
-                'permissions.array' => 'permissions must be type array.',
                 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            $str_permissions = $request->input('permissions');
+            // Check if permissions is a JSON string and decode it
+            if (is_string($str_permissions)) {
+                $str_permissions = json_decode($str_permissions, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Permissions format is invalid', 400);
+                }
+            }
             $avatar = null;
             $cnic_front = null;
             $cnic_back = null;
@@ -296,10 +330,23 @@ class UserController extends Controller
                 ]));
             }
             
-            
-            // sync permissions to user according to business
-            foreach ($request->permissions as $businessId => $permissions) {
+            $str_permissions = $request->input('permissions');
+
+            // Check if permissions is a JSON string and decode it
+            if (is_string($str_permissions)) {
+                $str_permissions = json_decode($str_permissions, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Permissions format is invalid', 400);
+                }
+            }
+
+            foreach ($str_permissions as $businessId => $permissions) {
                 $uhb = UserHasBusiness::where('user_id', $id)->where('business_id', $businessId)->first();
+                // Add "edit profile" permission
+                if (!in_array('edit profile', $permissions)) {
+                    $permissions[] = 'edit profile';
+                }
+    
                 $uhb->syncPermissions($permissions);
             }
             
@@ -404,7 +451,13 @@ class UserController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
 
-            $query = User::orderBy('id', 'desc')->where('role','user')->join('cities', 'users.city_id', '=', 'cities.id')
+            $query = User::orderBy('id', 'desc')
+            ->where('role', 'user')
+            ->where(function($q) {
+                $q->where('setup_code', '<>', '')
+                  ->orWhere('setup_code', '=', '0');
+            })
+            ->join('cities', 'users.city_id', '=', 'cities.id')
             ->select('users.*', 'cities.name as city');
             
             if (!empty($searchQuery)) {
@@ -418,11 +471,29 @@ class UserController extends Controller
                         ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
-                        $query = $query->whereIn('id', $userIds);
+                        $query = $query->whereIn('users.id', $userIds);
                 }
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
+            $data->getCollection()->transform(function ($user) {
+                // Fetch business ids and names from businesses table via user_has_businesses
+                $businesses = DB::table('user_has_businesses')
+                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
+                    ->where('user_has_businesses.user_id', $user->id)
+                    ->select('businesses.id', 'businesses.name')
+                    ->get();
+            
+                // Append the business array (with id and name) to the user object
+                $user->business_names = $businesses->map(function($business) {
+                    return [
+                        'id' => $business->id,
+                        'name' => $business->name
+                    ];
+                })->toArray();
+            
+                return $user;
+            });
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User fetch invite list of users',
@@ -453,10 +524,6 @@ class UserController extends Controller
             $user = User::find($id);
             if (empty($user)) throw new Exception('Account not found', 404);
             $setupCode = generateSetupCode();   
-            // creating user of business
-            do {
-                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (User::where('u_code', $u_code)->exists());  
             $user->update([
                 'setup_code' => $setupCode,
 
@@ -478,7 +545,36 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
+    public function destroy($id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'delete users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $user = User::find($id);
+            if (empty($user)) throw new Exception('Account not found', 404);
+            $uhb = UserHasBusiness::where('user_id',$id)->delete();
+            $user->delete(); 
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Delete user',
+            ]);
+            return response()->json(['success'=>'user has been deleted successfully'],200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
     public function editProfile(Request $request, $id):JsonResponse
     {
         try{
@@ -557,9 +653,10 @@ class UserController extends Controller
                 'avatar'=>$avatar,
                 'cnic_images'=>$cnic_images,
             ]);
+            
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User edit user profile',
+                'description' => 'User edit his profile',
             ]);
             return response()->json($user);
 
@@ -569,5 +666,77 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+    
+    public function updateInvite(Request $request, $id):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
 
+            $user = User::findOrFail($id);
+            
+            $validator = Validator::make(
+                $request->all(),[
+                    'email'=>'required|email|string|unique:users,email',
+                    'permissions'=>'required|array'
+
+            ],[
+
+                'email.required' => 'Email is required.',
+                'email.email' => 'Please provide a valid email address.',
+                'email.max' => 'Email cannot exceed 255 characters.',
+                'email.unique' => 'This email address is already in use.',
+
+                'permissions.required' => 'permissions is required.',
+                'permissions.array' => 'permissions must be type array.',
+                
+                'city.exists'=>'City is not valid',
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            
+            if (empty($user)) throw new Exception('No User found', 404);
+            
+            $setupCode = generateSetupCode();   
+            $user->update([
+                'email' =>$request->email,
+                'setup_code' => $setupCode,
+
+            ]);
+            $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
+            Mail::to($request->email)->send(new UserMail([
+                'message'=>'Please setup your account by clicking on the below link',
+                'url' => $setupUrl,
+                'is_url'=>true,
+            ]));
+            
+            // sync permissions to user according to business
+            foreach ($request->permissions as $businessId => $permissions) {
+                $uhb = UserHasBusiness::create([
+                    'business_id' => $businessId,
+                    'user_id' => $id,
+                ]);
+                $uhb->syncPermissions($permissions);
+            }
+            
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User update invite user with permissions',
+            ]);
+            return response()->json($user,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }

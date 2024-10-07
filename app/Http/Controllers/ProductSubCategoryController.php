@@ -18,20 +18,24 @@ class ProductSubCategoryController extends Controller
     {
         try{
             $user = Auth::user();
-
-            // return response()->json($user);
-            
-            if (!$user->can('list product sub caetgory')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'list product sub category')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $perPage = $request->query('per_page', 10);
 
-            $data = ProductSubCategory::paginate($perPage);
+            $data = ProductSubCategory::select(
+                'product_sub_categories.*',
+                'product_categories.name as product_category'
+            )
+            ->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
+            ->paginate($perPage);
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -41,13 +45,7 @@ class ProductSubCategoryController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+
 
     public function store(Request $request)
     {
@@ -115,10 +113,15 @@ class ProductSubCategoryController extends Controller
             } elseif ($numLevels == 4) {
                 $level5 = $i;  // New level 5 value
             }
-
-            $coa = ChartOfAccount::create([
+            $coa = ChartOfAccount::where('code',$request->parent_code)->first();
+            $subcategory = ProductSubCategory::create([
+                'name' => $request->name,
+                'category_id' => $coa->ref_id,
+            ]);
+            ChartOfAccount::create([
                 'code'=>$newCode,
                 'name'=>$request->name,
+                'ref_id'=>$subcategory->id,
                 'parent_code'=>$baseCode,
                 'level1' => $level1,
                 'level2' => $level2,
@@ -127,16 +130,7 @@ class ProductSubCategoryController extends Controller
                 'level5' => $level5,
             ]);
 
-            $category = ProductSubCategory::create([
-                'name' => $request->name,
-            ]);
-
-            $relation = BusinessHasAccount::create([
-                'business_id' => $businessId,
-                'chart_of_account_id' => $coa->id,
-            ]);
-
-            return response()->json($category);
+            return response()->json($subcategory);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 

@@ -19,13 +19,15 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         try{
-            $user = Auth::user();
-
-            
-            if (!$user->can('list product')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            $user = Auth::user();            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list product')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $perPage = $request->query('per_page', 10);
 
@@ -42,13 +44,6 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -56,17 +51,20 @@ class ProductController extends Controller
     public function store(Request $request): JsonResponse
     {
         try{
-            $user = Auth::user();
-            if (!$user->can('create product')){
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            $user = Auth::user();            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create product')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
             $validator = Validator::make(
                 $request->all(),[
                     'title'=>'required|string',
                     'descripton'=>'required|string',
-                    'added_by'=>'required|string',
                     'category_id'=>'required|string',
                     'sub_category_id'=>'required|string',
                     'purchase_price'=>'required|string',
@@ -74,9 +72,38 @@ class ProductController extends Controller
     
     
             ],[
-    
+                'title.required'=>'Title is Required',
+                'title.string'=>'Title is must be a string',
+
+                'descripton.required'=>'Description is Required',
+                'descripton.string'=>'Description is must be a string',
+
+                'category_id.required'=>'Category is Required',
+                'category_id.string'=>'Category is must be a string',
+
+                'sub_category_id.required'=>'Sub Category is Required',
+                'sub_category_id.string'=>'Sub Category is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $sku_no = generateSKU($request->title,$request->category_id);
+            do {
+                $p_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (Product::where('p_code', $p_code)->exists());
+
+            $product = Product::create([
+                'title' => $request->title,
+                'p_code' => $p_code,
+                'sku' => $sku_no,
+                'description' => $request->description,
+                'category_id' => $request->category_id,
+                'sub_category_id' => $request->sub_category_id,
+                'purchase_price' => $request->purchase_price,
+                'sale_price' => $request->sale_price,
+                'added_by' => $user->id,
+            ]);
+            
+            return response()->json($product);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 

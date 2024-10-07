@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use App\Models\City;
 use App\Models\Customer;
 use Illuminate\Http\Request;
+use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
@@ -135,12 +137,28 @@ class CustomerController extends Controller
             do {
                 $c_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Customer::where('c_code', $c_code)->exists());
+
+            // validate coa
+            $COA = ChartOfAccount::Where('name','CUSTOMER')->first();
+            if(empty($COA)) throw new Exception('Customer COA not found', 404);
+
+            // validate city
+            $city = City::find($request->city_id);
+            if(empty($city)) throw new Exception('City not found', 404);
+
+            $city_coa = ChartOfAccount::where('name', $city->name)
+            ->where('parent_code', $COA->code)
+            ->first();
+
+            if (empty($city_coa)) {
+                $city_coa = createCOA($city->name, $COA->code, $city->id);
+            }
             $customer = Customer::create([
-                'name'=>$request->name,
-                'c_code'=>$c_code,
-                'business_id'=>$user->business_id,
-                'chart_of_account_id'=>$request->coa_id,
-                'cnic'=>$request->cnic,
+                'name' => $request->name,
+                'c_code' => $c_code,
+                'business_id' => $user->login_business,
+                'account_id' => $request->account_id,
+                'cnic' => $request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
                 'mobile' => $request->mobile ?? null,
@@ -148,7 +166,9 @@ class CustomerController extends Controller
                 'address' => $request->address ?? null,
                 'logo' => $logo,
             ]);
-        
+
+            createCOA($request->name, $city_coa->code, $customer->id);
+            
             return response()->json($customer);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

@@ -61,24 +61,22 @@ class ProductCategoryController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'parent_code'=>'required|string|regex:/^(\d+(-\d+){0,3})$/',
+                    'description'=>'nullable|string',
 
             ],[
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
-
-                'parent_code.required'=>'Parent Code is Required',
-                'parent_code.string'=>'Parent Code is must be a string',
-                'parent_code.regex' => 'Parent code must follow the correct format (e.g., 1, 1-2, 1-1-2).',
-
+                'description.string' => 'Description is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             // Split the parent code into levels
-            $parentCodeParts = explode('-', $request->parent_code);
+            $data = ChartOfAccount::where('name','INVENTORY')->Where('parent_code',1)->first();
+            if(empty($data)) throw new Exception('Inventory COA not found', 404);
+            $parentCodeParts = explode('-', $data->code);
             $numLevels = count($parentCodeParts);
             // generate code
             $newCode = null;
-            $baseCode = $request->parent_code;
+            $baseCode = $data->code;
             for ($i = 1; $i <= 9; $i++) {
                 $generatedCode = $baseCode . '-' . $i;
                 
@@ -112,9 +110,15 @@ class ProductCategoryController extends Controller
                 $level5 = $i;  // New level 5 value
             }
 
+            $category = ProductCategory::create([
+                'name' => $request->name,
+                'description' => $request->description ?? null,
+            ]);
+
             $coa = ChartOfAccount::create([
                 'code'=>$newCode,
                 'name'=>$request->name,
+                'ref_id'=>$category->id,
                 'parent_code'=>$baseCode,
                 'level1' => $level1,
                 'level2' => $level2,
@@ -123,15 +127,53 @@ class ProductCategoryController extends Controller
                 'level5' => $level5,
             ]);
 
-            $category = ProductCategory::create([
+            return response()->json($category);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function update(Request $request, $id){
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'edit product category')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $validator = Validator::make(
+                $request->all(),[
+                    'name'=>'required|string',
+                    'description'=>'nullable|string',
+
+            ],[
+                'name.required'=>'Name is Required',
+                'name.string'=>'Name is must be a string',
+                'description.string' => 'Description is must be a string',
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $category = ProductCategory::find($id);
+            if(empty($category)) throw new Exception('Product Category not found', 404);
+
+            $coa = ChartOfAccount::where('ref_id',$id)->where('name',$category->name)->first();
+            if(empty($coa)) throw new Exception('Chart of Account not found', 404);
+
+            $coa->update([
                 'name' => $request->name,
             ]);
 
-            $relation = BusinessHasAccount::create([
-                'business_id' => $businessId,
-                'chart_of_account_id' => $coa->id,
+            $category->update([
+                'name' => $request->name,
+                'description' => $request->description ?? null,
             ]);
-
+            
             return response()->json($category);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

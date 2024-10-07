@@ -19,8 +19,6 @@ class PermissionController extends Controller
     
             // Define the structure for organizing permissions
             $groupedPermissions = [
-                'Profile' => ['edit profile'],
-                'Businesses' => ['list businesses'],
                 'Users' => ['list users', 'view users', 'create users', 'edit users', 'delete users'],
                 'Customers' => ['list customers', 'view customers', 'create customers', 'edit customers', 'delete customers'],
                 'Vendors' => ['list vendors', 'view vendors', 'create vendors', 'edit vendors', 'delete vendors'],

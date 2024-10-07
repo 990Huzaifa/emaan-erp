@@ -8,6 +8,7 @@ use App\Models\Log;
 use App\Models\User;
 use App\Models\Admin;
 use App\Mail\UserMail;
+use App\Models\Business;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
@@ -58,7 +59,10 @@ class AuthController extends Controller
                 'description' => 'User logged in',
             ]);
             if($user->role == 'user'){
-                $businesses = UserHasBusiness::where('user_id',$user->id)->get();
+                $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id');
+            
+                // Now fetch the business records based on the business IDs
+                $businesses = Business::whereIn('id', $userBusinesses)->get();
                 return response()->json(["access_token"=>$this->accessToken,"userInfo"=>$user,'role'=>'user','businesses'=>$businesses ]);
             }elseif ($user->role == 'admin') {
                 return response()->json(["access_token"=>$this->accessToken,"userInfo"=>$user,'role'=>'admin']);

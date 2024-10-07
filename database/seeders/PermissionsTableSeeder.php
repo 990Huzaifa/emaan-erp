@@ -15,7 +15,6 @@ class PermissionsTableSeeder extends Seeder
     {
         $permissions = [
             'edit profile',
-            'list businesses',
             'list users',
             'view users',
             'create users',

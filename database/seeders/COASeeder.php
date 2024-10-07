@@ -168,6 +168,7 @@ class COASeeder extends Seeder
                 'code' => '2-1-1-1',
                 'parent_code' => '2-1-1',
                 'name' => 'HYDERABAD',
+                'ref_id' => '1',
                 'level1' => '2',
                 'level2' => '1',
                 'level3' => '1',
