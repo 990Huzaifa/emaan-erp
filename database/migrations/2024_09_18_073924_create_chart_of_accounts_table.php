@@ -16,7 +16,6 @@ return new class extends Migration
             $table->string('code');
             $table->string('parent_code');
             $table->string('name');
-            $table->string('ref_id')->nullable();
             $table->string('level1');
             $table->string('level2');
             $table->string('level3');

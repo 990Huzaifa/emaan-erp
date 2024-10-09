@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
@@ -64,11 +65,14 @@ class ProductController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'title'=>'required|string',
-                    'descripton'=>'required|string',
+                    'description'=>'required|string',
+                    'added_by'=>'required|string',
                     'category_id'=>'required|string',
                     'sub_category_id'=>'required|string',
                     'purchase_price'=>'required|string',
                     'sale_price'=>'required|numeric',
+                    'measurement_unit_id'=>'required|string|exists:measurement_units,id',
+                    'image'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:8192',
     
     
             ],[
@@ -78,11 +82,30 @@ class ProductController extends Controller
                 'descripton.required'=>'Description is Required',
                 'descripton.string'=>'Description is must be a string',
 
+                'added_by.required'=>'Added By is Required',
+                'added_by.string'=>'Added By is must be a string',
+
                 'category_id.required'=>'Category is Required',
                 'category_id.string'=>'Category is must be a string',
 
                 'sub_category_id.required'=>'Sub Category is Required',
                 'sub_category_id.string'=>'Sub Category is must be a string',
+
+                'purchase_price.required'=>'Purchase Price is Required',
+                'purchase_price.string'=>'Purchase Price is must be a string',
+
+                'sale_price.required'=>'Sale Price is Required',
+                'sale_price.string'=>'Sale Price is must be a string',
+
+                'measurement_unit_id.required'=>'Measurement Unit is Required',
+                'measurement_unit_id.string'=>'Measurement Unit is must be a string',
+
+
+                'image.image'=>'Image is must be a image',
+                'image.mimes'=>'Image is must be a image',
+                'image.max'=>'Image is must be a image',
+
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
 
@@ -90,11 +113,23 @@ class ProductController extends Controller
             do {
                 $p_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Product::where('p_code', $p_code)->exists());
-
+            $acc = ChartOfAccount::where('name',"INVENTORY")->first();
+            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            $COA = createCOA($request->title,$acc->code);
+            $image = null;
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('product-image'), $image_name);
+                $image = 'product-image/' . $image_name;
+            }
             $product = Product::create([
                 'title' => $request->title,
                 'p_code' => $p_code,
                 'sku' => $sku_no,
+                'measurement_unit_id' => $request->measurement_unit_id,
+                'acc_id' => $acc->id,
+                'image' => $image,
                 'description' => $request->description,
                 'category_id' => $request->category_id,
                 'sub_category_id' => $request->sub_category_id,

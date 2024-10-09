@@ -45,8 +45,6 @@ class ProductSubCategoryController extends Controller
         }
     }
 
-
-
     public function store(Request $request)
     {
         try{
@@ -63,74 +61,25 @@ class ProductSubCategoryController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'parent_code'=>'required|string|regex:/^(\d+(-\d+){0,3})$/',
+                    'category_id'=>'required|string|exists:product_categories,id',
 
             ],[
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
 
-                'parent_code.required'=>'Parent Code is Required',
-                'parent_code.string'=>'Parent Code is must be a string',
-                'parent_code.regex' => 'Parent code must follow the correct format (e.g., 1, 1-2, 1-1-2).',
-
+                'category_id.required'=>'Category id is Required',
+                'category_id.string'=>'Category id is must be a string',
+                'category_id.exists'=>'Category id is not exists',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            // Split the parent code into levels
-            $parentCodeParts = explode('-', $request->parent_code);
-            $numLevels = count($parentCodeParts);
-            // generate code
-            $newCode = null;
-            $baseCode = $request->parent_code;
-            for ($i = 1; $i <= 9; $i++) {
-                $generatedCode = $baseCode . '-' . $i;
-                
-                // Check if the generated code already exists in the database
-                $codeExists = ChartOfAccount::where('code', $generatedCode)->exists();
-                
-                if (!$codeExists) {
-                    $newCode = $generatedCode; // Assign the generated code to newCode if it doesn't exist
-                    break; // Exit the loop once a unique code is found
-                }
-            }
-
-            // If no unique code was found, throw an exception
-            if ($newCode === null) {
-                throw new Exception('Unable to generate a unique code.', 400);
-            }
             
-            $level1 = isset($parentCodeParts[0]) ? $parentCodeParts[0] : '0';
-            $level2 = isset($parentCodeParts[1]) ? $parentCodeParts[1] : '0';
-            $level3 = isset($parentCodeParts[2]) ? $parentCodeParts[2] : '0';
-            $level4 = isset($parentCodeParts[3]) ? $parentCodeParts[3] : '0';
-            $level5 = isset($parentCodeParts[4]) ? $parentCodeParts[4] : '0';
-
-            if ($numLevels == 1) {
-                $level2 = $i;  // New level 2 value
-            } elseif ($numLevels == 2) {
-                $level3 = $i;  // New level 3 value
-            } elseif ($numLevels == 3) {
-                $level4 = $i;  // New level 4 value
-            } elseif ($numLevels == 4) {
-                $level5 = $i;  // New level 5 value
-            }
-            $coa = ChartOfAccount::where('code',$request->parent_code)->first();
             $subcategory = ProductSubCategory::create([
                 'name' => $request->name,
-                'category_id' => $coa->ref_id,
-            ]);
-            ChartOfAccount::create([
-                'code'=>$newCode,
-                'name'=>$request->name,
-                'ref_id'=>$subcategory->id,
-                'parent_code'=>$baseCode,
-                'level1' => $level1,
-                'level2' => $level2,
-                'level3' => $level3,
-                'level4' => $level4,
-                'level5' => $level5,
+                'category_id' => $request->category_id,
             ]);
 
-            return response()->json($subcategory);
+
+            return response()->json($subcategory,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -138,6 +87,46 @@ class ProductSubCategoryController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+
+    public function update(Request $request, $id)
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'update product sub category')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make(
+                $request->all(),[
+                    'name'=>'required|string',
+                    'category_id'=>'required|string|exists:product_categories,id',
+
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $subcategory = ProductSubCategory::find($id);
+            if (!$subcategory) throw new Exception('Product Sub Category not found', 404);
+
+            $subcategory->update([
+                'name' => $request->name,
+                'category_id' => $request->category_id,
+            ]);
+            return response()->json($subcategory, 200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
 
     /**
      * Show the form for List a new resource.
@@ -148,7 +137,7 @@ class ProductSubCategoryController extends Controller
             $data = ProductSubCategory::find($id);
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
-            return response()->json($data);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

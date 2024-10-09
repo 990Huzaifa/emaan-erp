@@ -20,5 +20,10 @@ class Product extends Model
         'sub_category_id',
         'business_id',
         'added_by',
+        'acc_id',
+        'measurement_unit_id',
+        'purchase_price',
+        'sale_price',
+        'is_active'
     ];
 }

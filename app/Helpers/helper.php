@@ -30,7 +30,7 @@ function generateSetupCode($length = 64)
 }
 
 
-function createCOA($name, $parent_code, $ref_id): ChartOfAccount
+function createCOA($name, $parent_code): ChartOfAccount
 {
     $newCode = null;
     for ($i = 1; $i <= 9; $i++) {
@@ -66,7 +66,6 @@ function createCOA($name, $parent_code, $ref_id): ChartOfAccount
 
     return ChartOfAccount::create([
         'name' => $name,
-        'ref_id' => $ref_id,
         'parent_code' => $parent_code,
         'level1' => $level1,
         'level2' => $level2,
