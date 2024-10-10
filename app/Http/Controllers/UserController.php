@@ -56,7 +56,7 @@ class UserController extends Controller
             if (!empty($searchQuery)) {
                 // Check if the search query is numeric to search by order ID
                 if (is_numeric($searchQuery)) {
-                    $query = $query->where('id', $searchQuery);
+                    $query = $query->where('users.id', $searchQuery);
                 } else {
                     // Otherwise, search by user name or email
                     $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
@@ -258,7 +258,7 @@ class UserController extends Controller
             if (empty($user)) throw new Exception('No User found', 404);
             $validator = Validator::make(
                 $request->all(),[
-                    'name'=>'required|string',
+                    'name'=>'nullable|string',
                     'city'=>'nullable|exists:cities,id',
                     'email' => [
                     'required',
@@ -281,14 +281,6 @@ class UserController extends Controller
                 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $str_permissions = $request->input('permissions');
-            // Check if permissions is a JSON string and decode it
-            if (is_string($str_permissions)) {
-                $str_permissions = json_decode($str_permissions, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    throw new Exception('Permissions format is invalid', 400);
-                }
-            }
             $avatar = null;
             $cnic_front = null;
             $cnic_back = null;
@@ -339,22 +331,39 @@ class UserController extends Controller
                     throw new Exception('Permissions format is invalid', 400);
                 }
             }
+            $uhb_ids = UserHasBusiness::where('user_id', $id)->pluck('id')->toArray();
 
-            foreach ($str_permissions as $businessId => $permissions) {
-                $uhb = UserHasBusiness::where('user_id', $id)->where('business_id', $businessId)->first();
-                // Add "edit profile" permission
+            // Delete the permissions associated with these UserHasBusiness records
+            DB::table('model_has_permissions')->whereIn('model_id', $uhb_ids)
+                ->where('model_type', (new UserHasBusiness())->getMorphClass())
+                ->delete();
+            
+            // Now delete the UserHasBusiness records
+            UserHasBusiness::where('user_id', $id)->delete();
+            
+            foreach ($str_permissions as $business_id => $permissions) {
+                
+                    $uhb = UserHasBusiness::create([
+                        'user_id' => $id,
+                        'business_id' => $business_id,
+                    ]);
+                
+            
+                // Add "edit profile" permission if not already in the list
                 if (!in_array('edit profile', $permissions)) {
                     $permissions[] = 'edit profile';
                 }
-    
+            
+                // Sync the permissions
                 $uhb->syncPermissions($permissions);
             }
+
             
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User update user details with permissions',
             ]);
-            return response()->json($user,200);
+            return response()->json(['success'=>'user updated successfully.'],200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 
@@ -456,6 +465,79 @@ class UserController extends Controller
             ->where(function($q) {
                 $q->where('setup_code', '<>', '')
                   ->orWhere('setup_code', '=', '0');
+            })
+            ->join('cities', 'users.city_id', '=', 'cities.id')
+            ->select('users.*', 'cities.name as city');
+            
+            if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
+                if (is_numeric($searchQuery)) {
+                    $query = $query->where('id', $searchQuery);
+                } else {
+                    // Otherwise, search by user name or email
+                    $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+                        $query = $query->whereIn('users.id', $userIds);
+                }
+            }
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
+            $data->getCollection()->transform(function ($user) {
+                // Fetch business ids and names from businesses table via user_has_businesses
+                $businesses = DB::table('user_has_businesses')
+                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
+                    ->where('user_has_businesses.user_id', $user->id)
+                    ->select('businesses.id', 'businesses.name')
+                    ->get();
+            
+                // Append the business array (with id and name) to the user object
+                $user->business_names = $businesses->map(function($business) {
+                    return [
+                        'id' => $business->id,
+                        'name' => $business->name
+                    ];
+                })->toArray();
+            
+                return $user;
+            });
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User fetch invite list of users',
+            ]);
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function waitList(Request $request):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perPage = $request->query('per_page', 10);
+            $searchQuery = $request->query('search');
+
+            $query = User::orderBy('id', 'desc')
+            ->where('role', 'user')
+            ->where(function($q) {
+                $q->where('is_verify', 0);
             })
             ->join('cities', 'users.city_id', '=', 'cities.id')
             ->select('users.*', 'cities.name as city');

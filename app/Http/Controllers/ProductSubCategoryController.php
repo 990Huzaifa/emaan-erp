@@ -27,14 +27,29 @@ class ProductSubCategoryController extends Controller
                 }
             }
             $perPage = $request->query('per_page', 10);
-
-            $data = ProductSubCategory::select(
+            $searchQuery = $request->query('search');
+            $query = ProductSubCategory::orderBy('id', 'desc');
+            $query->select(
                 'product_sub_categories.*',
                 'product_categories.name as product_category'
             )
             ->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
             ->paginate($perPage);
-
+            if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
+                if (is_numeric($searchQuery)) {
+                    $query = $query->where('product_sub_categories.id', $searchQuery);
+                } else {
+                    // Otherwise, search by user name or email
+                    $userIds = ProductSubCategory::where('name', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+    
+                    // Filter orders by the found user IDs
+                    $query = $query->whereIn('product_sub_categories.id', $userIds);
+                }
+            }
+            $data = $query->paginate($perPage);
             return response()->json($data,200);
 
         }catch(QueryException $e){

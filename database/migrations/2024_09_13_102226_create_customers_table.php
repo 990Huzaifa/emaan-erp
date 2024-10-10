@@ -16,14 +16,14 @@ return new class extends Migration
             $table->string('c_code');
             $table->unsignedBigInteger('business_id');
             $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
+            $table->unsignedBigInteger('acc_id');
+            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('name');
             $table->string('telephone')->nullable();
             $table->string('mobile')->nullable();
             $table->string('website')->nullable();
             $table->string('email')->nullable();
             $table->string('cnic');
-            $table->unsignedBigInteger('account_id');
-            $table->foreign('account_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('logo')->nullable();
             $table->longText('address')->nullable();
             $table->decimal('opening_balance',15,2)->default(0.00);

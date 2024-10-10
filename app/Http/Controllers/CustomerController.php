@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use App\Models\Log;
 use App\Models\City;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
+use App\Models\BusinessHasAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -41,12 +43,7 @@ class CustomerController extends Controller
             $query = $query->join('chart_of_accounts', 'customers.chart_of_accounts_id', '=', 'chart_of_accounts.id')
             ->select('customers.*', 'chart_of_accounts.name as chart_of_account');
             if (!empty($searchQuery)) {
-                // Check if the search query is numeric to search by order ID
-                if (is_numeric($searchQuery)) {
-                    $query = $query->where('id', $searchQuery);
-                } else {
-                    // Otherwise, search by Customers name or email
-                    $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
+                $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('email', 'like', '%' . $searchQuery . '%')
                         ->orWhere('c_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
@@ -54,7 +51,6 @@ class CustomerController extends Controller
     
                     // Filter orders by the found Customers IDs
                     $query = $query->whereIn('id', $customerIds);
-                }
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
@@ -91,12 +87,12 @@ class CustomerController extends Controller
                     'name'=>'required|string',
                     'coa_id'=>'required|numeric',
                     'email' => 'nullable|email',
-                    'cnic'=>'required|string|max:14|unique:customers,cnic',
+                    'cnic'=>'nullable|string|max:14|unique:customers,cnic',
                     'logo' => 'nullable|image',
                     'website' => 'nullable|url',
                     'address' => 'nullable|string|max:255',
                     'telephone' => 'nullable|string|max:20',
-                    'mobile' => 'nullable|string|max:12',
+                    'mobile' => 'required|string|max:12',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -124,7 +120,7 @@ class CustomerController extends Controller
 
                 'mobile.string' => 'Mobile number must be a string.',
                 'mobile.max' => 'Mobile number cannot exceed 12 characters.',
-
+                'mobile.required' => 'Mobile number is required.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $logo = null;
@@ -146,18 +142,14 @@ class CustomerController extends Controller
             $city = City::find($request->city_id);
             if(empty($city)) throw new Exception('City not found', 404);
 
-            $city_coa = ChartOfAccount::where('name', $city->name)
-            ->where('parent_code', $COA->code)
-            ->first();
-
-            if (empty($city_coa)) {
-                $city_coa = createCOA($city->name, $COA->code, $city->id);
-            }
+            $acc = ChartOfAccount::where('name',"Customers")->first();
+            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            $COA = createCOA($request->name,$acc->code);
             $customer = Customer::create([
                 'name' => $request->name,
                 'c_code' => $c_code,
+                'acc_id' => $COA->id,
                 'business_id' => $user->login_business,
-                'account_id' => $request->account_id,
                 'cnic' => $request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
@@ -166,8 +158,16 @@ class CustomerController extends Controller
                 'address' => $request->address ?? null,
                 'logo' => $logo,
             ]);
+            BusinessHasAccount::create([
+                'business_id' => $user->login_business,
+                'chart_of_account_id' => $COA->id,
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User create customer',
+            ]);
 
-            createCOA($request->name, $city_coa->code, $customer->id);
+            
             
             return response()->json($customer);
         }catch(QueryException $e){
