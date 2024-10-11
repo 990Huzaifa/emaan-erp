@@ -12,6 +12,8 @@ class Customer extends Model
     protected $fillable = [
         'name',
         'city_id',
+        'acc_id',
+        'sales_tax_rate',
         'cnic',
         'logo',
         'email',

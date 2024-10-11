@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('product_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('pc_code');
+            $table->foreignId('acc_id')->constrained('chart_of_accounts');
+            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');    
             $table->string('description')->nullable();
             $table->timestamps();
         });

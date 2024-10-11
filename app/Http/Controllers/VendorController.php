@@ -7,6 +7,7 @@ use App\Models\Log;
 use App\Models\Vendor;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
@@ -151,7 +152,7 @@ class VendorController extends Controller
             } while (Vendor::where('v_code', $v_code)->exists());
 
             $acc = ChartOfAccount::where('name',"VENDORS")->first();
-            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            if(empty($acc)) throw new Exception('Vendors COA not found', 404);
             $COA = createCOA($request->name,$acc->code);
             
             $vendor = Vendor::create([
@@ -165,8 +166,13 @@ class VendorController extends Controller
                 'website' => $request->website ?? null,
                 'avatar' => $avatar,
                 'address' => $request->address,
-                'opening_balance' => $request->opening_balance ?? 0,
-
+            ]);
+            $COA->update([
+                'ref_id' => $vendor->id,
+            ]);
+            OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
             ]);
             Log::create([
                 'user_id' => $user->id,

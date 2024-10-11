@@ -11,6 +11,8 @@ class ProductSubCategory extends Model
 
     protected $fillable = [
         'name',
+        'psc_code',
+        'acc_id',
         'category_id',
     ];
 }

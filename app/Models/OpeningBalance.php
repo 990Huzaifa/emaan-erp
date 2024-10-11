@@ -5,14 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ProductCategory extends Model
+class OpeningBalance extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'pc_code',
         'acc_id',
-        'description',
+        'amount',
     ];
 }

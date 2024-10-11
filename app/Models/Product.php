@@ -21,9 +21,13 @@ class Product extends Model
         'business_id',
         'added_by',
         'acc_id',
+        'brand_name',
+        'terms_of_payment',
         'measurement_unit_id',
+        'sales_tax_rate',
         'purchase_price',
         'sale_price',
+        'opening_balance',
         'is_active'
     ];
 }

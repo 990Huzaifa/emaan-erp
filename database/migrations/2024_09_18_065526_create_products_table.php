@@ -23,10 +23,13 @@ return new class extends Migration
             $table->unsignedBigInteger('acc_id');
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->string('title');
+            $table->string('brand_name')->nullable();
             $table->string('sku');
             $table->string('description')->nullable();
             $table->longText('image')->nullable();
+            $table->longText('terms_of_payment')->nullable();
             $table->string('added_by');
+            $table->decimal('sales_tax_rate',10,2)->default(0.00);
             $table->decimal('purchase_price',10,2)->default(0.00);
             $table->decimal('sale_price',10,2)->default(0.00);
             $table->boolean('is_active')->default(1);

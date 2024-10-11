@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BusinessHasAccount;
 use Exception;
+use App\Models\Log;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\ProductCategory;
 use Illuminate\Http\JsonResponse;
+use App\Models\BusinessHasAccount;
 use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
@@ -69,11 +70,28 @@ class ProductCategoryController extends Controller
                 'description.string' => 'Description is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $acc = ChartOfAccount::where('name',"INVENTORY")->first();
+            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            $COA = createCOA($request->name,$acc->code);
+
+            do {
+                $pc_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (ProductCategory::where('pc_code', $pc_code)->exists());
+
             $category = ProductCategory::create([
                 'name' => $request->name,
+                'pc_code' => $pc_code,
+                'acc_id' => $COA->id,
                 'description' => $request->description ?? null,
             ]);
-
+            $COA->update([
+                'ref_id' => $category->id,
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Product Category created successfully',
+            ]);
             return response()->json($category,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -108,6 +126,11 @@ class ProductCategoryController extends Controller
 
             $category = ProductCategory::find($id);
             if(empty($category)) throw new Exception('Product Category not found', 404);
+            $acc = ChartOfAccount::find($category->acc_id);
+            if(empty($acc)) throw new Exception('Chart of Account not found', 404);
+            $acc->update([
+                'name' => $request->name,
+            ]);
             $category->update([
                 'name' => $request->name,
                 'description' => $request->description ?? null,

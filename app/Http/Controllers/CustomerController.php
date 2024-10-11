@@ -8,6 +8,7 @@ use App\Models\City;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
 use Illuminate\Http\JsonResponse;
 use App\Models\BusinessHasAccount;
 use Illuminate\Support\Facades\Auth;
@@ -85,7 +86,6 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'coa_id'=>'required|numeric',
                     'email' => 'nullable|email',
                     'cnic'=>'nullable|string|max:14|unique:customers,cnic',
                     'logo' => 'nullable|image',
@@ -93,6 +93,7 @@ class CustomerController extends Controller
                     'address' => 'nullable|string|max:255',
                     'telephone' => 'nullable|string|max:20',
                     'mobile' => 'required|string|max:12',
+                    'opening_balance'=>'nullable|numeric',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -104,9 +105,6 @@ class CustomerController extends Controller
                 'cnic.string'=>'CNIC is must be a string',
 
                 'email.email' => 'Please provide a valid email address.',
-
-                'coa_id.required'=>'COA id is Required',
-                'coa_id.string'=>'COA id is must be a numeric',
 
                 'logo.image' => 'logo must be an image file',
 
@@ -121,6 +119,8 @@ class CustomerController extends Controller
                 'mobile.string' => 'Mobile number must be a string.',
                 'mobile.max' => 'Mobile number cannot exceed 12 characters.',
                 'mobile.required' => 'Mobile number is required.',
+
+                'opening_balance.numeric'=>'Opening Balance is must be a numeric',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $logo = null;
@@ -135,21 +135,19 @@ class CustomerController extends Controller
             } while (Customer::where('c_code', $c_code)->exists());
 
             // validate coa
-            $COA = ChartOfAccount::Where('name','CUSTOMER')->first();
-            if(empty($COA)) throw new Exception('Customer COA not found', 404);
+            $acc = ChartOfAccount::Where('name','CUSTOMERS')->first();
+            if(empty($acc)) throw new Exception('Customer COA not found', 404);
 
             // validate city
             $city = City::find($request->city_id);
             if(empty($city)) throw new Exception('City not found', 404);
-
-            $acc = ChartOfAccount::where('name',"Customers")->first();
-            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
             $COA = createCOA($request->name,$acc->code);
             $customer = Customer::create([
                 'name' => $request->name,
                 'c_code' => $c_code,
                 'acc_id' => $COA->id,
                 'business_id' => $user->login_business,
+                'city_id' => $request->city_id,
                 'cnic' => $request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
@@ -161,6 +159,13 @@ class CustomerController extends Controller
             BusinessHasAccount::create([
                 'business_id' => $user->login_business,
                 'chart_of_account_id' => $COA->id,
+            ]);
+            OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+            $COA->update([
+                'ref_id' => $customer->id,
             ]);
             Log::create([
                 'user_id' => $user->id,

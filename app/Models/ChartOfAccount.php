@@ -13,6 +13,7 @@ class ChartOfAccount extends Model
         'code',
         'parent_code',
         'name',
+        'ref_id',
         'level1',
         'level2',
         'level3',

@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
+use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -103,11 +104,14 @@ class ProductController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'title'=>'required|string',
+                    'brand_name'=>'nullable|string',
+                    'terms_of_payment'=>'nullable|string',
                     'description'=>'required|string',
                     'category_id'=>'required|string',
                     'sub_category_id'=>'required|string',
                     'purchase_price'=>'required|string',
                     'sale_price'=>'required|numeric',
+                    'sales_tax_rate'=>'required|numeric',
                     'measurement_unit_id'=>'required|string|exists:measurement_units,id',
                     'image'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:8192',
     
@@ -115,6 +119,8 @@ class ProductController extends Controller
             ],[
                 'title.required'=>'Title is Required',
                 'title.string'=>'Title is must be a string',
+
+                'brand_name.string'=>'Brand Name is must be a string',
 
                 'descripton.required'=>'Description is Required',
                 'descripton.string'=>'Description is must be a string',
@@ -139,6 +145,12 @@ class ProductController extends Controller
                 'image.mimes'=>'Image is must be a image',
                 'image.max'=>'Image is must be a image',
 
+                'sales_tax_rate.required'=>'Sales Tax Rate is Required',
+                'sales_tax_rate.numeric'=>'Sales Tax Rate is must be a numeric',
+
+                'opening_balance.numeric'=>'Opening Balance is must be a numeric',
+                
+
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -147,7 +159,8 @@ class ProductController extends Controller
             do {
                 $p_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Product::where('p_code', $p_code)->exists());
-            $acc = ChartOfAccount::where('name',"INVENTORY")->first();
+            $subcategory = ProductSubCategory::find($request->sub_category_id);
+            $acc = ChartOfAccount::find($subcategory->acc_id);
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
             $COA = createCOA($request->title,$acc->code);
             $image = null;
@@ -159,6 +172,8 @@ class ProductController extends Controller
             }
             $product = Product::create([
                 'title' => $request->title,
+                'brand_name' => $request->brand_name ?? null,
+                'terms_of_payment' => $request->terms_of_payment ?? null,
                 'p_code' => $p_code,
                 'sku' => $sku_no,
                 'measurement_unit_id' => $request->measurement_unit_id,
@@ -169,7 +184,11 @@ class ProductController extends Controller
                 'sub_category_id' => $request->sub_category_id,
                 'purchase_price' => $request->purchase_price,
                 'sale_price' => $request->sale_price,
+                'sales_tax_rate' => $request->sales_tax_rate,
                 'added_by' => $user->id,
+            ]);
+            $COA->update([
+                'ref_id' => $product->id,
             ]);
             Log::create([
                 'user_id' => $user->id,
@@ -226,7 +245,7 @@ class ProductController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit product')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit products')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -237,19 +256,24 @@ class ProductController extends Controller
             $validator = Validator::make(
                     $request->all(),[
                         'title'=>'required|string',
+                        'brand_name'=>'nullable|string',
+                        'terms_of_payment'=>'nullable|string',
                         'description'=>'required|string',
                         'category_id'=>'required|string',
                         'sub_category_id'=>'required|string',
                         'purchase_price'=>'required|string',
                         'sale_price'=>'required|numeric',
                         'measurement_unit_id'=>'required|string|exists:measurement_units,id',
+                        'sales_tax_rate'=>'nullable|numeric',
                         'image'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:8192',
         
         
                 ],[
                     'title.required'=>'Title is Required',
                     'title.string'=>'Title is must be a string',
-    
+
+                    'brand_name.string'=>'Brand Name is must be a string',
+
                     'descripton.required'=>'Description is Required',
                     'descripton.string'=>'Description is must be a string',
     
@@ -267,7 +291,8 @@ class ProductController extends Controller
     
                     'measurement_unit_id.required'=>'Measurement Unit is Required',
                     'measurement_unit_id.string'=>'Measurement Unit is must be a string',
-    
+                    
+                    'sales_tax_rate.numeric'=>'Sales Tax Rate is must be a numeric',
     
                     'image.image'=>'Image is must be a image',
                     'image.mimes'=>'Image is must be a image',
@@ -277,11 +302,10 @@ class ProductController extends Controller
                 ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             
-            $acc = ChartOfAccount::find($product->acc_id);
-            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
-            $COA = $acc->update([
-                'name' => $request->title,
-            ]);
+            $subcategory = ProductSubCategory::find($request->sub_category_id);
+            $acc = ChartOfAccount::find($subcategory->acc_id);
+            if(empty($acc)) throw new Exception('COA not found', 404);
+            $COA = updateCOA($product->acc_id,$request->title,$acc->code);
             $image = $product->image; // Keep current image by default
             $oldImagePath = public_path($product->image); // Path to the old image
 
@@ -301,16 +325,18 @@ class ProductController extends Controller
         
             $product->update([
                 'title' => $request->title,
+                'brand_name' => $request->brand_name ?? null,
+                'terms_of_payment' => $request->terms_of_payment ?? null,
                 'p_code' => $product->p_code,
                 'sku' => $product->sku,
                 'measurement_unit_id' => $request->measurement_unit_id,
-                'acc_id' => $acc->id,
                 'image' => $image,
                 'description' => $request->description,
                 'category_id' => $request->category_id,
                 'sub_category_id' => $request->sub_category_id,
                 'purchase_price' => $request->purchase_price,
                 'sale_price' => $request->sale_price,
+                'sales_tax_rate' => $request->sales_tax_rate ?? 0,
                 'added_by' => $user->id,
             ]);
             

@@ -165,6 +165,16 @@ class COASeeder extends Seeder
                 'level4' => '0',
                 'level5' => '0',
             ],
+            [
+                'code' => '5-1',
+                'parent_code' => '5',
+                'name' => 'SALE ORDERS',
+                'level1' => '5',
+                'level2' => '1',
+                'level3' => '0',
+                'level4' => '0',
+                'level5' => '0',
+            ],
         ];
         foreach ($data as $item) {
             ChartOfAccount::firstOrCreate(
