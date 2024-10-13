@@ -16,9 +16,9 @@ return new class extends Migration
             $table->unsignedBigInteger('vendor_id');
             $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade');
             $table->unsignedBigInteger('business_id');
-            $table->foreign('business_id')->references('businesses')->onUpdate('cascade')->onDelete('cascade');
-            $table->unsignedBigInteger('chart_of_account_id');
-            $table->foreign('chart_of_account_id')->references('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
+            $table->unsignedBigInteger('acc_id');
+            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('order_code');
             $table->date('order_date');
             $table->date('due_date');
