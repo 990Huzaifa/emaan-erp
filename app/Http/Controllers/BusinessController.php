@@ -2,14 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\UserMail;
 use Exception;
-use App\Models\User;
+use Carbon\Carbon;
 use App\Models\Log;
+use App\Models\User;
+use App\Mail\UserMail;
 use App\Models\Business;
 use Illuminate\Http\Request;
+use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
 use App\Models\UserHasBusiness;
 use Illuminate\Http\JsonResponse;
+use App\Models\BusinessHasAccount;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -17,7 +21,6 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon;
 
 class BusinessController extends Controller
 {
@@ -117,9 +120,23 @@ class BusinessController extends Controller
                 'name'=> $request->name.'Admin',
                 'city_id'=> $request->city,
                 'email' => $request->email,
+                'cash' => $request->opening_balance ?? 0.00,
                 'logo' => $logo,
             ]);
-            // $setupCode = generateSetupCode();   
+            // validate coa
+            $acc = ChartOfAccount::Where('name','CASH')->first();
+            if(empty($acc)) throw new Exception('Cash COA not found', 404);
+
+            $COA = createCOA('CASH IN HAND',$acc->code);
+
+            BusinessHasAccount::create([
+                'business_id' => $business->id,
+                'chart_of_account_id' => $COA->id,
+            ]);
+            OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
             // creating user of business
             do {
                 $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);

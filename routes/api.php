@@ -15,6 +15,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\NotificationController;
 
 
 /*
@@ -49,6 +50,10 @@ Route::apiResource('permission',PermissionController::class)->only('index');
 Route::middleware(['admin.auth'])->group(function () {});
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+
     
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
     Route::get('business-list',[BusinessController::class, 'list']);

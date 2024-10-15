@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('voucher_id');
             $table->foreign('voucher_id')->references('id')->on('vouchers')->onDelete('cascade');
             $table->unsignedBigInteger('acc_id');
-            $table->foreign('acc_id')->references('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->decimal('debit_amount', 15, 2)->default(0.00);
             $table->decimal('credit_amount', 15, 2)->default(0.00);
             $table->longText('description')->nullable();

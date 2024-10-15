@@ -12,6 +12,8 @@ class Business extends Model
         'name',
         'city_id',
         'email',
+        'cash',
+        'bank',
         'logo',
     ];
 }

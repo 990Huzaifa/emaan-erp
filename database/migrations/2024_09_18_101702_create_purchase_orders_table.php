@@ -25,8 +25,6 @@ return new class extends Migration
             $table->string('reference');
             $table->string('description');
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
-            $table->decimal('purchase_price',10,2)->default(0.00);
-            $table->decimal('sale_price',10,2)->default(0.00);
             $table->decimal('total', 8, 2)->default(0.00);
             $table->decimal('paid', 8, 2)->default(0.00);
             $table->decimal('due', 8, 2)->default(0.00);

@@ -67,6 +67,7 @@ function createCOA($name, $parent_code): ChartOfAccount
     return ChartOfAccount::create([
         'name' => $name,
         'parent_code' => $parent_code,
+        'code' => $newCode,
         'level1' => $level1,
         'level2' => $level2,
         'level3' => $level3,

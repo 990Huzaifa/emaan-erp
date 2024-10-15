@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\Log;
+use Illuminate\Support\Facades\DB;
 use App\Models\City;
 use App\Models\Customer;
 use App\Models\OpeningBalance;
@@ -28,7 +29,8 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            $query = Customer::orderBy('id', 'desc');
+            $query = Customer::orderBy('id', 'desc')->join('cities', 'customers.city_id', '=', 'cities.id')
+            ->select('customers.*', 'cities.name as city');
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list customers')) {
@@ -83,6 +85,7 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
+                    'city_id'=>'required',
                     'email' => 'nullable|email',
                     'cnic'=>'nullable|string|max:14|unique:customers,cnic',
                     'logo' => 'nullable|image',
@@ -96,7 +99,6 @@ class CustomerController extends Controller
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
 
-                'cnic.required' => 'CNIC is required.',
                 'cnic.max' => 'CNIC cannot exceed 14 characters.',
                 'cnic.unique' => 'This CNIC is already in use.',
                 'cnic.string'=>'CNIC is must be a string',
@@ -118,6 +120,8 @@ class CustomerController extends Controller
                 'mobile.required' => 'Mobile number is required.',
 
                 'opening_balance.numeric'=>'Opening Balance is must be a numeric',
+                
+                'city_id.required'=>'City is Required',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $logo = null;
@@ -145,7 +149,7 @@ class CustomerController extends Controller
                 'acc_id' => $COA->id,
                 'business_id' => $user->login_business,
                 'city_id' => $request->city_id,
-                'cnic' => $request->cnic,
+                'cnic' => $request->cnic ?? null,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
                 'mobile' => $request->mobile ?? null,
@@ -198,7 +202,11 @@ class CustomerController extends Controller
                 }
             }
 
-            $customer = Customer::find($id);
+            $customer = DB::table('customers')
+            ->join('cities', 'customers.city_id', '=', 'cities.id')
+            ->where('customers.id', $id)
+            ->select('customers.*', 'cities.name as city_name') // Select customer fields and city name only
+            ->first();
             if (empty($customer)) throw new Exception('No Customer found', 404);
             return response()->json($customer);
         }catch(QueryException $e){
@@ -231,7 +239,7 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'city'=>'required|numeric',
+                    'city_id'=>'required|numeric',
                     'email' => 'nullable|email',
                     'cnic'=>'required|string|max:14',
                     'logo' => 'nullable|image',
@@ -247,13 +255,12 @@ class CustomerController extends Controller
 
                 'cnic.required' => 'CNIC is required.',
                 'cnic.max' => 'CNIC cannot exceed 14 characters.',
-                'cnic.unique' => 'This CNIC is already in use.',
                 'cnic.string'=>'CNIC is must be a string',
 
                 'email.email' => 'Please provide a valid email address.',
 
-                'city.required'=>'City is Required',
-                'city.numeric'=>'City is must be a numeric',
+                'city_id.required'=>'City is Required',
+                'city_id.numeric'=>'City is must be a numeric',
 
                 'logo.image' => 'logo must be an image file',
 
@@ -283,9 +290,10 @@ class CustomerController extends Controller
                     unlink($oldImagePath);
                 }
             }
+
             $customer->update([
                 'name'=>$request->name,
-                'city_id'=>$request->city,
+                'city_id'=>$request->city_id,
                 'cnic'=>$request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
