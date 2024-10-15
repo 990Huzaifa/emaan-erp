@@ -6,11 +6,11 @@ use Exception;
 use App\Models\Log;
 use App\Models\City;
 use App\Models\Customer;
+use App\Models\OpeningBalance;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
-use App\Models\OpeningBalance;
-use Illuminate\Http\JsonResponse;
 use App\Models\BusinessHasAccount;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -41,11 +41,8 @@ class CustomerController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
 
-            $query = $query->join('chart_of_accounts', 'customers.chart_of_accounts_id', '=', 'chart_of_accounts.id')
-            ->select('customers.*', 'chart_of_accounts.name as chart_of_account');
             if (!empty($searchQuery)) {
                 $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
                         ->orWhere('c_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
@@ -230,11 +227,11 @@ class CustomerController extends Controller
                 }
             }
             $customer = Customer::find($id);
-            if (empty($customer)) throw new Exception('No User found', 404);
+            if (empty($customer)) throw new Exception('No Customer found', 404);
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'coa_id'=>'required|numeric',
+                    'city'=>'required|numeric',
                     'email' => 'nullable|email',
                     'cnic'=>'required|string|max:14',
                     'logo' => 'nullable|image',
@@ -255,8 +252,8 @@ class CustomerController extends Controller
 
                 'email.email' => 'Please provide a valid email address.',
 
-                'coa_id.required'=>'COA id is Required',
-                'coa_id.string'=>'COA id is must be a numeric',
+                'city.required'=>'City is Required',
+                'city.numeric'=>'City is must be a numeric',
 
                 'logo.image' => 'logo must be an image file',
 
@@ -274,15 +271,21 @@ class CustomerController extends Controller
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $logo = $customer->logo;
+            $oldImagePath = public_path($customer->logo);
             if ($request->hasFile('logo')) {
                 $image = $request->file('logo');
                 $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
                 $image->move(public_path('customer-logo'), $image_name);
                 $logo = 'customer-logo/' . $image_name;
+                
+                // Remove the old image if it exists and is not the default one
+                if (file_exists($oldImagePath) && !empty($image_name)) {
+                    unlink($oldImagePath);
+                }
             }
             $customer->update([
                 'name'=>$request->name,
-                'chart_of_account_id'=>$request->coa_id,
+                'city_id'=>$request->city,
                 'cnic'=>$request->cnic,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
@@ -308,15 +311,11 @@ class CustomerController extends Controller
     {
         try{
             $user = Auth::user();
-            
-            // Check if the user has the required permission
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'delete customers')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
+        
+            if (!$user->can('delete customers')){
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
             }
             $customer = Customer::find($id);
             if (empty($customer)) throw new Exception('No User found', 404);

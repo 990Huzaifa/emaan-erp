@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\JsonResponse;
 use App\Models\ProductSubCategory;
+use App\Models\OpeningBalance;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -186,6 +187,10 @@ class ProductController extends Controller
                 'sale_price' => $request->sale_price,
                 'sales_tax_rate' => $request->sales_tax_rate,
                 'added_by' => $user->id,
+            ]);
+            OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
             ]);
             $COA->update([
                 'ref_id' => $product->id,
