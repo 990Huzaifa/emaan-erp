@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('pc_code');
-            $table->foreignId('acc_id')->constrained('chart_of_accounts');
+            $table->unsignedBigInteger('acc_id');
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');    
             $table->string('description')->nullable();
             $table->timestamps();

@@ -38,6 +38,22 @@ class PermissionController extends Controller
                     'delete product sub category',
                     'edit product sub category'
                 ],
+                'Purchase Order' => [
+                    'list purchase orders',
+                    'view purchase orders',
+                    'create purchase orders',
+                    'edit purchase orders',
+                    'approve purchase orders',
+                    'delete purchase orders'
+                ],
+                'Sale Order' => [
+                    'list sale orders',
+                    'view sale orders',
+                    'create sale orders',
+                    'edit sale orders',
+                    'approve sale orders',
+                    'delete sale orders'
+                ],
             ];
     
             // Prepare an empty array to store structured permissions

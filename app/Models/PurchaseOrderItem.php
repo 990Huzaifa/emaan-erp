@@ -8,4 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class PurchaseOrderItem extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'purchase_order_id',
+        'product_id',
+        'quantity',
+        'unit_price',
+        'total',
+        'total_tax',
+    ];
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }

@@ -362,7 +362,6 @@ class VendorController extends Controller
             }
 
             $vendors = Vendor::select('id','name')->get();
-            if (empty($vendor)) throw new Exception('No vendor found', 404);
 
             return response()->json($vendors,200);
             

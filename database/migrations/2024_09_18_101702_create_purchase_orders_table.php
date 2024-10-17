@@ -17,17 +17,17 @@ return new class extends Migration
             $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade');
             $table->unsignedBigInteger('business_id');
             $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
-            $table->unsignedBigInteger('acc_id');
-            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
             $table->string('order_code');
             $table->date('order_date');
             $table->date('due_date');
-            $table->string('reference');
-            $table->string('description');
+            $table->string('terms_of_payment')->nullable();
+            $table->string('remarks')->nullable();
+            $table->string('reference')->nullable();
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
-            $table->decimal('total', 8, 2)->default(0.00);
-            $table->decimal('paid', 8, 2)->default(0.00);
-            $table->decimal('due', 8, 2)->default(0.00);
+            $table->decimal('total_tax', 10, 2)->default(0.00);
+            $table->decimal('total', 10, 2)->default(0.00);
+            $table->decimal('paid', 10, 2)->default(0.00);
+            $table->decimal('due', 10, 2)->default(0.00);
             $table->timestamps();
         });
     }

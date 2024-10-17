@@ -16,7 +16,7 @@ return new class extends Migration
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('product_categories')->onDelete('cascade');
             $table->string('psc_code');
-            $table->foreignId('acc_id')->constrained('chart_of_accounts');
+            $table->unsignedBigInteger('acc_id');
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade'); 
             $table->string('name')->default('main');
             $table->timestamps();

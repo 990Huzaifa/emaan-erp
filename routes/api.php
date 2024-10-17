@@ -3,6 +3,7 @@
 use App\Http\Controllers\COAController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductSubCategoryController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\ProductController;
 use Illuminate\Http\Request;
@@ -83,10 +84,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('vendor',VendorController::class)->only('index','store','show','update');
     Route::post('vendor-update/{id}',[VendorController::class,'update']);
-    
+    Route::get('list/vendor/',[VendorController::class,'list']);
+
     Route::apiResource('product',ProductController::class)->only('index','store','show','update');
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);
     Route::get('list/product/',[ProductController::class,'list']);
     Route::post('product-update/{id}',[ProductController::class,'update']);
+
+    Route::apiResource('purchase-order',PurchaseOrderController::class)->only('index','store','show','update');
+    Route::put('status/{id}/purchase-order',[PurchaseOrderController::class,'updateStatus']);
+
 });
 

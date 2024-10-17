@@ -20,8 +20,7 @@ return new class extends Migration
             $table->decimal('quantity', 8, 2);
             $table->decimal('unit_price', 8, 2);
             $table->decimal('total_price', 8, 2);
-            $table->string('description')->nullable();
-            $table->date('expiry_date')->nullable();
+            $table->decimal('tax', 10, 2)->default(0.00);
             $table->timestamps();
         });
     }

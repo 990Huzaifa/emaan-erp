@@ -49,6 +49,18 @@ class PermissionsTableSeeder extends Seeder
             'view product sub category',
             'delete product sub category',
             'edit product sub category',
+            'list purchase orders',
+            'view purchase orders',
+            'create purchase orders',
+            'edit purchase orders',
+            'approve purchase orders',
+            'delete purchase orders',
+            'list sale orders',
+            'view sale orders',
+            'create sale orders',
+            'edit sale orders',
+            'approve sale orders',
+            'delete sale orders',
         ];
 
         // Loop through each permission and create it
