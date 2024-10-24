@@ -54,6 +54,20 @@ class PermissionController extends Controller
                     'approve sale orders',
                     'delete sale orders'
                 ],
+                'Purchase Quotations' => [
+                    'list purchase quotations',
+                    'view purchase quotations',
+                    'create purchase quotations',
+                    'edit purchase quotations',
+                    'approve purchase quotations'
+                ],
+                'Good Received Note' => [
+                    'list goods received notes',
+                    'view goods received notes',
+                    'create goods received notes',
+                    'edit goods received notes',
+                    'approve goods received notes'
+                ],
             ];
     
             // Prepare an empty array to store structured permissions

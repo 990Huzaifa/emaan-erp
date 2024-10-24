@@ -61,6 +61,16 @@ class PermissionsTableSeeder extends Seeder
             'edit sale orders',
             'approve sale orders',
             'delete sale orders',
+            'list goods received notes',
+            'view goods received notes',
+            'create goods received notes',
+            'edit goods received notes',
+            'approve goods received notes',
+            'list purchase quotations',
+            'view purchase quotations',
+            'create purchase quotations',
+            'edit purchase quotations',
+            'approve purchase quotations',
         ];
 
         // Loop through each permission and create it

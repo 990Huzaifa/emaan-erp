@@ -23,7 +23,6 @@ return new class extends Migration
             $table->string('terms_of_payment')->nullable();
             $table->string('remarks')->nullable();
             $table->string('reference')->nullable();
-            $table->longText('product_ids');
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
             $table->timestamps();
         });
