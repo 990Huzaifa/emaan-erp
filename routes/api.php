@@ -16,6 +16,7 @@ use App\Http\Controllers\MeasureUnitController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\PurchaseQuotationController;
 use App\Http\Controllers\ProductSubCategoryController;
 
 
@@ -93,6 +94,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('purchase-order',PurchaseOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-order',[PurchaseOrderController::class,'updateStatus']);
+    
+    Route::apiResource('purchase-quotation',PurchaseQuotationController::class)->only('index','store','show','update');
 
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);

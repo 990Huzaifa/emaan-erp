@@ -2,14 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\purchaseQuotationItem;
 use Exception;
+use App\Models\Log;
 use Illuminate\Http\Request;
+use App\Models\PurchaseQuotation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 
-class QuotationController extends Controller
+class PurchaseQuotationController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -27,14 +30,19 @@ class QuotationController extends Controller
                 }
             }
             $perPage = $request->query('per_page', 10);
-            $page = $request->query('page', 1);
-            $query = $request->query('query', null);
-            $quotation = Quotation::where('business_id', $businessId);
-            if ($query) {
-                $quotation = $quotation->where('quotation_no', 'like', '%' . $query . '%');
+            $searchQuery = $request->query('search');
+            $query = PurchaseQuotation::with(['items.product' => function ($query) {
+                $query->select('id', 'title'); // Select product name and id
+            }])
+            ->join('vendors', 'purchase_quotations.vendor_id', '=', 'vendors.id') // Join with vendors
+            ->select('purchase_quotations.*', 'vendors.name as vendor_name') // Select fields including vendor name
+            ->orderBy('purchase_quotations.id', 'desc');
+            if (!empty($searchQuery)) {
+                $query = $query->where('quotation_code', 'like', '%' . $searchQuery . '%');
             }
-            $quotation = $quotation->paginate($perPage, ['*'], 'page', $page);
-            return response()->json($quotation);
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
+            return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);            
         }catch(Exception $e){
@@ -60,7 +68,7 @@ class QuotationController extends Controller
             $validate = Validator::make(
                 $request->all(),[
                     'quotation_date'=>'required|date',
-                    'customer_id'=>'required|exists:customers,id',
+                    'vendor_id'=>'required|exists:vendors,id',
                     'products' => 'required|array',
 
             ],[
@@ -68,10 +76,24 @@ class QuotationController extends Controller
             ]
             );
             if ($validate->fails()) throw new Exception($validate->errors()->first(), 400);
-            $quotation = Quotation::create([
+            $orderCode = 'PQ-'.uniqid();
+            $quotation = PurchaseQuotation::create([
                 'quotation_date'=>$request->quotation_date,
-                'customer_id'=>$request->customer_id,
+                'quotation_code'=>$orderCode,
+                'vendor_id'=>$request->vendor_id,
                 'business_id'=>$businessId
+            ]);
+            foreach ($request->products as $product) {
+                purchaseQuotationItem::create([
+                    'purchase_quotation_id' => $quotation->id,
+                    'product_id' => $product['product_id'],
+                    'quantity' => $product['quantity'],
+                ]);
+            }
+            $quotation->refresh();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User create purchase quotation',
             ]);
             return response()->json($quotation);
         }catch(QueryException $e){
@@ -86,7 +108,29 @@ class QuotationController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'view quotation')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $quotation = PurchaseQuotation::where('business_id', $businessId)->where('id', $id)->first();
+            if (!$quotation) {
+                return response()->json([
+                    'error' => 'Quotation not found'
+                ], 404);
+            }
+            return response()->json($quotation);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
