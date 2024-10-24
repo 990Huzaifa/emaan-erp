@@ -32,6 +32,7 @@ class User extends Authenticatable
         'avatar',
         'login_business',
         'is_verify',
+        'status',
     ];
 
     /**

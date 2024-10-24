@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\Log;
+use App\Models\SaleOrder;
 use Illuminate\Http\Request;
-use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderItem;
+use App\Models\SaleOrderItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 
-class PurchaseOrderController extends Controller
+class SaleOrderController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -25,7 +25,7 @@ class PurchaseOrderController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list purchase orders')) {
+                if (!$user->hasBusinessPermission($businessId, 'list sale orders')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -33,12 +33,12 @@ class PurchaseOrderController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = PurchaseOrder::with(['items.product' => function ($query) {
+            $query = SaleOrder::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])
-            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with vendors
-            ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
-            ->orderBy('purchase_orders.id', 'desc');
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with customers
+            ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
+            ->orderBy('sale_orders.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }
@@ -71,7 +71,7 @@ class PurchaseOrderController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
-                    'vendor_id'=>'required|exists:vendors,id',
+                    'customer_id'=>'required|exists:customers,id',
                     'order_date'=>'required',
                     'due_date' => 'required',
                     'total' => 'required|numeric',
@@ -80,8 +80,8 @@ class PurchaseOrderController extends Controller
 
             ],[
 
-                'vendor_id.required' => 'Vendor is required.',
-                'vendor_id.exists' => 'Vendor does not exist.',
+                'customer_id.required' => 'Customer is required.',
+                'customer_id.exists' => 'Customer does not exist.',
 
                 'order_date.required' => 'Order date is required.',
 
@@ -97,9 +97,9 @@ class PurchaseOrderController extends Controller
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $orderCode = 'PO-'.uniqid();
-            $data = PurchaseOrder::create([
+            $data = SaleOrder::create([
                 'order_code' => $orderCode,
-                'vendor_id' => $request->vendor_id,
+                'customer_id' => $request->customer_id,
                 'business_id' => $user->login_business,
                 'order_date' => $request->order_date,
                 'due_date' => $request->due_date,
@@ -109,8 +109,8 @@ class PurchaseOrderController extends Controller
                 'remarks' => $request->remarks ?? null,
             ]);
             foreach($request->items as $item){
-                PurchaseOrderItem::create([
-                    'purchase_order_id' => $data->id,
+                SaleOrderItem::create([
+                    'sale_order_id' => $data->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
@@ -120,7 +120,7 @@ class PurchaseOrderController extends Controller
             }         
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Purchase Order',   
+                'description' => 'Create Sale Order',   
             ]);
             return response()->json($data);
         }catch(QueryException $e){
@@ -141,18 +141,18 @@ class PurchaseOrderController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view purchase orders')) {
+                if (!$user->hasBusinessPermission($businessId, 'view sale orders')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            $data = PurchaseOrder::with(['items.product' => function ($query) {
+            $data = SaleOrder::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])
-            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with the vendors table
-            ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
-            ->where('purchase_orders.id', $id) // Filter by the specific purchase order ID
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
+            ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
+            ->where('sale_orders.id', $id) // Filter by the specific sale order ID
             ->firstOrFail();
             return response()->json($data,200);
         }catch(QueryException $e){
@@ -162,17 +162,6 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, string $id): JsonResponse
     {
         try{
@@ -181,7 +170,7 @@ class PurchaseOrderController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit purchase orders')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit sale orders')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -211,8 +200,8 @@ class PurchaseOrderController extends Controller
                 'items.required' => 'Items are required.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $data = PurchaseOrder::find($id);
-            if (empty($data)) throw new Exception('No PO found', 404);
+            $data = saleOrder::find($id);
+            if (empty($data)) throw new Exception('No SO found', 404);
             $data->update([
                 'order_date' => $request->order_date,
                 'due_date' => $request->due_date,
@@ -221,7 +210,7 @@ class PurchaseOrderController extends Controller
                 'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
             ]);
-            $existingItems = PurchaseOrderItem::where('purchase_order_id', $id)->get()->keyBy('id');
+            $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
             $requestItemIds = [];
             foreach ($request->items as $item) {
                 if (isset($item['id']) && isset($existingItems[$item['id']])) {
@@ -235,7 +224,7 @@ class PurchaseOrderController extends Controller
                     $requestItemIds[] = $item['id'];  // Keep track of updated items
                 } else {
                     // Create new item
-                    PurchaseOrderItem::create([
+                    SaleOrderItem::create([
                         'purchase_order_id' => $id,
                         'product_id' => $item['product_id'],
                         'quantity' => $item['quantity'],
@@ -246,10 +235,10 @@ class PurchaseOrderController extends Controller
                 }
             }
             $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
-            PurchaseOrderItem::destroy($itemsToDelete);
+            SaleOrderItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order',   
+                'description' => 'Update Sale Order',   
             ]);
             return response()->json($data);
         }catch(QueryException $e){
@@ -267,19 +256,19 @@ class PurchaseOrderController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'approve purchase orders')) {
+                if (!$user->hasBusinessPermission($businessId, 'approve sale orders')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            $data = PurchaseOrder::find($id);
+            $data = SaleOrder::find($id);
             $data->update([
                 'status' => $request->status
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order Status',   
+                'description' => 'Update Sale Order Status',   
             ]);
             return response()->json($data);
         }catch(QueryException $e){

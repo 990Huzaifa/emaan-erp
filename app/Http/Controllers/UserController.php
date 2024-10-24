@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Exceptions\UnauthorizedException;
+use App\Notifications\GeneralNotification;
 
 class UserController extends Controller
 {
@@ -56,7 +57,7 @@ class UserController extends Controller
             if (!empty($searchQuery)) {
                 // Check if the search query is numeric to search by order ID
                 if (is_numeric($searchQuery)) {
-                    $query = $query->where('users.id', $searchQuery);
+                    $query = $query->where('id', $searchQuery);
                 } else {
                     // Otherwise, search by user name or email
                     $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
@@ -107,12 +108,12 @@ class UserController extends Controller
     public function store(Request $request):JsonResponse
     {
         try{
-            $user = Auth::user();
+            $Auser = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create users')) {
+            if ($Auser->role == 'user') {
+                $businessId = $Auser->login_business;
+                if (!$Auser->hasBusinessPermission($businessId, 'create users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -159,6 +160,7 @@ class UserController extends Controller
                 'email' => $request->email,
                 'setup_code' => $setupCode,
             ]);
+            $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
             $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
             // sync permissions to user according to business
             foreach ($str_permissions as $businessId => $permissions) {
@@ -181,7 +183,7 @@ class UserController extends Controller
             ])); 
         
             Log::create([
-                'user_id' => $user->id,
+                'user_id' => $Auser->id,
                 'description' => 'User create user',
             ]);    
             
@@ -207,7 +209,7 @@ class UserController extends Controller
                     ], 403);
                 }
             }
-             $userData = User::findOrFail($id);
+            $userData = User::findOrFail($id);
 
             // Fetch the user's associated businesses and permissions
             $userHasBusinesses = UserHasBusiness::where('user_id', $id)->get();
@@ -337,7 +339,7 @@ class UserController extends Controller
             DB::table('model_has_permissions')->whereIn('model_id', $uhb_ids)
                 ->where('model_type', (new UserHasBusiness())->getMorphClass())
                 ->delete();
-            
+
             // Now delete the UserHasBusiness records
             UserHasBusiness::where('user_id', $id)->delete();
             
@@ -388,13 +390,13 @@ class UserController extends Controller
             }
             $user = User::findOrFail($id);
             if (empty($user)) throw new Exception('No User found', 404);
-            if($user->is_active == 1){
+            if($user->status == 1){
                 $user->update([
-                    'is_active'=>0,
+                    'status'=>0,
                 ]);
             }else{
                 $user->update([
-                    'is_active'=>1,
+                    'status'=>1,
                 ]);
             }
             Log::create([
@@ -516,7 +518,7 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
     public function waitList(Request $request):JsonResponse
     {
         try{
@@ -536,9 +538,7 @@ class UserController extends Controller
 
             $query = User::orderBy('id', 'desc')
             ->where('role', 'user')
-            ->where(function($q) {
-                $q->where('is_verify', 0);
-            })
+            ->where('is_verify', 0)
             ->join('cities', 'users.city_id', '=', 'cities.id')
             ->select('users.*', 'cities.name as city');
             

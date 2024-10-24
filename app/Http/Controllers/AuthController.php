@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use Exception;
 use Carbon\Carbon;
-use App\Models\Log;
 use App\Models\User;
+use App\Models\Log;
 use App\Models\Admin;
-use App\Mail\UserMail;
 use App\Models\Business;
+use App\Mail\UserMail;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
@@ -25,7 +25,8 @@ class AuthController extends Controller
 {
     protected $accessToken;
 
-    public function login(Request $request):JsonResponse{
+    public function login(Request $request):JsonResponse
+    {
         try{
             $validator = Validator::make(
                 $request->all(),[
@@ -48,8 +49,9 @@ class AuthController extends Controller
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $user = User::where('email',$request->email)->first();
-            if (empty($user)) throw new Exception('Account not found.', 404);
-            // if($user->role == 'user' && $user->is_verify == 0) throw new Exception('Account not verified.', 404);
+            if (empty($user)) throw new Exception('Account not found.', 400);
+            if($user->is_verify == 0) throw new Exception('Account not verified.', 400);
+            if($user->status == 0) throw new Exception('Account not active.', 400);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
             $user->tokens()->delete();
             $token = $user->createToken('authToken');
@@ -180,7 +182,7 @@ class AuthController extends Controller
         
     }
 
-    public function forgetPassword(Request $request): JsonResponse
+    public function forgotPassword(Request $request): JsonResponse
     {
         try {
             $validator = validator(
@@ -211,7 +213,7 @@ class AuthController extends Controller
 
             Mail::to($request->email)->send(new UserMail([
                 'message' => 'Hi '.$user->name.', Please click on the link below to reset your password.',
-                'url' => config('app.frontend_url').'/reset-password/'.$request->email.'/'.$token,
+                'url' => config('app.frontend_url').'/reset-password/'.$token,
                  'is_url'=>true
             ]));
             Log::create([
@@ -234,16 +236,12 @@ class AuthController extends Controller
             $validator = validator(
                 $request->all(),
                 [
-                    'email' => 'required|email|exists:users',
                     'token' => 'required|string',
 
                     'password' => 'required|string|min:8',
                     'confirm_password' => 'required|string|min:8|same:password',
                 ],
                 [
-                    'email.required' => 'Email Address required',
-                    'email.email' => 'Invalid Email',
-                    'email.exists' => 'Invalid Email Address',
                     'token.required' => 'Token required',
 
                     'password.required' => 'Password required',
@@ -258,13 +256,14 @@ class AuthController extends Controller
             );
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-
-            $user = User::where('email', $request->email)->first();
+            
+            $data  = PasswordResetToken::where('token', $request->token)->first();
+            $user = User::where('email', $data->email)->first();
             $user->update([
                 'password' => Hash::make($request->password),
             ]);
 
-            PasswordResetToken::where('email', $request->email)->delete();
+            PasswordResetToken::where('token', $request->token)->delete();
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User reset password',

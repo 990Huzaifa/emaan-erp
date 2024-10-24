@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Log;
 use App\Models\Vendor;
+use App\Models\OpeningBalance;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
-use App\Models\OpeningBalance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
@@ -45,19 +45,13 @@ class VendorController extends Controller
                 $query = $query->where('is_active', 0);
             }
             if (!empty($searchQuery)) {
-                // Check if the search query is numeric to search by order ID
-                if (is_numeric($searchQuery)) {
-                    $query = $query->where('id', $searchQuery);
-                } else {
-                    // Otherwise, search by user name or email
-                    $userIds = Vendor::where('name', 'like', '%' . $searchQuery . '%')
+                $userIds = Vendor::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('v_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
     
-                    // Filter orders by the found user IDs
-                    $query = $query->whereIn('users.id', $userIds);
-                }
+                // Filter orders by the found user IDs
+                $query = $query->whereIn('vendors.id', $userIds);
             }
             $data = $query->paginate($perPage);
 
@@ -152,7 +146,7 @@ class VendorController extends Controller
             } while (Vendor::where('v_code', $v_code)->exists());
 
             $acc = ChartOfAccount::where('name',"VENDORS")->first();
-            if(empty($acc)) throw new Exception('Vendors COA not found', 404);
+            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
             $COA = createCOA($request->name,$acc->code);
             
             $vendor = Vendor::create([
@@ -166,6 +160,7 @@ class VendorController extends Controller
                 'website' => $request->website ?? null,
                 'avatar' => $avatar,
                 'address' => $request->address,
+
             ]);
             $COA->update([
                 'ref_id' => $vendor->id,
@@ -194,9 +189,9 @@ class VendorController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
 
             // Check if the user has the required permission
+            $businessId = $user->login_business;
             if ($user->role == 'user') {
                 if (!$user->hasBusinessPermission($businessId, 'view vendors')) {
                     return response()->json([
@@ -253,7 +248,6 @@ class VendorController extends Controller
                     'website'=>'nullable|string',
                     'avatar'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                     'address'=>'required|string',
-                    'opening_balance'=>'nullable|numeric',
 
             ],[
                 'name.required'     => 'Name is required.',
@@ -285,13 +279,11 @@ class VendorController extends Controller
                 'address.string'    => 'Address must be a string.',
                 'address.max'       => 'Address cannot exceed 500 characters.',
 
-                'opening_balance.numeric' => 'Opening credit balance must be a number.',
-
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $acc = ChartOfAccount::find($vendor->acc_id);
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
-           $acc->update([
+            $acc->update([
                 'name' => $request->name,
             ]);
             $avatar = $vendor->avatar; // Keep current image by default
@@ -305,7 +297,7 @@ class VendorController extends Controller
                 $avatar = 'vendor-avatar/' . $imageName;
 
                 // Remove the old image if it exists and is not the default one
-                if (file_exists($oldImagePath) && !empty($product->image)) {
+                if (file_exists($oldImagePath) && !empty($imageName)) {
                     unlink($oldImagePath);
                 }
             }
@@ -319,7 +311,6 @@ class VendorController extends Controller
                 'phone' => $request->phone,
                 'website' => $request->website ?? null,
                 'address' => $request->address,
-                'opening_balance' => $request->opening_balance ?? 0,
                 'avatar' => $avatar,
             ]);
             Log::create([

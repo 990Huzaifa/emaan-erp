@@ -1,22 +1,22 @@
 <?php
 
-use App\Http\Controllers\COAController;
-use App\Http\Controllers\ProductCategoryController;
-use App\Http\Controllers\ProductSubCategoryController;
-use App\Http\Controllers\PurchaseOrderController;
-use App\Http\Controllers\VendorController;
-use App\Http\Controllers\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\COAController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
-use App\Http\Controllers\MeasureUnitController;
-use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VendorController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\BusinessController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\MeasureUnitController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductSubCategoryController;
 
 
 /*
@@ -51,10 +51,10 @@ Route::apiResource('permission',PermissionController::class)->only('index');
 Route::middleware(['admin.auth'])->group(function () {});
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
+    
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-
+    
     
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
     Route::get('business-list',[BusinessController::class, 'list']);
@@ -85,14 +85,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('vendor',VendorController::class)->only('index','store','show','update');
     Route::post('vendor-update/{id}',[VendorController::class,'update']);
     Route::get('list/vendor/',[VendorController::class,'list']);
-
+    
     Route::apiResource('product',ProductController::class)->only('index','store','show','update');
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);
     Route::get('list/product/',[ProductController::class,'list']);
     Route::post('product-update/{id}',[ProductController::class,'update']);
-
+    
     Route::apiResource('purchase-order',PurchaseOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-order',[PurchaseOrderController::class,'updateStatus']);
 
+    Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
+    Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);
 });
 
