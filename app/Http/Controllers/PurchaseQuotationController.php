@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\purchaseQuotationItem;
+use App\Models\PurchaseQuotationItem;
 use Exception;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -23,7 +23,7 @@ class PurchaseQuotationController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'list quotation')) {
+                if (!$user->hasBusinessPermission($businessId, 'list purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -53,13 +53,13 @@ class PurchaseQuotationController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request):JsonResponse
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'create quotation')) {
+            $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -67,18 +67,21 @@ class PurchaseQuotationController extends Controller
             }
             $validate = Validator::make(
                 $request->all(),[
-                    'quotation_date'=>'required|date',
+                    'order_date'=>'required|date',
+                    'due_date'=> 'required|date',
                     'vendor_id'=>'required|exists:vendors,id',
                     'products' => 'required|array',
 
             ],[
-                'quotation_date.required'=>'Quotation date is required',
+                'order_date.required'=>'Quotation date is required',
+                'due_date.required'=> 'Due date is required'
             ]
             );
             if ($validate->fails()) throw new Exception($validate->errors()->first(), 400);
             $orderCode = 'PQ-'.uniqid();
             $quotation = PurchaseQuotation::create([
-                'quotation_date'=>$request->quotation_date,
+                'order_date'=>$request->order_date,
+                'due_date'=>$request->due_date,
                 'quotation_code'=>$orderCode,
                 'vendor_id'=>$request->vendor_id,
                 'business_id'=>$businessId
@@ -112,19 +115,20 @@ class PurchaseQuotationController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'view quotation')) {
+                if (!$user->hasBusinessPermission($businessId, 'view purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            $quotation = PurchaseQuotation::where('business_id', $businessId)->where('id', $id)->first();
-            if (!$quotation) {
-                return response()->json([
-                    'error' => 'Quotation not found'
-                ], 404);
-            }
-            return response()->json($quotation);
+            $data = PurchaseQuotation::with(['items.product' => function ($query) {
+                $query->select('id', 'title','image','purchase_price','sale_price','sales_tax_rate'); // Select product name and id
+            }])
+            ->join('vendors', 'purchase_quotations.vendor_id', '=', 'vendors.id') // Join with the vendors table
+            ->select('purchase_quotations.*', 'vendors.name as vendor_name') // Select fields including vendor name
+            ->where('purchase_quotations.id', $id) // Filter by the specific purchase order ID
+            ->firstOrFail();
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -133,20 +137,75 @@ class PurchaseQuotationController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'edit purchase quotations')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $validator = Validator::make(
+                $request->all(),[
+                    'order_date'=>'required',
+                    'due_date' => 'required',
+                    'terms_of_payment' => 'nullable|string',
+                    'remarks' => 'nullable|string',
+                    'products' => 'required|array',    
+
+            ],[
+
+                'order_date.required' => 'Order date is required.',
+                'due_date.required' => 'Due date is required.',
+                'products.required' => 'Items are required.',
+            ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            $data = PurchaseQuotation::find($id);
+            if (empty($data)) throw new Exception('No PO found', 404);
+            $data->update([
+                'quotation_date'=>$request->quotation_date,
+                'due_date'=>$request->due_date,
+                'vendor_id'=>$request->vendor_id,
+            ]);
+            $existingItems = PurchaseQuotationItem::where('purchase_quotation_id', $id)->get()->keyBy('id');
+            $requestItemIds = [];
+            foreach ($request->products as $item) {
+                if (isset($item['id']) && isset($existingItems[$item['id']])) {
+                    // Update existing item
+                    $existingItems[$item['id']]->update([
+                        'quantity' => $item['quantity']
+                    ]);
+                    $requestItemIds[] = $item['id'];  // Keep track of updated items
+                } else {
+                    // Create new item
+                    PurchaseQuotationItem::create([
+                        'purchase_quotation_id' => $id,
+                        'product_id' => $item['product_id'],
+                        'quantity' => $item['quantity']
+                    ]);
+                }
+            }
+            $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
+            PurchaseQuotationItem::destroy($itemsToDelete);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Update Purchase Quotation',   
+            ]);
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
