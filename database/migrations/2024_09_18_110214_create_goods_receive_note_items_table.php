@@ -20,7 +20,8 @@ return new class extends Migration
             $table->decimal('quantity', 8, 2);
             $table->decimal('receive', 8, 2);
             $table->decimal('billed', 8, 2);
-            $table->decimal('unit_price', 10, 2);
+            $table->decimal('purchase_unit_price', 10, 2);
+            $table->decimal('sale_unit_price', 10, 2);
             $table->decimal('total_price', 10, 2);
             $table->decimal('tax', 10, 2)->default(0.00);
             $table->timestamps();

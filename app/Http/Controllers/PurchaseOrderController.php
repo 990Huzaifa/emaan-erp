@@ -55,7 +55,7 @@ class PurchaseOrderController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -96,9 +96,12 @@ class PurchaseOrderController extends Controller
                 'items.required' => 'Items are required.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $orderCode = 'PO-'.uniqid();
+            
+            do {
+                $order_code = 'PO-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (PurchaseOrder::where('order_code', $order_code)->exists());
             $data = PurchaseOrder::create([
-                'order_code' => $orderCode,
+                'order_code' => $order_code,
                 'vendor_id' => $request->vendor_id,
                 'business_id' => $user->login_business,
                 'order_date' => $request->order_date,
@@ -295,5 +298,37 @@ class PurchaseOrderController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function list(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list purchase orders')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $searchQuery = $request->query('search');
+            $query = PurchaseOrder::with(['items.product' => function ($query) {
+                $query->select('id', 'title'); // Select product name and id
+            }])// Select fields including vendor name
+            ->orderBy('purchase_orders.id', 'desc');
+            if (!empty($searchQuery)) {
+                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+            }
+            // Execute the query with pagination
+            $data = $query->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }

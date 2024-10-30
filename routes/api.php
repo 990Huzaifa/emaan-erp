@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\GRNController;
 use App\Http\Controllers\COAController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
@@ -92,10 +93,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/product/',[ProductController::class,'list']);
     Route::post('product-update/{id}',[ProductController::class,'update']);
     
+    Route::apiResource('purchase-quotation',PurchaseQuotationController::class)->only('index','store','show','update');
+    
     Route::apiResource('purchase-order',PurchaseOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-order',[PurchaseOrderController::class,'updateStatus']);
+    Route::get('list/purchase-order',[PurchaseOrderController::class,'list']);
     
-    Route::apiResource('purchase-quotation',PurchaseQuotationController::class)->only('index','store','show','update');
+    Route::apiResource('grn',GRNController::class)->only('index','store','show','update');
+    Route::put('status/{id}/grn',[GRNController::class,'updateStatus']);
 
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);

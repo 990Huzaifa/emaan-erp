@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('lot_id');
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
-            $table->string('name');
-            $table->string('description');
-            $table->decimal('stock', 10, 2)->default(0.00);
+            $table->unsignedBigInteger('product_id');
+            $table->foreign('product_id')->references('id')->on('products')->onUpdate('cascade')->onDelete('cascade');
+            $table->bigInteger('stock')->default(0);
             $table->decimal('unit_price',8,2);
             $table->boolean('in_stock')->default(1);
             $table->timestamps();
