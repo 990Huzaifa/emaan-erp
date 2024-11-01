@@ -208,6 +208,36 @@ class PurchaseQuotationController extends Controller
         }
     }
 
+    public function updateStatus(Request $request, string $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve purchase quotation')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = PurchaseQuotation::find($id);
+            $data->update([
+                'status' => $request->status
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Update Purchase Quotation Status',   
+            ]);
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
