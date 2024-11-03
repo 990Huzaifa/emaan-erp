@@ -821,4 +821,177 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function createPartner(Request $request):JsonResponse
+    {
+        try{
+            $Auser = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($Auser->role == 'user') {
+                $businessId = $Auser->login_business;
+                if (!$Auser->hasBusinessPermission($businessId, 'create users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $validator = Validator::make(
+                $request->all(),[
+                    'name'=>'nullable|string',
+                    'city'=>'nullable|exists:cities,id',
+                    'email'=>'required|email|string|unique:users,email',
+                    'permissions'=>'required'
+
+            ],[
+                'name.required'=>'Name is Required',
+                'name.string'=>'Name is must be a string',
+
+                'email.required' => 'Email is required.',
+                'email.email' => 'Please provide a valid email address.',
+                'email.max' => 'Email cannot exceed 255 characters.',
+                'email.unique' => 'This email address is already in use.',
+
+                'permissions.required' => 'permissions is required.',
+                
+                'city.exists'=>'City is not valid',
+            ]);
+            $str_permissions = $request->input('permissions');
+            
+            // Check if permissions is a JSON string and decode it
+            if (is_string($str_permissions)) {
+                $str_permissions = json_decode($str_permissions, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Permissions format is invalid', 400);
+                }
+            }
+            
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            do {
+                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (User::where('u_code', $u_code)->exists());
+            $setupCode = generateSetupCode(); 
+            $user = User::create([
+                'name'=>$request->name,
+                'city_id'=>1,
+                'u_code'=>$u_code,
+                'email' => $request->email,
+                'setup_code' => $setupCode,
+            ]);
+            $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
+            $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
+            // sync permissions to user according to business
+            foreach ($str_permissions as $businessId => $permissions) {
+                $uhb = UserHasBusiness::create([
+                    'business_id' => $businessId,
+                    'user_id' => $user->id,
+                ]);
+                // Add "edit profile" permission
+                if (!in_array('edit profile', $permissions)) {
+                    $permissions[] = 'edit profile';
+                }
+    
+                $uhb->syncPermissions($permissions);
+            }
+            // sending mail to user
+            Mail::to($request->email)->send(new UserMail([
+                'message'=> 'Please setup your account by clicking on the below link',
+                'url' => $setupUrl,
+                'is_url'=>true,
+            ])); 
+        
+            Log::create([
+                'user_id' => $Auser->id,
+                'description' => 'User create user',
+            ]);    
+            
+            return response()->json($user);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
+    public function waitPartnerList(Request $request):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perPage = $request->query('per_page', 10);
+            $searchQuery = $request->query('search');
+            
+            $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
+
+            $userIdsQuery = User::where('users.role', 'user')
+            ->where('users.is_verify', 0)
+            ->where('users.id', '<>', $user->id)
+            ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
+            ->whereIn('user_has_businesses.business_id', $userBusinesses)
+            ->distinct()
+            ->pluck('users.id'); // Get distinct user IDs only
+
+        // Step 2: Use the list of IDs to fetch the actual user data, including additional columns
+        $query = User::whereIn('users.id', $userIdsQuery)
+            ->orderBy('users.id', 'desc')
+            ->join('cities', 'users.city_id', '=', 'cities.id')
+            ->select('users.*', 'cities.name as city');
+            
+            if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
+                if (is_numeric($searchQuery)) {
+                    $query = $query->where('id', $searchQuery);
+                } else {
+                    // Otherwise, search by user name or email
+                    $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+                        $query = $query->whereIn('users.id', $userIds);
+                }
+            }
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
+            $data->getCollection()->transform(function ($user) {
+                // Fetch business ids and names from businesses table via user_has_businesses
+                $businesses = DB::table('user_has_businesses')
+                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
+                    ->where('user_has_businesses.user_id', $user->id)
+                    ->select('businesses.id', 'businesses.name')
+                    ->get();
+            
+                // Append the business array (with id and name) to the user object
+                $user->business_names = $businesses->map(function($business) {
+                    return [
+                        'id' => $business->id,
+                        'name' => $business->name
+                    ];
+                })->toArray();
+            
+                return $user;
+            });
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User fetch invite list of users',
+            ]);
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }

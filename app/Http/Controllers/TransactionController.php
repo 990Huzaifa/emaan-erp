@@ -30,9 +30,16 @@ class TransactionController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = Transaction::where('business_id',$businessId)->join('chart_of_accounts', 'transactions.acc_id', '=', 'chart_of_accounts.id') // Join with vendors
-            ->select('transactions.*', 'chart_of_accounts.name as acc_name')->orderBy('transactions.id', 'desc');
-            
+            $query = Transaction::where('business_id',$businessId)->join('chart_of_accounts', 'transaction.acc_id', '=', 'chart_of_accounts.id') // Join with vendors
+            ->select('transaction.*', 'chart_of_accounts.name')->orderBy('inventory_details.id', 'desc');
+            if (!empty($searchQuery)) {
+                $query->where(function ($q) use ($searchQuery) {
+                    $q->where('transaction.acc_id', 'like', '%' . $searchQuery . '%')
+                    ->orWhereHas('chart_of_accounts', function ($q) use ($searchQuery) {
+                    $q->where('name', 'like', '%' . $searchQuery . '%');
+                    });
+                });
+            }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
             return response()->json($data,200);
