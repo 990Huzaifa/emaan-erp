@@ -199,7 +199,8 @@ class VendorController extends Controller
                     ], 403);
                 }
             }
-            $vendor = Vendor::findOrFail($id);
+            $vendor = Vendor::join('cities', 'vendors.city_id', '=', 'cities.id')
+            ->select('vendors.*', 'cities.name as city_name')->findOrFail($id);
 
             if (empty($vendor)) throw new Exception('No vendor found', 404);
 
@@ -207,7 +208,7 @@ class VendorController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User view vendor',
             ]);
-            return response()->json(['data'=>$vendor],200);
+            return response()->json($vendor,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

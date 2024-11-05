@@ -71,6 +71,10 @@ class PermissionsTableSeeder extends Seeder
             'create purchase quotations',
             'edit purchase quotations',
             'approve purchase quotations',
+            'list inventory detail',
+            'view inventory detail',
+            'list transaction',
+            'view transaction'
         ];
 
         // Loop through each permission and create it
