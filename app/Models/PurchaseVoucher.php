@@ -5,17 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Transaction extends Model
+class PurchaseVoucher extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'business_id',
+        'grn_id',
         'acc_id',
-        'transaction_type',
-        'description',
-        'debit',
-        'credit',
-        'current_balance',
+        'business_id',
+        'voucher_code',
+        'voucher_amount',
+        'status',
+        'voucher_date',
     ];
 }

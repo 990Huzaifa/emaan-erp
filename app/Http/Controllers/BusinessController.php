@@ -239,4 +239,46 @@ class BusinessController extends Controller
         }
     }
 
+    public function businessAccounts(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Check if the user has permission to list businesses
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Join 'business_has_accounts', 'opening_balances', and 'chart_of_accounts' tables
+            $data = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
+                ->join('opening_balances', 'business_has_accounts.acc_id', '=', 'opening_balances.acc_id')
+                ->join('chart_of_accounts', 'business_has_accounts.acc_id', '=', 'chart_of_accounts.acc_id')
+                ->get([
+                    'business_has_accounts.acc_id', // Get account id
+                    'opening_balances.amount', // Get opening balance amount
+                    'chart_of_accounts.name as account_name' // Get account name from chart of accounts
+                ]);
+
+            // Log the action
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User fetched list of business accounts',
+            ]);
+
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
 }

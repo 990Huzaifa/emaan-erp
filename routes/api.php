@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\InventoryDetailController;
+use App\Http\Controllers\LedgerController;
+use App\Http\Controllers\PurchaseVoucherController;
+use App\Http\Controllers\TransactionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -101,6 +105,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('grn',GRNController::class)->only('index','store','show','update');
     Route::put('status/{id}/grn',[GRNController::class,'updateStatus']);
+
+    Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
+    
+    Route::apiResource('transaction',TransactionController::class)->only('index','show','update');
+    
+    Route::get('ledger',[LedgerController::class,'index']);
+    
+    Route::apiResource('purchase-voucher',PurchaseVoucherController::class)->only('index','show','update');
 
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);

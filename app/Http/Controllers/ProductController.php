@@ -428,6 +428,8 @@ class ProductController extends Controller
             return response()->json($product);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 

@@ -330,8 +330,15 @@ class GRNController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function list(): JsonResponse
     {
-        //
+        try{
+            $data = GoodsReceiveNote::select('id','grn_code')->where('status',1)->get();
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }    
     }
 }

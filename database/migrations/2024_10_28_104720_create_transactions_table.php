@@ -21,6 +21,7 @@ return new class extends Migration
             $table->longText('description')->nullable();
             $table->decimal('debit', 10, 2)->default(0.00);
             $table->decimal('credit', 10, 2)->default(0.00);
+            $table->decimal('current_balance', 10, 2)->default(0.00);
             $table->timestamps();
         });
     }

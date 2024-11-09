@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Log;
 use App\Models\Vendor;
-use App\Models\OpeningBalance;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -87,7 +88,7 @@ class VendorController extends Controller
                     ], 403);
                 }
             }
-
+            DB::beginTransaction();
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
@@ -173,11 +174,14 @@ class VendorController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User create vendor',
             ]);
+            DB::commit();
             return response()->json($vendor);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
