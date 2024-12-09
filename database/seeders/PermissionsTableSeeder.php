@@ -79,6 +79,7 @@ class PermissionsTableSeeder extends Seeder
             'view purchase voucher',
             'list purchase voucher',
             'edit purchase voucher',
+            'list ledger',
         ];
 
         // Loop through each permission and create it

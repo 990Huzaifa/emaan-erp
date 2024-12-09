@@ -85,7 +85,7 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'city_id'=>'required',
+                    'city_id'=>'required|exists:cities,id',
                     'email' => 'nullable|email',
                     'cnic'=>'nullable|string|max:14|unique:customers,cnic',
                     'logo' => 'nullable|image',
@@ -139,9 +139,7 @@ class CustomerController extends Controller
             $acc = ChartOfAccount::Where('name','CUSTOMERS')->first();
             if(empty($acc)) throw new Exception('Customer COA not found', 404);
 
-            // validate city
-            $city = City::find($request->city_id);
-            if(empty($city)) throw new Exception('City not found', 404);
+
             $COA = createCOA($request->name,$acc->code);
             $customer = Customer::create([
                 'name' => $request->name,
@@ -157,10 +155,6 @@ class CustomerController extends Controller
                 'address' => $request->address ?? null,
                 'logo' => $logo,
             ]);
-            BusinessHasAccount::create([
-                'business_id' => $user->login_business,
-                'chart_of_account_id' => $COA->id,
-            ]);
             OpeningBalance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
@@ -172,8 +166,6 @@ class CustomerController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User create customer',
             ]);
-
-            
             
             return response()->json($customer);
         }catch(QueryException $e){

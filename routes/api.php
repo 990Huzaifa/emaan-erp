@@ -75,6 +75,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('setup/{id}/user',[UserController::class,'sendSetupMail']);
 
 
+    // partners 
+    
+    Route::get('partner',[UserController::class,'waitPartnerList']);
+    Route::post('partner',[UserController::class,'createPartner']);
+
+
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::post('customer-update/{id}',[CustomerController::class,'update']);
@@ -105,14 +111,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('grn',GRNController::class)->only('index','store','show','update');
     Route::put('status/{id}/grn',[GRNController::class,'updateStatus']);
+    Route::get('list/grn',[GRNController::class,'list']);
 
     Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
     
     Route::apiResource('transaction',TransactionController::class)->only('index','show','update');
     
-    Route::get('ledger',[LedgerController::class,'index']);
+    // Route::get('ledger',[LedgerController::class,'index']);
+    Route::get('ledger/{acc_id}',[LedgerController::class,'list']);
     
-    Route::apiResource('purchase-voucher',PurchaseVoucherController::class)->only('index','show','update');
+    Route::apiResource('purchase-voucher',PurchaseVoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/purchase-voucher',[PurchaseVoucherController::class,'updateStatus']);
+    Route::put('purchase-voucher/{grn_id}/previous',[PurchaseVoucherController::class,'previousData']);
 
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);

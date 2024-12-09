@@ -70,7 +70,14 @@ class PermissionController extends Controller
                     'edit goods received notes',
                     'approve goods received notes'
                 ],
-                'Purchase Voucher' =>['create purchase voucher','view purchase voucher','list purchase voucher','edit purchase voucher',]
+                'Employee' => [
+                    'list employee',
+                    'view employee',
+                    'create employee',
+                    'edit employee'
+                ],
+                'Purchase Voucher' =>['create purchase voucher','view purchase voucher','list purchase voucher','edit purchase voucher','approve purchase voucher'],
+                'Ledger' => ['list ledger'],
             ];
     
             // Prepare an empty array to store structured permissions
