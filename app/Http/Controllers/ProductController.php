@@ -7,11 +7,13 @@ use App\Models\Log;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use App\Models\ProductSubCategory;
-use App\Models\OpeningBalance;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -431,6 +433,40 @@ class ProductController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+
+    public function downloadSample()
+    {
+        $filePath = public_path('assets/file/sample.csv');
+
+        // Check if the file exists
+        if (!file_exists($filePath)) {
+            return abort(404, 'File not found.');
+        }
+
+        // Define headers
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="sample.csv"',
+        ];
+
+        // Return the file as a response
+        return Response::download($filePath, 'sample.csv', $headers);
+    }
+
+    public function categoryData() 
+    {
+        $data= ProductSubCategory::select(
+            'product_sub_categories.*',
+            'product_categories.name as product_category'
+        )
+        ->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
+        ->get();
+
+        $pdf = Pdf::loadView('pdf.category', ['data' => $data]);
+        // return $pdf;
+        return $pdf->download('category-data-list.pdf');
     }
 
 }

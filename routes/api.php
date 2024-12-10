@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InventoryDetailController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\PurchaseVoucherController;
@@ -82,6 +83,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
+
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::post('customer-update/{id}',[CustomerController::class,'update']);
     
@@ -126,5 +128,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);
+
+
+    Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
+    Route::post('employee-update/{id}',[EmployeeController::class,'update']);
+
 });
 
