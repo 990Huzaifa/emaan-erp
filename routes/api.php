@@ -104,6 +104,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);
     Route::get('list/product/',[ProductController::class,'list']);
     Route::post('product-update/{id}',[ProductController::class,'update']);
+    Route::get('/csv/product', [ProductController::class, 'csvProduct']);
+    Route::post('/csv/product/upload', [ProductController::class, 'importProduct']);
     
     Route::apiResource('purchase-quotation',PurchaseQuotationController::class)->only('index','store','show','update');
     

@@ -78,6 +78,7 @@ class PermissionController extends Controller
                 ],
                 'Purchase Voucher' =>['create purchase voucher','view purchase voucher','list purchase voucher','edit purchase voucher','approve purchase voucher'],
                 'Ledger' => ['list ledger'],
+                'Measurement Unit' => ['list measurement unit', 'view measurement unit', 'create measurement unit', 'edit measurement unit',],
             ];
     
             // Prepare an empty array to store structured permissions

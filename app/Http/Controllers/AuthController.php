@@ -277,4 +277,36 @@ class AuthController extends Controller
             return response()->json(['error' => $e->getMessage()],400);
         }
     }
+
+    public function profile(): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User profile',
+            ]);
+            return response()->json(['user' => $user], 200);
+        }catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()],400);
+        }
+    }
+
+    public function profileStore(): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User profile',
+            ]);
+            return response()->json(['user' => $user], 200);
+        }catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()],400);
+        }
+    }
 }

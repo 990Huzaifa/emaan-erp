@@ -8,13 +8,17 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
+use App\Models\MeasurementUnit;
+use App\Models\ProductCategory;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use App\Models\ProductSubCategory;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
+
 
 class ProductController extends Controller
 {
@@ -436,23 +440,165 @@ class ProductController extends Controller
     }
 
 
-    public function downloadSample()
+    public function csvProduct()
     {
-        $filePath = public_path('assets/file/sample.csv');
+
+        $filePath = public_path('assets/files/product-sample.csv');
 
         // Check if the file exists
         if (!file_exists($filePath)) {
             return abort(404, 'File not found.');
         }
-
         // Define headers
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="sample.csv"',
+            'Content-Disposition' => 'attachment; filename="product-sample.csv"',
         ];
 
         // Return the file as a response
-        return Response::download($filePath, 'sample.csv', $headers);
+        return Response::download($filePath, 'product-sample.csv', $headers);
+    }
+
+    public function importProduct(Request $request):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+
+            // Check user permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create products')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make($request->all(), [
+                'csv' => 'required|file|mimes:csv,txt|max:8192', // Max 8MB
+            ], [
+                'csv.required' => 'CSV file is required.',
+                'csv.mimes' => 'Only CSV or TXT files are allowed.',
+                'csv.max' => 'CSV file size must be less than 8MB.',
+            ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            
+            $file = $request->file('csv');
+            
+            // Read CSV file
+            $csvData = array_map('str_getcsv', file($file->getPathname()));
+            $headers = array_shift($csvData); // Remove header row
+
+            $products = [];
+            $errors = [];
+            DB::beginTransaction();
+            try{
+            foreach ($csvData as $row) {
+                $data = array_combine($headers, $row);
+                
+                try {
+                    // Verify category
+                    $category = ProductCategory::where('name', $data['category'])->first();
+                    if (!$category) {
+                        throw new Exception("Category '{$data['category']}' not found");
+                    }
+    
+                    // Verify subcategory
+                    $subcategory = ProductSubCategory::where('name', $data['sub_category'])
+                        ->where('category_id', $category->id)
+                        ->first();
+                    if (!$subcategory) {
+                        throw new Exception("Subcategory '{$data['sub_category']}' not found for category '{$data['category']}'");
+                    }
+    
+                    // Verify measurement unit
+                    $measurementUnit = MeasurementUnit::where('name', $data['measurement_unit'])->first();
+                    if (!$measurementUnit) {
+                        throw new Exception("Measurement unit '{$data['measurement_unit']}' not found");
+                    }
+    
+                    // Generate SKU and product code
+                    $sku_no = generateSKU($data['title'], $category->id);
+                    do {
+                        $p_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                    } while (Product::where('p_code', $p_code)->exists());
+    
+                    // Get COA
+                    $acc = ChartOfAccount::find($subcategory->acc_id);
+                    if(empty($acc)) throw new Exception('Inventory COA not found');
+                    $COA = createCOA($data['title'], $acc->code);
+    
+                    // Create product
+                    $product = Product::create([
+                        'title' => $data['title'],
+                        'p_code' => $p_code,
+                        'sku' => $sku_no,
+                        'measurement_unit_id' => $measurementUnit->id,
+                        'acc_id' => $COA->id,
+                        'description' => $data['description'],
+                        'category_id' => $category->id,
+                        'sub_category_id' => $subcategory->id,
+                        'sale_price' => $data['sale_price'],
+                        'sales_tax_rate' => $data['sales_tax_rate'],
+                        'added_by' => $user->id,
+                    ]);
+    
+                    // Create opening balance
+                    OpeningBalance::create([
+                        'acc_id' => $COA->id,
+                        'amount' => 0,
+                    ]);
+    
+                    // Update COA reference
+                    $COA->update([
+                        'ref_id' => $product->id,
+                    ]);
+    
+                    $products[] = $product;
+
+                    DB::commit();
+    
+                } catch (Exception $e) {
+                    DB::rollBack();
+                    $errors[] = "Row error for title '{$data['title']}': " . $e->getMessage();
+                }
+            }
+        
+
+                // Create log entry only if some products were imported successfully
+                if (count($products) > 0) {
+                    Log::create([
+                        'user_id' => $user->id,
+                        'description' => 'User imported products via CSV',
+                    ]);
+                }
+
+                // Commit main transaction if we have any successful imports
+                if (count($products) > 0 || count($errors) == count($csvData)) {
+                    DB::commit();
+                } else {
+                    DB::rollBack();
+                    throw new Exception('No products were imported successfully');
+                }
+
+                return response()->json([
+                    'success' => count($products) . ' products imported successfully',
+                    'products' => $products,
+                    'errors' => $errors,
+                ]);
+
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        }catch(QueryException $e){
+            return response()->json([' DB error' => $e->getMessage()], 400);
+        }
+        catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     public function categoryData() 

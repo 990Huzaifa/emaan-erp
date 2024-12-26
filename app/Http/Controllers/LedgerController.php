@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use App\Models\Transaction;
+use App\Models\ChartOfAccount;
 
 class LedgerController extends Controller
 {
@@ -62,10 +63,25 @@ class LedgerController extends Controller
                 }
             }
             $perPage = $request->query('per_page', 10);
-
+            $start_date = $request->query('start_date');
+            $end_date = $request->query('end_date');
+            
             if (empty($acc_id)) throw new Exception('account id required', 404);
 
-            $results = Transaction::where('acc_id',$acc_id)->paginate($perPage);
+                // Build the query
+            $query = Transaction::where('acc_id', $acc_id);
+
+            // Apply date filters if provided
+            if (!empty($start_date)) {
+                $query->where('created_at', '>=', $start_date);
+            }
+
+            if (!empty($end_date)) {
+                $query->where('created_at', '<=', $end_date);
+            }
+
+            // Paginate the results
+            $results = $query->paginate($perPage);
 
             $totalDebit = $results->sum('debit');
             $totalCredit = $results->sum('credit');
@@ -81,5 +97,38 @@ class LedgerController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+    
+    public  function listCOA($name):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list ledger')) {
+            if ($user->role == 'user') {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            
+            $parent_code = null;
+            
+            if($name == 'CUSTOMERS'){
+                $parent_code = ChartOfAccount::select('code')->where('name',$name)->where('business_id',$businessId)->get();
+            }
+            else if($name == 'VENDORS'){
+                $parent_code = ChartOfAccount::select('code')->where('name',$name)->get();
+            }else{
+                 throw new Exception('Invalid Account', 400);
+            }
+            $results = ChartOfAccount::select('id','name')->where('parent_code', $parent_code[0]->code)->get();
+            return response()->json($results,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+        
     }
 }
