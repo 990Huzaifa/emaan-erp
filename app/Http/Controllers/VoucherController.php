@@ -125,7 +125,23 @@ class VoucherController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if (!$user->hasBusinessPermission($businessId, 'view voucher')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+            $voucher = Voucher::findOrFail($id);
+            if (empty($voucher)) throw new Exception('No voucher found', 404);
+            return response()->json($voucher);            
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 500);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+        
     }
 
 
