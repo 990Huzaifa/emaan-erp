@@ -99,7 +99,6 @@ class VoucherController extends Controller
                 'type'=>$request->type,
                 'code'=>$code,
                 'amount'=>$request->amount,
-                'approved_by'=>$user->id,
                 'description'=>$request->description,
             ]);
             DB::commit();
