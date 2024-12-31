@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('ref_id')->nullable();
             $table->enum('type', ['sales', 'purchase', 'journal', 'receipt', 'payment','expense'])->default('sales');
             $table->decimal('amount',25,2)->default(0.00);
-            $table->string('status')->default('pending');
+            $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
             $table->longText('description')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamps();

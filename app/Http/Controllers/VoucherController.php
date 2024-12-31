@@ -30,7 +30,11 @@ class VoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $vouchers = Voucher::where('business_id', $businessId)->paginate($perPage);
+            $vouchers = Voucher::where('business_id', $businessId)
+            ->join('chart_of_accounts', 'vouchers.acc_id', '=', 'chart_of_accounts.id')
+            ->select('vouchers.*', 'chart_of_accounts.name as acc_name')
+            ->orderBy('vouchers.id', 'desc')
+            ->paginate($perPage);
             return response()->json($vouchers);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 500);
