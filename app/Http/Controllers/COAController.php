@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BusinessHasAccount;
+use DB;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
+use Illuminate\Http\JsonResponse;
+use App\Models\BusinessHasAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -46,7 +49,7 @@ class COAController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -62,31 +65,52 @@ class COAController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'name'=>'required|string',
+                    'name'=>'required|string|unique:chart_of_accounts,name',
+                    'type'=>'required|string|in:BANK,CASH',
+                    'opening_balance'=>'required|numeric',
 
             ],[
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
+                'name.unique'=>'Name is Already in use',
+
+                'type.required'=>'Type is Required',
+                'type.string'=>'Type must be a string',
+                'type.in'=>'Type Invalid',
+
+                'opening_balance.required'=>'Balance is Required',
+                'opening_balance.numeric'=>'Balance must be a number',
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             // Split the parent code into levels
-            $acc = ChartOfAccount::where('name',"BANK")->first();
-            if(empty($acc)) throw new Exception('BANK COA not found', 404);
+            $type = $request->type;
+            $acc = ChartOfAccount::where('name',$type)->first();
+            if(empty($acc)) throw new Exception(`$type COA not found`, 404);
+            DB::beginTransaction();
+            $check = ChartOfAccount::where('name',$request->name)->exists();
+            if($check) throw new Exception('Name is Already in use', 400);
             $COA = createCOA($request->name,$acc->code);
 
 
 
-            $businessHasAccount = BusinessHasAccount::create([
+            BusinessHasAccount::create([
                 'business_id' => $businessId,
                 'chart_of_account_id' => $COA->id,
             ]);
-        
+
+            OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+
+            DB::commit();
             return response()->json($COA);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
-
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -95,14 +119,6 @@ class COAController extends Controller
      * Display the specified resource.
      */
     public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
     {
         //
     }

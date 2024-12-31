@@ -41,6 +41,9 @@ class GRNController extends Controller
             $query = GoodsReceiveNote::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])
+            ->where('business_id',$businessId)
+            ->join('users', 'users.id', '=', 'goods_receive_notes.received_by') // Corrected join
+            ->select('goods_receive_notes.*', 'users.name as received_by')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
@@ -333,7 +336,19 @@ class GRNController extends Controller
     public function list(): JsonResponse
     {
         try{
-            $data = GoodsReceiveNote::select('id','grn_code')->where('status',1)->get();
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list goods received notes')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            
+            $data = GoodsReceiveNote::select('id','grn_code')->where('status',1)->where('business_id',$businessId)->get();
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

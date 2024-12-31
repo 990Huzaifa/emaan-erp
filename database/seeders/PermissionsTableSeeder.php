@@ -84,6 +84,11 @@ class PermissionsTableSeeder extends Seeder
             'view measurement unit',
             'create measurement unit',
             'edit measurement unit',
+            'create voucher',
+            'view voucher',
+            'list voucher',
+            'edit voucher',
+            'approve voucher',
             
         ];
 

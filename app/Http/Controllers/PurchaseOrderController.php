@@ -37,6 +37,7 @@ class PurchaseOrderController extends Controller
                 $query->select('id', 'title'); // Select product name and id
             }])
             ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with vendors
+            ->where('business_id',$businessId)
             ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
             ->orderBy('purchase_orders.id', 'desc');
             if (!empty($searchQuery)) {
@@ -318,7 +319,7 @@ class PurchaseOrderController extends Controller
             $query = PurchaseOrder::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])// Select fields including vendor name
-            ->orderBy('purchase_orders.id', 'desc');
+            ->orderBy('purchase_orders.id', 'desc')->where('purchase_orders.business_id',$businessId);
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }

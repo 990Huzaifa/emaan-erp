@@ -13,13 +13,17 @@ return new class extends Migration
     {
         Schema::create('vouchers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('business_id');
+            $table->unsignedBigInteger('business_id'); 
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
+            $table->unsignedBigInteger('acc_id');
+            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->string('code')->unique();
-            $table->enum('type', ['sales', 'purchase', 'journal', 'receipt', 'payment'])->default('sales');
-            $table->string('value');
-            $table->string('status')->default('active');
+            $table->unsignedBigInteger('ref_id')->nullable();
+            $table->enum('type', ['sales', 'purchase', 'journal', 'receipt', 'payment','expense'])->default('sales');
+            $table->decimal('amount',25,2)->default(0.00);
+            $table->string('status')->default('pending');
             $table->longText('description')->nullable();
+            $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamps();
         });
     }

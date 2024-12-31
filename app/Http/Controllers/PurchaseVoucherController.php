@@ -169,7 +169,7 @@ class PurchaseVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view purchase voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -190,25 +190,32 @@ class PurchaseVoucherController extends Controller
             // for products
             $total_billed = $data->voucher_amount;
             $check_pv = PurchaseVoucher::where('grn_id',$data->grn_id)->where('id','<>',$id)->exists();
-            // dd($check_pv);
+
             if(!$check_pv){
                 //for products trasaction
                 foreach ($grn->items as $item) {
-                $product = Product::find($item->product_id);
-                $product_acc = $product->acc_id;
-                Transaction::create([
-                    'business_id' => $grn->business_id,
-                    'acc_id'=>$product_acc,
-                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Item is purchased by this vendor: '.$vendor->name,
-                    'debit' => 0.00,
-                    'credit' => $item->billed
-                ]);
-            }
-            
-                // lot entry
-                foreach ($grn->items as $item) {
                     $product = Product::find($item->product_id);
+                    $product_acc = $product->acc_id;
+                    
+                    $product_t = Transaction::where('acc_id', $product_acc)->orderBy('id', 'desc')->first();
+                    $p_cb = $item->billed;
+                    if(empty($product_t)){
+                        $p_ob = OpeningBalance::where('acc_id', $product_acc)->value('amount');
+                        $p_cb += $p_ob;
+                    }else{
+                        $p_cb +=$product_t->current_balance;
+                    }
+                    Transaction::create([
+                        'business_id' => $grn->business_id,
+                        'acc_id'=>$product_acc,
+                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                        'description' => 'Item is purchased by this vendor: '.$vendor->name,
+                        'debit' => $item->billed,
+                        'credit' => 0.00,
+                        'current_balance' => $p_cb
+                    ]);
+                    
+                    //lot entry
                     do {
                         $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                     } while (Lot::where('lot_code', $lot_code)->exists());
@@ -232,13 +239,26 @@ class PurchaseVoucherController extends Controller
                 }
             }
             // for vendor trasaction
+            $vendor_t = Transaction::where('acc_id', $vendor_acc)->orderBy('id', 'desc')->first();
+            $v_cb = $total_billed;
+            
+            // Check if any transaction exists for this vendor account
+            if (empty($vendor_t)) {
+                // No prior transactions, get opening balance
+                $v_ob = OpeningBalance::where('acc_id', $vendor_acc)->value('amount');
+                $v_cb += $v_ob; // Add opening balance to the total billed
+            } else {
+                // Prior transaction exists, add total billed to the last current balance
+                $v_cb += $vendor_t->current_balance;
+            }
             Transaction::create([
                 'business_id' => $grn->business_id,
                 'acc_id'=>$vendor_acc,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'purchase item from this vendor: '.$vendor->name,
-                'debit' => $total_billed,
-                'credit' => 0.00
+                'debit' => 0.00,
+                'credit' => $total_billed,
+                'current_balance' => $v_cb
             ]);
             
             $account = OpeningBalance::where('acc_id',$data->acc_id)->first();

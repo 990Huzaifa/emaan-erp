@@ -36,6 +36,7 @@ class PurchaseQuotationController extends Controller
             }])
             ->join('vendors', 'purchase_quotations.vendor_id', '=', 'vendors.id') // Join with vendors
             ->select('purchase_quotations.*', 'vendors.name as vendor_name') // Select fields including vendor name
+            ->where('business_id',$businessId)
             ->orderBy('purchase_quotations.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('quotation_code', 'like', '%' . $searchQuery . '%');
