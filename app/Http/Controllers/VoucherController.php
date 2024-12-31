@@ -133,6 +133,27 @@ class VoucherController extends Controller
         //
     }
 
+    public function updateStatus(Request $request, string $id)
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if (!$user->hasBusinessPermission($businessId, 'approve voucher')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+            $voucher = Voucher::findOrFail($id);
+            $voucher->status = $request->status;
+            $voucher->save();
+            return response()->json($voucher);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 500);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
