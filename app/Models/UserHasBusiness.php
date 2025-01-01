@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Traits\HasPermissions;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Spatie\Permission\Traits\HasRoles;
 
 class UserHasBusiness extends Model
 {
-    use HasFactory,HasPermissions;
+    use HasFactory, HasRoles,HasPermissions;
 
     protected $fillable = [
         'business_id',

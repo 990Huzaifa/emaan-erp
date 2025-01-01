@@ -89,7 +89,11 @@ class PermissionsTableSeeder extends Seeder
             'list sale voucher',
             'edit sale voucher',
             'approve sale voucher',
-            
+            'create purchase invoice',
+            'view purchase invoice',
+            'list purchase invoice',
+            'edit purchase invoice',
+            'approve purchase invoice',
         ];
 
         // Loop through each permission and create it

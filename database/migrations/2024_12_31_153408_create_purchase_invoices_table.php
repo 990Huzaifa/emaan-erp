@@ -20,14 +20,9 @@ return new class extends Migration
             $table->unsignedBigInteger('vendor_id');
             $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade');
             $table->unsignedBigInteger('grn_id');
-            $table->foreign('grn_id')->references('id')->on('grns')->onDelete('cascade');
+            $table->foreign('grn_id')->references('id')->on('goods_receive_notes')->onDelete('cascade');
             $table->string('po_no');
-            $table->decimal('subtotal', 10, 2);
-            $table->decimal('tax', 10, 2)->default(0.00);
-            $table->decimal('additional_charges', 10, 2)->default(0.00);
-            $table->decimal('total', 10, 2);
-            $table->decimal('discount', 10, 2);
-            $table->string('note')->nullable();
+            $table->string('terms_of_payment')->nullable();
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid');
             $table->timestamps();
         });

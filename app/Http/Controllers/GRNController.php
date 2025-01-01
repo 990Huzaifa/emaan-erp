@@ -246,7 +246,7 @@ class GRNController extends Controller
     }
     
     
-    public function updateStatus(Request $request, string $id): JsonResponse
+    public function updateStatus(Request $request, string $id)
     {
         try{
             $user = Auth::user();
@@ -261,38 +261,13 @@ class GRNController extends Controller
                 }
             }
             $data = GoodsReceiveNote::find($id);
+            
             if (empty($data)) throw new Exception('GRN not found', 400);
             if($data->status != 0) throw new Exception('status can not be changed', 400);
             $data->update([
                 'status' => $request->status
             ]);
-            // transaction start
-            $vendor = Vendor::find($data->purchase_order->vendor_id);
-            $vendor_acc = $vendor->acc_id;
-            // for products
-            $total_billed = 0;
-            foreach ($data->items as $item) {
-                $total_billed += $item->billed;
-                $product = Product::find($item->product_id);
-                $product_acc = $product->acc_id;
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id'=>$product_acc,
-                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Item is purchased by this vendor: '.$vendor->name,
-                    'debit' => 0.00,
-                    'credit' => $item->billed
-                ]);
-            }
-            // for vendor
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id'=>$vendor_acc,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'purchase item from this vendor: '.$vendor->name,
-                'debit' => $total_billed,
-                'credit' => 0.00
-            ]);
+
             // lot entry
             foreach ($data->items as $item) {
                 $product = Product::find($item->product_id);
@@ -330,9 +305,6 @@ class GRNController extends Controller
     }
     
     
-    /**
-     * Remove the specified resource from storage.
-     */
     public function list(): JsonResponse
     {
         try{

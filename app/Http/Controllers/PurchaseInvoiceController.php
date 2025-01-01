@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-
+use DB;
 use App\Models\GoodsReceiveNote;
+use App\Models\Log;
 use App\Models\PurchaseInvoice;
+use App\Models\PurchaseInvoiceItem;
 use App\Models\PurchaseOrder;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -18,9 +20,39 @@ class PurchaseInvoiceController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view purchase invoice')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perPage = $request->query('per_page', 10);
+            $searchQuery = $request->query('search');
+            $query = PurchaseInvoice::with(['items.product' => function ($query) {
+                $query->select('id', 'title');
+            }])
+            ->join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id') // Join with vendors
+            ->select('purchase_invoices.*', 'vendors.name as vendor_name')
+            ->where('business_id',$businessId)
+            ->orderBy('id', 'desc');
+            if (!empty($searchQuery)) {
+                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+            }
+            // Execute the query with pagination
+            $data = $query->paginate($perPage);
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
@@ -41,28 +73,53 @@ class PurchaseInvoiceController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
-                    'grn_id'=>'required|exists:goods_received_notes,id',
+                    'grn_id'=>'required|exists:goods_receive_notes,id',
                 ],[
-                'grn_id.required' => 'The goods receive note field is required.',
-                'grn_id.exists' => 'The selected goods receive note is invalid.',
+                'grn_id.required' => 'The grn_id is required.',
+                'grn_id.exists' => 'The grn_id is invalid.',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             do {
                 $invoice_no = 'PI-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PurchaseInvoice::where('invoice_no', $invoice_no)->exists());
-            $GRN = GoodsReceiveNote::find($request->grn_id);
+
+            $GRN = GoodsReceiveNote::with('items')->where('status',1)->find($request->grn_id);
+            if (!$GRN) throw new Exception('Goods Receive Note is not approved yet.', 400);
+
             $POID = $GRN->purchase_order_id;
             $PO = PurchaseOrder::find($POID);
-            PurchaseInvoice::create([
+            if (!$PO) throw new Exception('Purchase Order not found.', 404);
+            DB::beginTransaction();
+            $purchaseInvoice = PurchaseInvoice::create([
                 'invoice_no' => $invoice_no,
                 'invoice_date' => $request->invoice_date,
                 'business_id' => $user->login_business,
                 'grn_id' => $request->grn_id,
+                'vendor_id' => $PO->vendor_id,
+                'po_no' => $PO->order_code,
+                'terms_of_payment' => $PO->terms_of_payment,
             ]);
+
+            // Map GRN items to PI items
+            foreach ($GRN->items as $item) {
+                PurchaseInvoiceItem::create([
+                    'purchase_invoice_id' => $purchaseInvoice->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->purchase_unit_price,
+                    'total' => $item->total_price,
+                    'tax' => $item->tax,
+                ]);
+            }
+
+            DB::commit();
+            return response()->json($purchaseInvoice, 200);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -72,16 +129,39 @@ class PurchaseInvoiceController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try{
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view purchase invoice')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = PurchaseInvoice::with(['items.product' => function ($query) {
+                $query->select('id', 'title');
+            }])
+            ->join('businesses', 'purchase_invoices.business_id', '=', 'businesses.id')
+            ->join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id') // Join with vendors
+            ->join('cities', 'vendors.city_id', '=', 'cities.id')
+            ->select('purchase_invoices.*',
+            'vendors.name as vendor_name',
+            'vendors.address as vendor_address',
+            'vendors.phone as vendor_phone',
+            'businesses.name as business_name',
+            'cities.name as city_name'
+            ) // Select fields including vendor name
+            ->where('purchase_invoices.id', $id)->first();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -91,11 +171,68 @@ class PurchaseInvoiceController extends Controller
         //
     }
 
+    public function updateStatus(Request $request, string $id)
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve purchase invoice')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = PurchaseInvoice::find($id);
+            // 0 = Pending, 1 = Approved, 2 = Rejected
+            if (empty($data)) throw new Exception('Purchase Invoice not found', 400);
+            if($data->status != 0) throw new Exception('status can not be changed', 400);
+            $data->update([
+                'status' => $request->status
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'update purchase invoice Status',   
+            ]);
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
     {
         //
+    }
+
+    public function list(): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list purchase invoice')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            
+            $data = PurchaseInvoice::select('id','invoice_no')->where('status',1)->where('business_id',$businessId)->get();
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }    
     }
 }
