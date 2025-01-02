@@ -139,7 +139,7 @@ class COAController extends Controller
         //
     }
 
-    public function list()
+    public function list(): JsonResponse
     {
         try {
             $user = Auth::user();

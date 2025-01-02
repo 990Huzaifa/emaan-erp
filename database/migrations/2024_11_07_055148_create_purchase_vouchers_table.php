@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('purchase_vouchers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('grn_id');
-            $table->foreign('grn_id')->references('id')->on('goods_receive_notes')->onDelete('cascade');
+            $table->unsignedBigInteger('ref_id');
+            $table->integer('against')->default(0)->comment('0->po, 1->vendor');
             $table->unsignedBigInteger('acc_id'); // Link to COA for tracking payments
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->unsignedBigInteger('business_id'); // Link to COA for tracking payments

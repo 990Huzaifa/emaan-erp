@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\City;
 use Exception;
 use App\Models\Log;
 use App\Models\Vendor;
@@ -12,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 
 class VendorController extends Controller
@@ -27,7 +29,7 @@ class VendorController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                if (!$user->hasBusinessPermission($businessId, 'list vendors')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -147,7 +149,7 @@ class VendorController extends Controller
             } while (Vendor::where('v_code', $v_code)->exists());
 
             $acc = ChartOfAccount::where('name',"VENDORS")->first();
-            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            if(empty($acc)) throw new Exception('Vendor COA not found', 404);
             $COA = createCOA($request->name,$acc->code);
             
             $vendor = Vendor::create([
@@ -286,6 +288,8 @@ class VendorController extends Controller
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            DB::beginTransaction();
             $acc = ChartOfAccount::find($vendor->acc_id);
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
             $acc->update([
@@ -323,13 +327,15 @@ class VendorController extends Controller
                 'description' => 'User update vendor',
             ]);
 
-            
+            DB::commit();
             return response()->json(['data'=>$vendor],200);
 
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -365,6 +371,154 @@ class VendorController extends Controller
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function csvVendor()
+    {
+
+        $filePath = public_path('assets/files/vendor-sample.csv');
+
+        // Check if the file exists
+        if (!file_exists($filePath)) {
+            return abort(404, 'File not found.');
+        }
+        // Define headers
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="vendor-sample.csv"',
+        ];
+
+        // Return the file as a response
+        return Response::download($filePath, 'vendor-sample.csv', $headers);
+    }
+    
+    public function importVendor(Request $request):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+
+            // Check user permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create vendors')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make($request->all(), [
+                'csv' => 'required|file|mimes:csv,txt|max:8192', // Max 8MB
+            ], [
+                'csv.required' => 'CSV file is required.',
+                'csv.mimes' => 'Only CSV or TXT files are allowed.',
+                'csv.max' => 'CSV file size must be less than 8MB.',
+            ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            
+            $file = $request->file('csv');
+            
+            // Read CSV file
+            $csvData = array_map('str_getcsv', file($file->getPathname()));
+            $headers = array_shift($csvData); // Remove header row
+
+            $vendors = [];
+            $errors = [];
+            DB::beginTransaction();
+            try{
+            foreach ($csvData as $row) {
+                $data = array_combine($headers, $row);
+                
+                try {    
+                    // Verify City
+                    $city = City::where('name', $data['city'])->first();
+                    if (!$city) {
+                        throw new Exception("City '{$data['city']}' not found");
+                    }
+    
+                    
+                    do {
+                        $v_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                    } while (Vendor::where('v_code', $v_code)->exists());
+    
+                    // validate coa
+                    $acc = ChartOfAccount::Where('name','VENDORS')->first();
+                    if(empty($acc)) throw new Exception('Vendor COA not found', 404);
+                    $name = strtoupper($data['name']);
+                    $COA = createCOA($name,$acc->code);
+    
+                    // Create product
+                    $vendor = Vendor::create([
+                        'name' => $name,
+                        'v_code' => $v_code,
+                        'city_id' => $city->id,
+                        'acc_id' => $COA->id,
+                        'added_by' => $user->id,
+                        'business_id' => $businessId,
+                        'email' =>$data['email'] ?? null,
+                        'telephone' => $data['telephone'] ?? null,
+                        'phone' => $data['phone'] ?? null,
+                        'website' => $data['website'] ?? null,
+                        'address' => $data['address'] ?? null,
+                    ]);
+    
+                    // Create opening balance
+                    OpeningBalance::create([
+                        'acc_id' => $COA->id,
+                        'amount' => 0,
+                    ]);
+    
+                    // Update COA reference
+                    $COA->update([
+                        'ref_id' => $vendor->id,
+                    ]);
+    
+                    $vendors[] = $vendor;
+
+                    DB::commit();
+    
+                } catch (Exception $e) {
+                    DB::rollBack();
+                    $errors[] = "Row error for title '{$data['title']}': " . $e->getMessage();
+                }
+            }
+        
+
+                // Create log entry only if some vendors were imported successfully
+                if (count($vendors) > 0) {
+                    Log::create([
+                        'user_id' => $user->id,
+                        'description' => 'User imported vendors via CSV',
+                    ]);
+                }
+
+                // Commit main transaction if we have any successful imports
+                if (count($vendors) > 0 || count($errors) == count($csvData)) {
+                    DB::commit();
+                } else {
+                    DB::rollBack();
+                    throw new Exception('No vendors were imported successfully');
+                }
+
+                return response()->json([
+                    'success' => count($vendors) . ' vendors imported successfully',
+                    'vendors' => $vendors,
+                    'errors' => $errors,
+                ]);
+
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        }catch(QueryException $e){
+            return response()->json([' DB error' => $e->getMessage()], 400);
+        }
+        catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

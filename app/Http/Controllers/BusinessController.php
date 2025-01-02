@@ -244,42 +244,98 @@ class BusinessController extends Controller
         try {
             $user = Auth::user();
             $businessId = $user->login_business;
-
-            // Check if the user has permission to list businesses
-            if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-
-            // Join 'business_has_accounts', 'opening_balances', and 'chart_of_accounts' tables
-            $data = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
-                ->join('opening_balances', 'business_has_accounts.acc_id', '=', 'opening_balances.acc_id')
-                ->join('chart_of_accounts', 'business_has_accounts.acc_id', '=', 'chart_of_accounts.acc_id')
-                ->get([
-                    'business_has_accounts.acc_id', // Get account id
-                    'opening_balances.amount', // Get opening balance amount
-                    'chart_of_accounts.name as account_name' // Get account name from chart of accounts
+            // if ($user->role == 'user') {
+            //     if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
+            //         return response()->json([
+            //             'error' => 'User does not have the required permission.'
+            //         ], 403);
+            //     }
+            // }
+            // Retrieve account codes for BANK and CASH
+            $Bank_acc_code = ChartOfAccount::where('name', 'BANK')->value('code');
+            $Cash_acc_code = ChartOfAccount::where('name', 'CASH')->value('code');
+            // Define the query with specific columns to fetch
+            $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
+                ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
+                ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
+                ->where(function ($query) use ($Bank_acc_code, $Cash_acc_code) {
+                    $query->where('chart_of_accounts.parent_code', $Bank_acc_code)
+                          ->orWhere('chart_of_accounts.parent_code', $Cash_acc_code);
+                })
+                ->select([
+                    'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
+                    'opening_balances.amount as balance', // Amount from opening balances
+                    'chart_of_accounts.name as account_name', // Account name from chart of accounts
+                    'chart_of_accounts.code as account_code'
                 ]);
-
+    
+            // Fetch the data
+            $data = $query->get();
+    
+            
+    
             // Log the action
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User fetched list of business accounts',
             ]);
-
+    
             return response()->json($data, 200);
-
+    
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-
+    
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
+    public function expenseAccounts(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            // if ($user->role == 'user') {
+            //     if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
+            //         return response()->json([
+            //             'error' => 'User does not have the required permission.'
+            //         ], 403);
+            //     }
+            // }
+            // Retrieve account codes for BANK and CASH
+            $Expense_acc_code = ChartOfAccount::where('name', 'EXPENSE')->value('code');
+            // Define the query with specific columns to fetch
+            $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
+                ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
+                ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
+                ->where('chart_of_accounts.parent_code', $Expense_acc_code)
+                ->select([
+                    'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
+                    'opening_balances.amount as balance', // Amount from opening balances
+                    'chart_of_accounts.name as account_name', // Account name from chart of accounts
+                    'chart_of_accounts.code as account_code'
+                ]);
+    
+            // Fetch the data
+            $data = $query->get();
+    
+            
+    
+            // Log the action
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User fetched list of business accounts',
+            ]);
+    
+            return response()->json($data, 200);
+    
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+    
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
     
 
 }

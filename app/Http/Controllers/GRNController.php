@@ -269,28 +269,30 @@ class GRNController extends Controller
             ]);
 
             // lot entry
-            foreach ($data->items as $item) {
-                $product = Product::find($item->product_id);
-                do {
-                    $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-                } while (Lot::where('lot_code', $lot_code)->exists());
-                $lot = Lot::create([
-                    'product_id' => $item->product_id,
-                    'lot_code' => $lot_code,
-                    'vendor_id' => $data->purchase_order->vendor_id,
-                    'purchase_unit_price' => $item->purchase_unit_price,
-                    'sale_unit_price' => $item->sale_unit_price,
-                    'quantity' => $item->quantity,
-                    'status' => 1,
-                    'total_price' => $item->purchase_unit_price * $item->quantity,
-                ]);
-                InventoryDetail::create([
-                    'lot_id' => $lot->id,
-                    'product_id' => $item->product_id,
-                    'stock' => $item->quantity,
-                    'unit_price' => $item->sale_unit_price,
-                    'in_stock' => 1,
-                ]);
+            if($request->status == 1){
+                foreach ($data->items as $item) {
+                    $product = Product::find($item->product_id);
+                    do {
+                        $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                    } while (Lot::where('lot_code', $lot_code)->exists());
+                    $lot = Lot::create([
+                        'product_id' => $item->product_id,
+                        'lot_code' => $lot_code,
+                        'vendor_id' => $data->purchase_order->vendor_id,
+                        'purchase_unit_price' => $item->purchase_unit_price,
+                        'sale_unit_price' => $item->sale_unit_price,
+                        'quantity' => $item->quantity,
+                        'status' => 1,
+                        'total_price' => $item->purchase_unit_price * $item->quantity,
+                    ]);
+                    InventoryDetail::create([
+                        'lot_id' => $lot->id,
+                        'product_id' => $item->product_id,
+                        'stock' => $item->quantity,
+                        'unit_price' => $item->sale_unit_price,
+                        'in_stock' => 1,
+                    ]);
+                }
             }
             Log::create([
                 'user_id' => $user->id,

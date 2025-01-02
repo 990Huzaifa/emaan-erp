@@ -14,6 +14,7 @@ use App\Models\BusinessHasAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 
 class CustomerController extends Controller
@@ -327,4 +328,155 @@ class CustomerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+
+
+    public function csvCustomer()
+    {
+
+        $filePath = public_path('assets/files/customer-sample.csv');
+
+        // Check if the file exists
+        if (!file_exists($filePath)) {
+            return abort(404, 'File not found.');
+        }
+        // Define headers
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="customer-sample.csv"',
+        ];
+
+        // Return the file as a response
+        return Response::download($filePath, 'customer-sample.csv', $headers);
+    }
+    
+    public function importCustomer(Request $request):JsonResponse
+    {
+        try{
+            $user = Auth::user();
+
+            // Check user permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make($request->all(), [
+                'csv' => 'required|file|mimes:csv,txt|max:8192', // Max 8MB
+            ], [
+                'csv.required' => 'CSV file is required.',
+                'csv.mimes' => 'Only CSV or TXT files are allowed.',
+                'csv.max' => 'CSV file size must be less than 8MB.',
+            ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            
+            $file = $request->file('csv');
+            
+            // Read CSV file
+            $csvData = array_map('str_getcsv', file($file->getPathname()));
+            $headers = array_shift($csvData); // Remove header row
+
+            $customers = [];
+            $errors = [];
+            DB::beginTransaction();
+            try{
+            foreach ($csvData as $row) {
+                $data = array_combine($headers, $row);
+                
+                try {    
+                    // Verify City
+                    $city = City::where('name', $data['city'])->first();
+                    if (!$city) {
+                        throw new Exception("City '{$data['city']}' not found");
+                    }
+    
+                    
+                    do {
+                        $c_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                    } while (Customer::where('c_code', $c_code)->exists());
+    
+                    // validate coa
+                    $acc = ChartOfAccount::Where('name','CUSTOMERS')->first();
+                    if(empty($acc)) throw new Exception('Customer COA not found', 404);
+                    $name = strtoupper($data['name']);
+                    $COA = createCOA($name,$acc->code);
+    
+                    // Create product
+                    $customer = Customer::create([
+                        'name' => $name,
+                        'c_code' => $c_code,
+                        'city_id' => $city->id,
+                        'acc_id' => $COA->id,
+                        'added_by' => $user->id,
+                        'business_id' => $businessId,
+                        'cnic' => $data['cnic'] ?? null,
+                        'email' =>$data['email'] ?? null,
+                        'telephone' => $data['telephone'] ?? null,
+                        'mobile' => $data['mobile'] ?? null,
+                        'website' => $data['website'] ?? null,
+                        'address' => $data['address'] ?? null,
+                    ]);
+    
+                    // Create opening balance
+                    OpeningBalance::create([
+                        'acc_id' => $COA->id,
+                        'amount' => 0,
+                    ]);
+    
+                    // Update COA reference
+                    $COA->update([
+                        'ref_id' => $customer->id,
+                    ]);
+    
+                    $customers[] = $customer;
+
+                    DB::commit();
+    
+                } catch (Exception $e) {
+                    DB::rollBack();
+                    $errors[] = "Row error for title '{$data['title']}': " . $e->getMessage();
+                }
+            }
+        
+
+                // Create log entry only if some customers were imported successfully
+                if (count($customers) > 0) {
+                    Log::create([
+                        'user_id' => $user->id,
+                        'description' => 'User imported customers via CSV',
+                    ]);
+                }
+
+                // Commit main transaction if we have any successful imports
+                if (count($customers) > 0 || count($errors) == count($csvData)) {
+                    DB::commit();
+                } else {
+                    DB::rollBack();
+                    throw new Exception('No customers were imported successfully');
+                }
+
+                return response()->json([
+                    'success' => count($customers) . ' customers imported successfully',
+                    'customers' => $customers,
+                    'errors' => $errors,
+                ]);
+
+            } catch (Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        }catch(QueryException $e){
+            return response()->json([' DB error' => $e->getMessage()], 400);
+        }
+        catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
 }

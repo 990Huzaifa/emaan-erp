@@ -17,8 +17,8 @@ return new class extends Migration
             $table->foreign('goods_receive_note_id')->references('id')->on('goods_receive_notes')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->decimal('quantity', 8, 2);
-            $table->decimal('receive', 8, 2);
+            $table->integer('quantity');
+            $table->integer('receive');
             $table->decimal('billed', 8, 2);
             $table->decimal('purchase_unit_price', 10, 2);
             $table->decimal('sale_unit_price', 10, 2);

@@ -81,16 +81,28 @@ class PurchaseVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'grn_id' => 'required|exists:goods_receive_notes,id',
+                    'po_id' => 'required|exists:purchase_orders,id',
+                    "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
+                    'cheque_no' => 'required_if:payment_method,BANK|string',
+                    'cheque_date' => 'required_if:payment_method,BANK|date',
                     'voucher_date' => 'required|date',
                     'voucher_amount' => 'required|numeric',
-                ],[
-                    'grn_id.required' => 'The goods receive note field is required.',
-                    'grn_id.exists' => 'The selected goods receive note is invalid.',
+                ], [
+                    'po_id.required' => 'The Purchase Order field is required.',
+                    'po_id.exists' => 'The selected Purchase Order is invalid.',
                     
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
+
+                    'payment_method.required' => 'The payment method field is required.',
+                    'payment_method.in' => 'The selected payment method is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
 
                     'voucher_date.required' => 'The voucher date field is required.',
                     'voucher_date.date' => 'The voucher date must be a valid date.',
@@ -109,9 +121,12 @@ class PurchaseVoucherController extends Controller
                 $voucher_code = 'PV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PurchaseVoucher::where('voucher_code', $voucher_code)->exists());
             $data = PurchaseVoucher::create([
-                'grn_id' => $request->grn_id,
+                'po_id' => $request->po_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
+                'payment_method' => $request->payment_method,
+                'cheque_no' => $request->cheque_no ?? null,
+                'cheque_date' => $request->cheque_date ?? null,
                 'voucher_code' => $voucher_code, 
                 'voucher_date' => $request->voucher_date,
                 'voucher_amount' => $request->voucher_amount,

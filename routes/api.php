@@ -86,6 +86,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::post('customer-update/{id}',[CustomerController::class,'update']);
+    Route::get('/csv/customer', [CustomerController::class, 'csvCustomer']);
+    Route::post('/csv/customer/upload', [CustomerController::class, 'importCustomer']);
     
     Route::apiResource('chart-of-account',COAController::class)->only('index','store','show','update');
     
@@ -99,6 +101,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('vendor',VendorController::class)->only('index','store','show','update');
     Route::post('vendor-update/{id}',[VendorController::class,'update']);
     Route::get('list/vendor/',[VendorController::class,'list']);
+    Route::get('/csv/vendor', [VendorController::class, 'csvVendor']);
+    Route::post('/csv/vendor/upload', [VendorController::class, 'importVendor']);
     
     Route::apiResource('product',ProductController::class)->only('index','store','show','update');
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);
