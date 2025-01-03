@@ -10,6 +10,7 @@ use App\Models\SaleOrderItem;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class SaleOrderController extends Controller
@@ -77,6 +78,11 @@ class SaleOrderController extends Controller
                     'total' => 'required|numeric',
                     'total_tax' => 'required|numeric',
                     'items' => 'required|array',
+                    'items.*.product_id' => 'required|exists:products,id',
+                    'items.*.quantity' => 'required|numeric',
+                    'items.*.unit_price' => 'required|numeric',
+                    'items.*.total_price' => 'required|numeric',
+                    'items.*.tax' => 'required|numeric',
 
             ],[
 
@@ -94,11 +100,29 @@ class SaleOrderController extends Controller
                 'total_tax.numeric' => 'Total Tax must be a number.',
                 
                 'items.required' => 'Items are required.',
+
+                'items.*.product_id.required' => 'Product is required.',
+                'items.*.product_id.exists' => 'Product does not exist.',
+
+                'items.*.quantity.required' => 'Quantity is required.', 
+                'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                'items.*.unit_price.required' => 'Unit Price is required.',
+                'items.*.unit_price.numeric' => 'Unit Price must be a number.',
+
+                'items.*.total_price.required' => 'Total Price is required.',
+                'items.*.total_price.numeric' => 'Total Price must be a number.',
+
+                'items.*.tax.required' => 'Tax is required.',
+                'items.*.tax.numeric' => 'Tax must be a number.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $orderCode = 'PO-'.uniqid();
+            do {
+                $order_code = 'SO-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (SaleOrder::where('order_code', $order_code)->exists());
+            DB::beginTransaction();
             $data = SaleOrder::create([
-                'order_code' => $orderCode,
+                'order_code' => $order_code,
                 'customer_id' => $request->customer_id,
                 'business_id' => $user->login_business,
                 'order_date' => $request->order_date,
@@ -122,10 +146,13 @@ class SaleOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Create Sale Order',   
             ]);
+            DB::commit();
             return response()->json($data);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

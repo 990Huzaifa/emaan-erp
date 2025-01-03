@@ -8,6 +8,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
+use App\Models\Balance;
 use App\Models\MeasurementUnit;
 use App\Models\ProductCategory;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -195,6 +196,10 @@ class ProductController extends Controller
                 'added_by' => $user->id,
             ]);
             OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+            Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
@@ -546,6 +551,11 @@ class ProductController extends Controller
     
                     // Create opening balance
                     OpeningBalance::create([
+                        'acc_id' => $COA->id,
+                        'amount' => 0,
+                    ]);
+
+                    Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);

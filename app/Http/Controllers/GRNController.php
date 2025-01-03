@@ -9,6 +9,7 @@ use App\Models\Lot;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\Vendor;
+use Illuminate\Support\Facades\DB;
 use Exception;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -261,13 +262,39 @@ class GRNController extends Controller
                 }
             }
             $data = GoodsReceiveNote::find($id);
-            
+            DB::beginTransaction();
             if (empty($data)) throw new Exception('GRN not found', 400);
             if($data->status != 0) throw new Exception('status can not be changed', 400);
             $data->update([
                 'status' => $request->status
             ]);
-
+            // transaction start
+            $vendor = Vendor::find($data->purchase_order->vendor_id);
+            $vendor_acc = $vendor->acc_id;
+            // for products
+            $total_billed = 0;
+            foreach ($data->items as $item) {
+                $total_billed += $item->billed;
+                $product = Product::find($item->product_id);
+                $product_acc = $product->acc_id;
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id'=>$product_acc,
+                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'Item is purchased by this vendor: '.$vendor->name,
+                    'credit' => 0.00,
+                    'debit' => $item->billed
+                ]);
+            }
+            // for vendor
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id'=>$vendor_acc,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'purchase item from this vendor: '.$vendor->name,
+                'credit' => $total_billed,
+                'debit' => 0.00
+            ]);
             // lot entry
             if($request->status == 1){
                 foreach ($data->items as $item) {
@@ -298,10 +325,14 @@ class GRNController extends Controller
                 'user_id' => $user->id,
                 'description' => 'update GRN Status',   
             ]);
+
+            DB::commit();
             return response()->json($data);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

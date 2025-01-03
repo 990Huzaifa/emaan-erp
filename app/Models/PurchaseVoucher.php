@@ -10,12 +10,15 @@ class PurchaseVoucher extends Model
     use HasFactory;
 
     protected $fillable = [
-        'grn_id',
+        'vendor_id',
         'acc_id',
         'business_id',
         'voucher_code',
         'voucher_amount',
         'status',
         'voucher_date',
+        'payment_method',
+        'cheque_no',
+        'cheque_date'
     ];
 }

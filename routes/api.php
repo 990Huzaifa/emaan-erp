@@ -103,6 +103,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/vendor/',[VendorController::class,'list']);
     Route::get('/csv/vendor', [VendorController::class, 'csvVendor']);
     Route::post('/csv/vendor/upload', [VendorController::class, 'importVendor']);
+
+
+    Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
+    Route::post('employee-update/{id}',[EmployeeController::class,'update']);
+    Route::get('/csv/employee', [EmployeeController::class, 'csvCustomer']);
+    Route::post('/csv/employee/upload', [EmployeeController::class, 'importCustomer']);
+
     
     Route::apiResource('product',ProductController::class)->only('index','store','show','update');
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);

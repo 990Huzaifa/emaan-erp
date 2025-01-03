@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ExpenseVoucher;
-use DB;
+use Illuminate\Support\Facades\DB;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;

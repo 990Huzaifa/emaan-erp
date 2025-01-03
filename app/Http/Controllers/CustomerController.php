@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\City;
 use App\Models\Customer;
 use App\Models\OpeningBalance;
+use App\Models\Balance;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\BusinessHasAccount;
@@ -157,6 +158,10 @@ class CustomerController extends Controller
                 'logo' => $logo,
             ]);
             OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+            Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
@@ -424,6 +429,11 @@ class CustomerController extends Controller
     
                     // Create opening balance
                     OpeningBalance::create([
+                        'acc_id' => $COA->id,
+                        'amount' => 0,
+                    ]);
+
+                    Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);

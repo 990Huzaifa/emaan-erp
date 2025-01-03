@@ -74,7 +74,8 @@ class PermissionController extends Controller
                     'list employee',
                     'view employee',
                     'create employee',
-                    'edit employee'
+                    'edit employee',
+                    'approve employee'
                 ],
                 'Purchase Voucher' =>['create purchase voucher','view purchase voucher','list purchase voucher','edit purchase voucher','approve purchase voucher'],
                 'Sale Voucher'=>['create sale voucher', 'view sale voucher', 'list sale voucher', 'edit sale voucher', 'approve sale voucher'],

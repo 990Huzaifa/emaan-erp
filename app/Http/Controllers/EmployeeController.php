@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OpeningBalance;
+use App\Models\Balance;
 use Exception;
 use App\Models\Log;
 use App\Models\Employee;
@@ -91,13 +93,17 @@ class EmployeeController extends Controller
                 'address' => 'required|max:255',
                 'designation' => 'required',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'pay_roll' => 'required|numeric'
+                'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'payroll' => 'required|numeric'
             ],[
                 'name.required' => 'Name is required',
 
                 'phone.required' => 'Phone is required',
                 'phone.digits' => 'Phone must be 11 digits',
                 'phone.regex' => 'Phone must be a valid phone number',
+
+                
 
                 'email.required' => 'Email is required',
 
@@ -113,48 +119,85 @@ class EmployeeController extends Controller
                 'image.mimes' => 'Image must be a file of type: jpeg, png, jpg, gif, svg',
                 'image.max' => 'Image must not exceed 2MB',
 
-                'pay_roll.required' => 'Pay roll is required',
-                'pay_roll.numeric' => 'Pay roll must be a number',
+                'payroll.required' => 'Pay roll is required',
+                'payroll.numeric' => 'Pay roll must be a number',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $profilePic = null;
+            $cnic_front = null;
+            $cnic_back = null;
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
                 $image_name = 'profile-' . $user->id . '-' . time() . '.' . $image->getClientOriginalExtension();
                 $image->move(public_path('employee-image'), $image_name);
                 $profilePic = 'employee-image/' . $image_name;
             }
+            if ($request->hasFile('cnic_front')) {
+                $front_image = $request->file('cnic_front');
+                $front_image_name = 'cnic_' . $user->id . '_front.' . $front_image->getClientOriginalExtension();
+                $front_image->move(public_path('employee-cnic'), $front_image_name);
+                $cnic_front = 'employee-cnic/' . $front_image_name;
+            }
+            if ($request->hasFile('cnic_back')) {
+                $back_image = $request->file('cnic_back');
+                $back_image_name = 'cnic_' . $user->id . '_back.' . $back_image->getClientOriginalExtension();
+                $back_image->move(public_path('employee-cnic'), $back_image_name);
+                $cnic_back = 'employee-cnic/' . $back_image_name;
+            }
+            $cnic_images = [$cnic_front, $cnic_back];
             do {
                 $e_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Employee::where('e_code', $e_code)->exists());
 
             // validate coa
-            $acc = ChartOfAccount::Where('name','EMPLOYEE')->first();
-            if(empty($acc)) throw new Exception('Employee COA not found', 404);
 
-            $COA = createCOA($request->name,$acc->code);
+            DB::beginTransaction();
+            $acc = ChartOfAccount::Where('name','EMPLOYEES SALARY')->first();
+            if(empty($acc)) throw new Exception('EMPLOYEES SALARY COA not found', 404);
+            $name = strtoupper($request->name);
+            $COA = createCOA($name,$acc->code);
             $employee = Employee::create([
-                'name' => $request->name,
+                'name' => $name,
                 'e_code' => $e_code,
+                'business_id' => $businessId,
+                'acc_id' => $COA->id,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'city_id' => $request->city_id,
                 'address' => $request->address,
+                'cnic'=>$request->cnic ?? null,
+                'cnic_images'=> $cnic_images,
+                'designation' => $request->designation,
+                'payroll' => $request->payroll,
                 'image' => $profilePic,
-            ]);
+                'joining_date' => $request->joining_date,
+                'added_by' => $user->id
+                ]);
             $COA->update([
                 'ref_id' => $employee->id,
             ]);
+            OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+
+            Balance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+            
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User create employee',
             ]);
-
+            DB::commit();
             return response()->json($employee);
 
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

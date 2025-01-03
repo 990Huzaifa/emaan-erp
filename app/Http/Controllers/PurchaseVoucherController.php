@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Balance;
 use App\Models\GoodsReceiveNote;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseVoucher;
@@ -41,16 +42,14 @@ class PurchaseVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = PurchaseVoucher::select('purchase_vouchers.*','goods_receive_notes.grn_code','chart_of_accounts.name as acc_name')
-            ->join('goods_receive_notes','purchase_vouchers.grn_id', '=', 'goods_receive_notes.id')
+            $query = PurchaseVoucher::select('purchase_vouchers.*','vendors.name as vendor_name','chart_of_accounts.name as acc_name')
+            ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
             ->join('chart_of_accounts','purchase_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->where('purchase_vouchers.business_id',$businessId)
+            ->where('purchase_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query = $query->where(function ($query) use ($searchQuery) {
-                    $query->where('purchase_vouchers.voucher_code', 'like', '%' . $searchQuery . '%')
-                          ->orWhere('goods_receive_notes.grn_code', 'like', '%' . $searchQuery . '%');
-                });
+                $query->where('purchase_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
+                
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
@@ -81,7 +80,7 @@ class PurchaseVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'po_id' => 'required|exists:purchase_orders,id',
+                    'vendor_id' => 'required|exists:purchase_orders,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
@@ -89,8 +88,8 @@ class PurchaseVoucherController extends Controller
                     'voucher_date' => 'required|date',
                     'voucher_amount' => 'required|numeric',
                 ], [
-                    'po_id.required' => 'The Purchase Order field is required.',
-                    'po_id.exists' => 'The selected Purchase Order is invalid.',
+                    'vendor_id.required' => 'The Vendor field is required.',
+                    'vendor_id.exists' => 'The selected Vendor is invalid.',
                     
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -113,15 +112,11 @@ class PurchaseVoucherController extends Controller
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
             DB::beginTransaction();
-            // $PO_ID = GoodsReceiveNote::find($request->grn_id)->value('purchase_order_id');
-            // if(empty($PO_ID)) throw new Exception('Purchase order not found', 400);
-            // $V_ID = PurchaseOrder::find($PO_ID)->value('voucher_id');
-            // if(empty($V_ID)) throw new Exception('Vendor not found', 400);
             do {
                 $voucher_code = 'PV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PurchaseVoucher::where('voucher_code', $voucher_code)->exists());
             $data = PurchaseVoucher::create([
-                'po_id' => $request->po_id,
+                'vendor_id' => $request->vendor_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
                 'payment_method' => $request->payment_method,
@@ -199,67 +194,54 @@ class PurchaseVoucherController extends Controller
                 'status'=>1
                 ]);
             // transaction
-            $grn = GoodsReceiveNote::find($data->grn_id);
-            $vendor = Vendor::find($grn->purchase_order->vendor_id);
+            $vendor = Vendor::find($data->vendor_id);
             $vendor_acc = $vendor->acc_id;
             // for products
             $total_billed = $data->voucher_amount;
-            $check_pv = PurchaseVoucher::where('grn_id',$data->grn_id)->where('id','<>',$id)->exists();
 
-            if(!$check_pv){
-                //for products trasaction
-                foreach ($grn->items as $item) {
-                    $product = Product::find($item->product_id);
-                    $product_acc = $product->acc_id;
-                    
-                    $product_t = Transaction::where('acc_id', $product_acc)->orderBy('id', 'desc')->first();
-                    $p_cb = $item->billed;
-                    if(empty($product_t)){
-                        $p_ob = OpeningBalance::where('acc_id', $product_acc)->value('amount');
-                        $p_cb += $p_ob;
-                    }else{
-                        $p_cb +=$product_t->current_balance;
-                    }
-                    Transaction::create([
-                        'business_id' => $grn->business_id,
-                        'acc_id'=>$product_acc,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'Item is purchased by this vendor: '.$vendor->name,
-                        'debit' => $item->billed,
-                        'credit' => 0.00,
-                        'current_balance' => $p_cb
-                    ]);
-                    
-                    
-                }
-            }
             // for vendor trasaction
             $vendor_t = Transaction::where('acc_id', $vendor_acc)->orderBy('id', 'desc')->first();
             $v_cb = $total_billed;
+
+            $business_t = Transaction::where('acc_id', $data->acc_id)->orderBy('id', 'desc')->first();
+            $b_cb = $total_billed;
             
-            // Check if any transaction exists for this vendor account
+            // Calculate updated balances
             if (empty($vendor_t)) {
-                // No prior transactions, get opening balance
                 $v_ob = OpeningBalance::where('acc_id', $vendor_acc)->value('amount');
-                $v_cb += $v_ob; // Add opening balance to the total billed
+                $v_cb = $v_ob + $total_billed; // Add opening balance to the billed amount
             } else {
-                // Prior transaction exists, add total billed to the last current balance
-                $v_cb += $vendor_t->current_balance;
+                $v_cb = $vendor_t->current_balance + $total_billed; // Add billed amount to previous balance
             }
+
+            if (empty($business_t)) {
+                $b_ob = OpeningBalance::where('acc_id', $data->acc_id)->value('amount');
+                $b_cb = $b_ob - $total_billed; // Subtract billed amount from opening balance
+            } else {
+                $b_cb = $business_t->current_balance - $total_billed; // Subtract billed amount from previous balance
+            }
+            // Credit amount to vendor's account
             Transaction::create([
-                'business_id' => $grn->business_id,
-                'acc_id'=>$vendor_acc,
+                'business_id' => $data->business_id,
+                'acc_id' => $vendor_acc,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'purchase item from this vendor: '.$vendor->name,
-                'debit' => 0.00,
-                'credit' => $total_billed,
-                'current_balance' => $v_cb
+                'description' => 'Payment made to vendor: ' . $vendor->name,
+                'debit' => 0.00, // No money deducted from vendor's side
+                'credit' => $total_billed, // Money credited to vendor
+                'current_balance' => $v_cb // Updated balance for vendor account
+            ]);
+
+            // Debit amount from business's account
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $data->acc_id,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Payment made to vendor: ' . $vendor->name,
+                'debit' => $total_billed, // Money debited from business account
+                'credit' => 0.00, // No money credited to business account
+                'current_balance' => $b_cb
             ]);
             
-            $account = OpeningBalance::where('acc_id',$data->acc_id)->first();
-            $account->update([
-                'amount' => $account->amount - $data->voucher_amount,
-                ]);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Voucher status change to PAID and trnsaction done successfully.',   

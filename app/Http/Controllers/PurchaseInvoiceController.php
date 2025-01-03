@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use DB;
+use Illuminate\Support\Facades\DB;
 use App\Models\GoodsReceiveNote;
 use App\Models\Log;
 use App\Models\PurchaseInvoice;

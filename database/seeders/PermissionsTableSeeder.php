@@ -94,6 +94,11 @@ class PermissionsTableSeeder extends Seeder
             'list purchase invoice',
             'edit purchase invoice',
             'approve purchase invoice',
+            'create employee',
+            'view employee',
+            'list employee',
+            'edit employee',
+            'approve employee',
         ];
 
         // Loop through each permission and create it

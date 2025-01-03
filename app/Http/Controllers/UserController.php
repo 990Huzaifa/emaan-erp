@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use DB; 
+use Illuminate\Support\Facades\DB;
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;

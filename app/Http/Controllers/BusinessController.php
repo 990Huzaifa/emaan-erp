@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Balance;
 use Exception;
 use Carbon\Carbon;
 use App\Models\Log;
@@ -134,6 +135,10 @@ class BusinessController extends Controller
                 'chart_of_account_id' => $COA->id,
             ]);
             OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+            Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);

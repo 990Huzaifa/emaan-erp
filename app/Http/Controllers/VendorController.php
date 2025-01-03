@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Balance;
 use App\Models\City;
 use Exception;
 use App\Models\Log;
@@ -169,6 +170,10 @@ class VendorController extends Controller
                 'ref_id' => $vendor->id,
             ]);
             OpeningBalance::create([
+                'acc_id' => $COA->id,
+                'amount' => $request->opening_balance ?? 0,
+            ]);
+            Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
@@ -468,6 +473,11 @@ class VendorController extends Controller
     
                     // Create opening balance
                     OpeningBalance::create([
+                        'acc_id' => $COA->id,
+                        'amount' => 0,
+                    ]);
+
+                    Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);
