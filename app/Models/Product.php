@@ -30,4 +30,9 @@ class Product extends Model
         'opening_balance',
         'is_active'
     ];
+
+    public function measurementUnit()
+    {
+        return $this->belongsTo(MeasurementUnit::class, 'measurement_unit_id', 'id');
+    }
 }

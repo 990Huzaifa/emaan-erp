@@ -11,18 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sale_quotations', function (Blueprint $table) {
+        Schema::create('delivery_notes', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('customer_id');
-            $table->foreign('customer_id')->references('id')->on('customers')->onDelete('cascade');
+            $table->unsignedBigInteger('sale_order_id');
+            $table->foreign('sale_order_id')->references('id')->on('sale_orders')->onDelete('cascade');
             $table->unsignedBigInteger('business_id');
             $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
-            $table->string('quotation_code');
-            $table->date('order_date');
-            $table->date('due_date');
-            $table->string('terms_of_payment')->nullable();
-            $table->string('remarks')->nullable();
-            $table->string('reference')->nullable();
+            $table->string('dn_code')->unique();
+            $table->date('dn_date');
+            $table->string('received_by');
+            $table->text('remarks')->nullable();
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
             $table->timestamps();
         });
@@ -33,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sale_quotations');
+        Schema::dropIfExists('delivery_notes');
     }
 };

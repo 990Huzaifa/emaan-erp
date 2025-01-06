@@ -43,8 +43,9 @@ class GRNController extends Controller
                 $query->select('id', 'title'); // Select product name and id
             }])
             ->where('business_id',$businessId)
+            ->join('purchase_orders','purchase_orders.id','=','goods_receive_notes.purchase_order_id')
             ->join('users', 'users.id', '=', 'goods_receive_notes.received_by') // Corrected join
-            ->select('goods_receive_notes.*', 'users.name as received_by')
+            ->select('goods_receive_notes.*', 'users.name as received_by', 'purchase_orders.order_code as po_code')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');

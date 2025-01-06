@@ -48,6 +48,13 @@ class PermissionController extends Controller
                     'approve purchase orders',
                     'delete purchase orders'
                 ],
+                'Sale Quotation' => [
+                    'list sale quotations',
+                    'view sale quotations',
+                    'create sale quotations',
+                    'edit sale quotations',
+                    'approve sale quotations',
+                ],
                 'Sale Order' => [
                     'list sale orders',
                     'view sale orders',
@@ -55,6 +62,13 @@ class PermissionController extends Controller
                     'edit sale orders',
                     'approve sale orders',
                     'delete sale orders'
+                ],
+                "Delivery Note" => [
+                    'list delivery notes',
+                    'view delivery notes',
+                    'create delivery notes',
+                    'edit delivery notes',
+                    'approve delivery notes'
                 ],
                 'Purchase Quotations' => [
                     'list purchase quotations',
