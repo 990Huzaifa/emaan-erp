@@ -79,6 +79,7 @@ class SaleOrderController extends Controller
                     'total_tax' => 'required|numeric',
                     'items' => 'required|array',
                     'items.*.product_id' => 'required|exists:products,id',
+                    'items.*.lot_id' => 'required|exists:lots,id',
                     'items.*.quantity' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
                     'items.*.total_price' => 'required|numeric',
@@ -136,6 +137,7 @@ class SaleOrderController extends Controller
                 SaleOrderItem::create([
                     'sale_order_id' => $data->id,
                     'product_id' => $item['product_id'],
+                    'lot_id' => $item['lot_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['total_price'],

@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreign('sale_quotation_id')->references('id')->on('sale_quotations')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->unsignedBigInteger('lot_id');
+            $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->integer('quantity');
             $table->timestamps();
         });

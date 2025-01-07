@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use App\Models\Lot;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\InventoryDetail;
 use Illuminate\Http\JsonResponse;
@@ -114,11 +116,62 @@ class InventoryDetailController extends Controller
         //
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+
+    public function inventoryProduct(): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list inventory detail')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = InventoryDetail::join('lots', 'inventory_details.lot_id', '=', 'lots.id')
+            ->join('products', 'inventory_details.product_id', '=', 'products.id')
+            ->select(
+                'products.id as product_id',
+                'products.title',
+                DB::raw('SUM(lots.quantity) as quantity'),
+                'lots.status'
+            )
+            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
+            ->orderBy('inventory_details.id', 'desc')->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Get the resource from storage by specified Lot id.
+     */
+    public function lotIndex(string $product_id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view inventory details')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = Lot::where('product_id',$product_id)->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }

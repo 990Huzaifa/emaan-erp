@@ -304,6 +304,7 @@ class GRNController extends Controller
                         $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                     } while (Lot::where('lot_code', $lot_code)->exists());
                     $lot = Lot::create([
+                        'purchase_order_id' => $data->purchase_order_id,
                         'product_id' => $item->product_id,
                         'lot_code' => $lot_code,
                         'vendor_id' => $data->purchase_order->vendor_id,

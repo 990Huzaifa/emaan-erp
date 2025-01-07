@@ -94,6 +94,19 @@ class PermissionsTableSeeder extends Seeder
             'list purchase invoice',
             'edit purchase invoice',
             'approve purchase invoice',
+
+            'create purchase return',
+            'view purchase return',
+            'list purchase return',
+            'edit purchase return',
+            'approve purchase return',
+
+            'create sale return',
+            'view sale return',
+            'list sale return',
+            'edit sale return',
+            'approve sale return',
+
             'create employee',
             'view employee',
             'list employee',

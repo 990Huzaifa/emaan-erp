@@ -214,6 +214,7 @@ class SaleQuotationController extends Controller
                     SaleQuotationItem::create([
                         'sale_quotation_id' => $id,
                         'product_id' => $item['product_id'],
+                        'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity']
                     ]);
                 }

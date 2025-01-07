@@ -12,6 +12,7 @@ class SaleQuotationItem extends Model
     protected $fillable = [
         'sale_quotation_id',
         'product_id',
+        'lot_id',
         'quantity'
     ];
 

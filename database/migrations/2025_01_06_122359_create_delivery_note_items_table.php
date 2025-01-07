@@ -17,9 +17,11 @@ return new class extends Migration
             $table->foreign('delivery_note_id')->references('id')->on('delivery_notes')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->unsignedBigInteger('lot_id');
+            $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->integer('quantity');
             $table->integer('delivered');
-            $table->decimal('billed', 8, 2);
+            $table->decimal('charged', 8, 2);
             $table->decimal('unit_price', 10, 2);
             $table->decimal('total_price', 10, 2);
             $table->decimal('tax', 10, 2)->default(0.00);

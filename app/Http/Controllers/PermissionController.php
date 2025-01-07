@@ -40,6 +40,13 @@ class PermissionController extends Controller
                     'delete product sub category',
                     'edit product sub category'
                 ],
+                'Purchase Quotations' => [
+                    'list purchase quotations',
+                    'view purchase quotations',
+                    'create purchase quotations',
+                    'edit purchase quotations',
+                    'approve purchase quotations'
+                ],                
                 'Purchase Order' => [
                     'list purchase orders',
                     'view purchase orders',
@@ -47,6 +54,20 @@ class PermissionController extends Controller
                     'edit purchase orders',
                     'approve purchase orders',
                     'delete purchase orders'
+                ],
+                'Good Received Note' => [
+                    'list goods received notes',
+                    'view goods received notes',
+                    'create goods received notes',
+                    'edit goods received notes',
+                    'approve goods received notes'
+                ],               
+                "Purchase Return" => [
+                    'create sale return',
+                    'view sale return',
+                    'list sale return',
+                    'edit sale return',
+                    'approve sale return',
                 ],
                 'Sale Quotation' => [
                     'list sale quotations',
@@ -70,20 +91,13 @@ class PermissionController extends Controller
                     'edit delivery notes',
                     'approve delivery notes'
                 ],
-                'Purchase Quotations' => [
-                    'list purchase quotations',
-                    'view purchase quotations',
-                    'create purchase quotations',
-                    'edit purchase quotations',
-                    'approve purchase quotations'
-                ],
-                'Good Received Note' => [
-                    'list goods received notes',
-                    'view goods received notes',
-                    'create goods received notes',
-                    'edit goods received notes',
-                    'approve goods received notes'
-                ],
+                "Sale Return" =>[
+                    'create purchase return',
+                    'view purchase return',
+                    'list purchase return',
+                    'edit purchase return',
+                    'approve purchase return',
+                ],                
                 'Employee' => [
                     'list employee',
                     'view employee',
@@ -101,6 +115,13 @@ class PermissionController extends Controller
                     'list purchase invoice',
                     'edit purchase invoice',
                     'approve purchase invoice'
+                ],
+                'Sales Invoice' =>[
+                    'create sales invoice',
+                    'view sales invoice',
+                    'list sales invoice',
+                    'edit sales invoice',
+                    'approve sales invoice'
                 ],
             ];
     

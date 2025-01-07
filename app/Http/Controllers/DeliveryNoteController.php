@@ -41,7 +41,7 @@ class DeliveryNoteController extends Controller
             $query = DeliveryNote::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])
-            ->where('business_id',$businessId)
+            ->where('delivery_notes.business_id',$businessId)
             ->join('sale_orders','sale_orders.id','=','delivery_notes.sale_order_id')
             ->join('users', 'users.id', '=', 'delivery_notes.received_by') // Corrected join
             ->select('delivery_notes.*', 'users.name as received_by', 'sale_orders.order_code as so_code')
@@ -85,6 +85,12 @@ class DeliveryNoteController extends Controller
                     'remarks' => 'nullable|string',
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.quantity' => 'required|numeric',
+                    'items.*.delivered' => 'required|numeric',
+                    'items.*.charged' => 'required|numeric',
+                    'items.*.unit_price' => 'required|numeric',
+                    'items.*.total_price' => 'required|numeric',
+                    'items.*.lot_id' => 'required|exists:lots,id',
+                    'items.*.tax' => 'required|numeric',
                 ],[
                     'sale_order_id.required' => 'Sale Order is required.',
                     'sale_order_id.exists' => 'Sale Order does not exist.',
@@ -96,8 +102,27 @@ class DeliveryNoteController extends Controller
 
                     'items.*.product_id.required' => 'Product is required.',
                     'items.*.product_id.exists' => 'Product does not exist.',
+
                     'items.*.quantity.required' => 'Quantity is required.',
                     'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                    'items.*.delivered.required' => 'Delivered is required.',
+                    'items.*.delivered.numeric' => 'Delivered must be a number.',
+
+                    'items.*.charged.required' => 'Charged is required.',
+                    'items.*.charged.numeric' => 'Charged must be a number.',
+
+                    'items.*.unit_price.required' => 'Unit Price is required.',
+                    'items.*.unit_price.numeric' => 'Unit Price must be a number.',
+
+                    'items.*.total_price.required' => 'Total Price is required.',
+                    'items.*.total_price.numeric' => 'Total Price must be a number.',
+
+                    'items.*.lot_id.required' => 'Lot is required.',
+                    'items.*.lot_id.exists' => 'Lot does not exist.',
+
+                    'items.*.tax.required' => 'Tax is required.',
+                    'items.*.tax.numeric' => 'Tax must be a number.',
                 ]
             );
             DB::beginTransaction();
@@ -118,7 +143,13 @@ class DeliveryNoteController extends Controller
                 DeliveryNoteItem::create([
                     'delivery_note_id' => $deliveryNote->id,
                     'product_id' => $item['product_id'],
+                    'lot_id' => $item['lot_id'],
                     'quantity' => $item['quantity'],
+                    'delivered' => $item['delivered'],
+                    'charged' => $item['charged'],
+                    'unit_price' => $item['unit_price'],
+                    'total_price' => $item['total_price'],
+                    'tax' => $item['tax'],
                 ]);
             }
             Log::create([

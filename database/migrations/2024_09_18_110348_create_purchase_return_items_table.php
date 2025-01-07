@@ -14,12 +14,12 @@ return new class extends Migration
         Schema::create('purchase_return_items', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('purchase_return_id');
-            $table->foreign('purchase_return_id')->references('id')->on('purchase_returns')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
+            $table->unsignedBigInteger('lot_id');
+            $table->integer('quantity');
+            $table->foreign('purchase_return_id')->references('id')->on('purchase_returns')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->decimal('quantity', 8, 2);
-            $table->decimal('unit_price', 8, 2);
-            $table->decimal('total_price', 8, 2);
+            $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->timestamps();
         });
     }

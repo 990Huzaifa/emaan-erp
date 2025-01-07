@@ -13,18 +13,19 @@ return new class extends Migration
     {
         Schema::create('purchase_returns', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('purchase_order_id');
-            $table->foreign('purchase_order_id')->references('id')->on('purchase_orders')->onDelete('cascade');
+            $table->unsignedBigInteger('grn_id');
             $table->unsignedBigInteger('business_id');
-            $table->foreign('business_id')->references('businesses')->onUpdate('cascade')->onDelete('cascade');
-            $table->unsignedBigInteger('chart_of_account_id');
-            $table->foreign('chart_of_account_id')->references('chart_of_accounts')->onUpdate('cascade')->onDelete('cascade');
-            $table->string('return_code');
+            $table->unsignedBigInteger('vendor_id');
+            $table->unsignedBigInteger('purchase_order_id');
+            $table->foreign('grn_id')->references('id')->on('goods_receive_notes')->onDelete('cascade');
+            $table->foreign('purchase_order_id')->references('id')->on('purchase_orders')->onDelete('cascade');
+            $table->foreign('business_id')->references('id')->on('businesses')->onUpdate('cascade')->onDelete('cascade');
+            $table->foreign('vendor_id')->references('id')->on('vendors')->onUpdate('cascade')->onDelete('cascade');
+            $table->string('pr_code');
             $table->string('return_by');
             $table->date('return_date');
             $table->string('reason');
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
-            $table->decimal('total', 8, 2);
             $table->timestamps();
         });
     }
