@@ -145,7 +145,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('purchase-voucher/{grn_id}/previous',[PurchaseVoucherController::class,'previousData']);
 
     Route::apiResource('purchase-return',PurchaseReturnController::class)->only('index','store','show','update');
-
+    Route::put('status/{id}/purchase-return',[PurchaseReturnController::class,'updateStatus']);
 
     Route::apiResource('sale-quotation',SaleQuotationController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-quotation',[SaleQuotationController::class,'updateStatus']);
