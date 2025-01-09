@@ -140,8 +140,8 @@ class PurchaseReturnController extends Controller
                     ], 403);
                 }
             }
-            $data = PurchaseReturn::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
+            $data = PurchaseReturn::with(['items' => function ($query) {
+                $query->with(['product:id,title', 'lot:id,lot_code']);
             }])
             ->join('users','purchase_returns.return_by','=','users.id')
             ->join('goods_receive_notes', 'purchase_returns.grn_id', '=', 'goods_receive_notes.id')

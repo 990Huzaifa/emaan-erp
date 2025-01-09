@@ -176,13 +176,13 @@ class SaleOrderController extends Controller
                     ], 403);
                 }
             }
-            $data = SaleOrder::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
+            $data = SaleOrder::with(['items' => function ($query) {
+                $query->with(['product:id,title', 'lot:id,lot_code']);
             }])
             ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
             ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
-            ->where('sale_orders.id', $id) // Filter by the specific sale order ID
-            ->firstOrFail();
+            ->find($id);
+            if (empty($data)) throw new Exception('No SO found', 404);
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -242,10 +242,11 @@ class SaleOrderController extends Controller
             $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
             $requestItemIds = [];
             foreach ($request->items as $item) {
-                if (isset($item['id']) && isset($existingItems[$item['id']])) {
+                if (empty($item['id']) && isset($item['id']) && isset($existingItems[$item['id']])) {
                     // Update existing item
                     $existingItems[$item['id']]->update([
                         'quantity' => $item['quantity'],
+                        'lot_id' => $item['lot_id'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
                         'tax' => $item['tax'],
@@ -256,6 +257,7 @@ class SaleOrderController extends Controller
                     SaleOrderItem::create([
                         'purchase_order_id' => $id,
                         'product_id' => $item['product_id'],
+                        'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
