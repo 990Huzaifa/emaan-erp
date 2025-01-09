@@ -23,4 +23,9 @@ class SaleOrderItem extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+
+    public function lot()
+    {
+        return $this->belongsTo(Lot::class, 'lot_id');
+    }
 }

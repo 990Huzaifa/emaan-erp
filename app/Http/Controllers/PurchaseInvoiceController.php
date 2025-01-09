@@ -27,7 +27,7 @@ class PurchaseInvoiceController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view purchase invoice')) {
+                if (!$user->hasBusinessPermission($businessId, 'list purchase invoice')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -38,9 +38,10 @@ class PurchaseInvoiceController extends Controller
             $query = PurchaseInvoice::with(['items.product' => function ($query) {
                 $query->select('id', 'title');
             }])
+            ->join('goods_receive_notes', 'purchase_invoices.grn_id', '=', 'goods_receive_notes.id')
             ->join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id') // Join with vendors
-            ->select('purchase_invoices.*', 'vendors.name as vendor_name')
-            ->where('business_id',$businessId)
+            ->select('purchase_invoices.*', 'vendors.name as vendor_name','goods_receive_notes.grn_code')
+            ->where('purchase_invoices.business_id',$businessId)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');

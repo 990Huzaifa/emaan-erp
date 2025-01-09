@@ -94,7 +94,7 @@ class GRNController extends Controller
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
-
+            DB::beginTransaction();
             do {
                 $grn_code = 'GRN-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (GoodsReceiveNote::where('grn_code', $grn_code)->exists());
@@ -124,11 +124,13 @@ class GRNController extends Controller
                 'user_id' => $user->id,
                 'description' => 'user created GRN',
             ]);
-
+            DB::commit();
             return response()->json($GRN,200);
         }catch(QueryException $e){
+            DB::rollBack(); 
             return response()->json(['DB error' => $e->getMessage()], 400);            
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -199,7 +201,7 @@ class GRNController extends Controller
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
-
+            DB::beginTransaction();
             $GRN = GoodsReceiveNote::find($id);
             $GRN->update([
                 'purchase_order_id' => $request->purchase_order_id,
@@ -238,11 +240,13 @@ class GRNController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update GRN',   
             ]);
-
+            DB::commit();
             return response()->json($GRN,200);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

@@ -107,6 +107,7 @@ class SaleQuotationController extends Controller
                 SaleQuotationItem::create([
                     'sale_quotation_id' => $saleQuotation->id,
                     'product_id' => $product['product_id'],
+                    'lot_id' => $product['lot_id'],
                     'quantity' => $product['quantity'],
                 ]);
             }
@@ -133,8 +134,10 @@ class SaleQuotationController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
+            
+            // Check user role and permissions
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view sale quotations')) {
@@ -143,17 +146,25 @@ class SaleQuotationController extends Controller
                     ], 403);
                 }
             }
-            $saleQuotation = SaleQuotation::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])->find($id);
+            
+            // Fetch the sale quotation with items and lot codes for each product
+            $saleQuotation = SaleQuotation::with(['items' => function ($query) {
+                $query->with(['product:id,title', 'lot:id,lot_code']);
+            }])
+            ->find($id);
+    
+            if (!$saleQuotation) {
+                return response()->json(['error' => 'Sale quotation not found'], 404);
+            }
+    
             return response()->json($saleQuotation);
-        }catch (QueryException $e) {
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
-        
     }
+
 
     /**
      * Update the specified resource in storage.

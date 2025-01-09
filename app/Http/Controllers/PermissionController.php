@@ -63,11 +63,11 @@ class PermissionController extends Controller
                     'approve goods received notes'
                 ],               
                 "Purchase Return" => [
-                    'create sale return',
-                    'view sale return',
-                    'list sale return',
-                    'edit sale return',
-                    'approve sale return',
+                    'create purchase return',
+                    'view purchase return',
+                    'list purchase return',
+                    'edit purchase return',
+                    'approve purchase return',                    
                 ],
                 'Sale Quotation' => [
                     'list sale quotations',
@@ -92,11 +92,11 @@ class PermissionController extends Controller
                     'approve delivery notes'
                 ],
                 "Sale Return" =>[
-                    'create purchase return',
-                    'view purchase return',
-                    'list purchase return',
-                    'edit purchase return',
-                    'approve purchase return',
+                    'create sale return',
+                    'view sale return',
+                    'list sale return',
+                    'edit sale return',
+                    'approve sale return',
                 ],                
                 'Employee' => [
                     'list employee',

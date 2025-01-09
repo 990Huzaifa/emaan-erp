@@ -307,11 +307,35 @@ class SaleOrderController extends Controller
         }
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function list(Request $request): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list sale orders')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $searchQuery = $request->query('search');
+            $query = SaleOrder::with(['items.product' => function ($query) {
+                $query->select('id', 'title'); // Select product name and id
+            }])// Select fields including vendor name
+            ->orderBy('sale_orders.id', 'desc')->where('sale_orders.business_id',$businessId);
+            if (!empty($searchQuery)) {
+                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+            }
+            // Execute the query with pagination
+            $data = $query->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }

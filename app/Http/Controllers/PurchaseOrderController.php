@@ -97,7 +97,6 @@ class PurchaseOrderController extends Controller
                 'items.required' => 'Items are required.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            
             do {
                 $order_code = 'PO-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PurchaseOrder::where('order_code', $order_code)->exists());
@@ -109,7 +108,7 @@ class PurchaseOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
-                'terms_of_payment' => $request->terms_of_payment ?? null,
+                'terms_of_payment' => $request->terms_conditions ?? null,
                 'remarks' => $request->remarks ?? null,
             ]);
             foreach($request->items as $item){
@@ -177,11 +176,10 @@ class PurchaseOrderController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();
-            
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
@@ -222,7 +220,7 @@ class PurchaseOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
-                'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
+                'terms_of_payment' => $request->terms_conditions ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
             ]);
             $existingItems = PurchaseOrderItem::where('purchase_order_id', $id)->get()->keyBy('id');
