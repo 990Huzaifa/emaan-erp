@@ -11,6 +11,7 @@ class Lot extends Model
 
     protected $fillable = [
         'product_id',
+        'grn_id',
         'vendor_id',
         'lot_code',
         'quantity',

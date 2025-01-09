@@ -53,7 +53,7 @@ class AuthController extends Controller
             if($user->is_verify == 0) throw new Exception('Account not verified.', 400);
             if($user->status == 0) throw new Exception('Account not active.', 400);
             if (!Hash::check($request->password, $user->password)) throw new Exception('Invalid login credentials.', 404);
-            $user->tokens()->delete();
+            // $user->tokens()->delete();
             $token = $user->createToken('authToken');
             $this->accessToken = $token->plainTextToken;
             Log::create([

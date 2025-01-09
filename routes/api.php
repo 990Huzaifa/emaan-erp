@@ -131,6 +131,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('grn',GRNController::class)->only('index','store','show','update');
     Route::put('status/{id}/grn',[GRNController::class,'updateStatus']);
     Route::get('list/grn',[GRNController::class,'list']);
+    Route::get('approve-grn/{id}',[GRNController::class,'approveGRNShow']);
 
     Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
     Route::get('inventory-products',[InventoryDetailController::class,'inventoryProduct']);

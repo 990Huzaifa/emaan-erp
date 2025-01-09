@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('purchase_return_items', function (Blueprint $table) {
+        Schema::create('sale_return_items', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('purchase_return_id');
+            $table->unsignedBigInteger('sale_return_id');
             $table->unsignedBigInteger('product_id');
             $table->unsignedBigInteger('lot_id');
             $table->integer('quantity');
             $table->decimal('unit_price', 8, 2);
             $table->decimal('tota', 25, 2);
-            $table->foreign('purchase_return_id')->references('id')->on('purchase_returns')->onDelete('cascade');
+            $table->foreign('sale_return_id')->references('id')->on('sale_returns')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->timestamps();
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('purchase_return_items');
+        Schema::dropIfExists('sale_return_items');
     }
 };

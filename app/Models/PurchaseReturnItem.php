@@ -14,6 +14,8 @@ class PurchaseReturnItem extends Model
         'product_id',
         'lot_id',
         'quantity',
+        'unit_price',
+        'total'
     ];
 
 

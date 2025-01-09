@@ -309,6 +309,7 @@ class GRNController extends Controller
                     } while (Lot::where('lot_code', $lot_code)->exists());
                     $lot = Lot::create([
                         'purchase_order_id' => $data->purchase_order_id,
+                        'grn_id' => $id,
                         'product_id' => $item->product_id,
                         'lot_code' => $lot_code,
                         'vendor_id' => $data->purchase_order->vendor_id,
@@ -366,5 +367,38 @@ class GRNController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }    
+    }
+
+    public function approveGRNShow($id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view goods received notes')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = GoodsReceiveNote::with(['items.product' => function ($query) use ($id) {
+                $query->select('products.id', 'products.title')
+                    ->join('lots', function ($join) use ($id) {
+                        $join->on('products.id', '=', 'lots.product_id')
+                            ->where('lots.grn_id', '=', $id);
+                    })
+                    ->addSelect('lots.id as lot_id', 'lots.lot_code'); // Include lot information
+            }])
+            
+            ->where('id', $id) // Filter by the specific purchase order ID
+            ->firstOrFail();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
