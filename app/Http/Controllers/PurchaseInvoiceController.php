@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Barryvdh\DomPDF\Facade as PDF;
 
 class PurchaseInvoiceController extends Controller
 {
@@ -235,5 +236,52 @@ class PurchaseInvoiceController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }    
+    }
+
+
+    public function print(string $id)
+    {
+        try {
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view purchase invoice')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+    
+            $data = PurchaseInvoice::with(['items.product' => function ($query) {
+                $query->select('id', 'title');
+            }])
+            ->join('businesses', 'purchase_invoices.business_id', '=', 'businesses.id')
+            ->join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id')
+            ->join('cities', 'vendors.city_id', '=', 'cities.id')
+            ->select(
+                'purchase_invoices.*',
+                'vendors.name as vendor_name',
+                'vendors.address as vendor_address',
+                'vendors.phone as vendor_phone',
+                'businesses.name as business_name',
+                'cities.name as city_name'
+            )
+            ->where('purchase_invoices.id', $id)->first();
+    
+            if (!$data) {
+                return redirect()->back()->with('error', 'Invoice not found.');
+            }
+    
+            // Use the Blade file to generate the PDF
+            $pdf = PDF::loadView('invoice.purchase-invoice', compact('data'));
+    
+            // Return the generated PDF for download
+            return $pdf->download('purchase-invoice-' . $id . '.pdf');
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
     }
 }

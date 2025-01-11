@@ -327,7 +327,8 @@ class SaleOrderController extends Controller
             $query = SaleOrder::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])// Select fields including vendor name
-            ->orderBy('sale_orders.id', 'desc')->where('sale_orders.business_id',$businessId);
+            ->orderBy('sale_orders.id', 'desc')->where('sale_orders.business_id',$businessId)
+            ->where('sale_orders.status','=',1);
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }

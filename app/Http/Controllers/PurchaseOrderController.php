@@ -317,7 +317,7 @@ class PurchaseOrderController extends Controller
             $query = PurchaseOrder::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])// Select fields including vendor name
-            ->orderBy('purchase_orders.id', 'desc')->where('purchase_orders.business_id',$businessId);
+            ->orderBy('purchase_orders.id', 'desc')->where('status',1)->where('purchase_orders.business_id',$businessId);
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }

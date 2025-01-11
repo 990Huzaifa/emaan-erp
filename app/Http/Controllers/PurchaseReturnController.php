@@ -6,6 +6,7 @@ use App\Models\GoodsReceiveNote;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseReturnItem;
 use Exception;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -112,8 +113,10 @@ class PurchaseReturnController extends Controller
                 $lot_id = Lot::where('product_id', $item['product_id'])->where('purchase_order_id', $po_id)->value('id');
                 $data->items()->create([
                     'product_id' => $item['product_id'],
-                    'lot_id' => $lot_id,
-                    'quantity' => $item['quantity']
+                    'lot_id' => $item['lot_id'],
+                    'unit_price' => $item['unit_price'],
+                    'quantity' => $item['quantity'],
+                    'total' => $item['total']
                 ]);
             }
             DB::commit();
@@ -169,7 +172,66 @@ class PurchaseReturnController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create purchase return')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $validator = Validator::make($request->all(), [
+                'grn_id' => 'required|exists:goods_receive_notes,id',
+                'return_date' => 'required|date',
+                'reason' => 'required|string',
+                'items' => 'required|array',
+                'items.*.product_id' => 'required|exists:products,id',
+                'items.*.quantity' => 'required|numeric',
+            ],[
+                'grn_id.required' => 'GRN is required.',
+                'grn_id.exists' => 'GRN does not exist.',
+                'return_date.required' => 'Return date is required.',
+                'reason.required' => 'Reason is required.',
+                'items.required' => 'Items are required.',
+                'items.*.product_id.required' => 'Product is required.',
+                'items.*.product_id.exists' => 'Product does not exist.',
+                'items.*.quantity.required' => 'Quantity is required.',
+            ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            DB::beginTransaction();
+            $data = PurchaseReturn::find($id);
+            if (!$data) throw new Exception('Purchase Return not found', 404);
+            foreach ($request->items as $item) {
+                if (!$data->items()->where('product_id', $item['product_id'])->exists()) {
+                    $lot_id = Lot::where('product_id', $item['product_id'])->where('purchase_order_id', $data->purchase_order_id)->value('id');
+                    $data->items()->create([
+                        'product_id' => $item['product_id'],
+                        'lot_id' => $item['lot_id'],
+                        'unit_price' => $item['unit_price'],
+                        'quantity' => $item['quantity'],
+                        'total' => $item['total']
+                    ]);
+                }else{
+                    $lot_id = Lot::where('product_id', $item['product_id'])->where('purchase_order_id', $data->purchase_order_id)->value('id');
+                    $data->items()->where('product_id', $item['product_id'])->update([
+                        'lot_id' => $item['lot_id'],
+                        'unit_price' => $item['unit_price'],
+                        'quantity' => $item['quantity'],
+                        'total' => $item['total']
+                    ]);
+                }
+            }
+            DB::commit();
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     public function updateStatus(Request $request,string $id): JsonResponse
