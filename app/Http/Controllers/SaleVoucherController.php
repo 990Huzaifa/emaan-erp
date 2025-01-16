@@ -2,17 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Balance;
-use App\Models\GoodsReceiveNote;
-use App\Models\PurchaseOrder;
-use App\Models\PurchaseVoucher;
-use App\Models\Transaction;
-use App\Models\Product;
-use App\Models\Lot;
+use App\Models\Customer;
 use App\Models\Log;
-use App\Models\InventoryDetail;
-use App\Models\Vendor;
 use App\Models\OpeningBalance;
+use App\Models\SaleVoucher;
+use App\Models\Transaction;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -21,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class PurchaseVoucherController extends Controller
+class SaleVoucherController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -34,7 +28,7 @@ class PurchaseVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list purchase voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'list sale voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -42,21 +36,23 @@ class PurchaseVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = PurchaseVoucher::select('purchase_vouchers.*','vendors.name as vendor_name','chart_of_accounts.name as acc_name')
-            ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
-            ->join('chart_of_accounts','purchase_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->where('purchase_vouchers.business_id',$user->login_business)
+            $query = SaleVoucher::select('sale_vouchers.*','customers.name as customer_name','chart_of_accounts.name as acc_name')
+            ->join('customers','sale_vouchers.customer_id', '=', 'customers.id')
+            ->join('chart_of_accounts','sale_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            ->where('sale_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query->where('purchase_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
+                $query->where('sale_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
                 
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
             return response()->json($data,200);
+
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        }
+        catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -71,7 +67,7 @@ class PurchaseVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create purchase voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'create sale voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -80,7 +76,7 @@ class PurchaseVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'vendor_id' => 'required|exists:vendors,id',
+                    'customer_id' => 'required|exists:customers,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
@@ -114,9 +110,9 @@ class PurchaseVoucherController extends Controller
             DB::beginTransaction();
             do {
                 $voucher_code = 'PV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (PurchaseVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = PurchaseVoucher::create([
-                'vendor_id' => $request->vendor_id,
+            } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
+            $data = SaleVoucher::create([
+                'customer_id' => $request->customer_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
                 'payment_method' => $request->payment_method,
@@ -148,14 +144,14 @@ class PurchaseVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view purchase voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'view sale voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
 
-            $data = PurchaseVoucher::find($id);
+            $data = SaleVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             // $grn_id = $data->grn_id;
 
@@ -179,14 +175,14 @@ class PurchaseVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'approve sale voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
 
-            $data = PurchaseVoucher::find($id);
+            $data = SaleVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 400);
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
@@ -194,51 +190,33 @@ class PurchaseVoucherController extends Controller
                 'status'=>1
                 ]);
             // transaction
-            $vendor = Vendor::find($data->vendor_id);
-            $vendor_acc = $vendor->acc_id;
+            $customer = Customer::find($data->customer_id);
+            $customer_acc = $customer->acc_id;
             // for products
             $total_billed = $data->voucher_amount;
 
-            // for vendor trasaction
-            $vendor_t = Transaction::where('acc_id', $vendor_acc)->orderBy('id', 'desc')->first();
-            $v_cb = $total_billed;
-
-            $business_t = Transaction::where('acc_id', $data->acc_id)->orderBy('id', 'desc')->first();
-            $b_cb = $total_billed;
+            $c_cb = calculateBalance($customer_acc, $total_billed, true); // Debit customer's account
+            $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
             
-            // Calculate updated balances
-            if (empty($vendor_t)) {
-                $v_ob = OpeningBalance::where('acc_id', $vendor_acc)->value('amount');
-                $v_cb = $v_ob + $total_billed; // Add opening balance to the billed amount
-            } else {
-                $v_cb = $vendor_t->current_balance + $total_billed; // Add billed amount to previous balance
-            }
-
-            if (empty($business_t)) {
-                $b_ob = OpeningBalance::where('acc_id', $data->acc_id)->value('amount');
-                $b_cb = $b_ob - $total_billed; // Subtract billed amount from opening balance
-            } else {
-                $b_cb = $business_t->current_balance - $total_billed; // Subtract billed amount from previous balance
-            }
-            // Credit amount to vendor's account
+            // Debit amount to customer's account
             Transaction::create([
                 'business_id' => $data->business_id,
-                'acc_id' => $vendor_acc,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment received by vendor: ' . $vendor->name,
-                'debit' => 0.00, // No money deducted from vendor's side
-                'credit' => $total_billed, // Money credited to vendor
-                'current_balance' => $v_cb // Updated balance for vendor account
+                'acc_id' => $customer_acc,
+                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Payment made by customer: ' . $customer->name,
+                'debit' => $total_billed, // No money deducted from customer's side
+                'credit' => 0.00, // Money credited to customer
+                'current_balance' => $c_cb // Updated balance for customer account
             ]);
 
-            // Debit amount from business's account
+            // Credit amount from business's account
             Transaction::create([
                 'business_id' => $data->business_id,
                 'acc_id' => $data->acc_id,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment send to vendor: ' . $vendor->name,
-                'debit' => $total_billed, // Money debited from business account
-                'credit' => 0.00, // No money credited to business account
+                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Payment received from customer: ' . $customer->name,
+                'debit' => 0.00, // Money debited from business account
+                'credit' => $total_billed, // No money credited to business account
                 'current_balance' => $b_cb
             ]);
             
@@ -246,6 +224,7 @@ class PurchaseVoucherController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
             ]);
+
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -257,27 +236,19 @@ class PurchaseVoucherController extends Controller
         }
     }
 
-    public function previousData(Request $request, string $grn_id): JsonResponse
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
     {
-        try{
-            $user = Auth::user();            
-            // Check if the user has the required permission
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view purchase voucher')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-            
-            $data = PurchaseVoucher::where('grn_id',$grn_id)->get();
+        //
+    }
 
-            return response()->json($data, 200);
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);            
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
     }
 }

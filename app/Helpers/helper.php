@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\OpeningBalance;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use App\Models\ChartOfAccount;
 
@@ -244,4 +246,15 @@ function updateChildAccounts($parentAcc, $oldParentCode, $newParentCode)
         // Recursively update the child accounts of this child
         updateChildAccounts($child, $oldChildCode, $newChildCode);
     }
+}
+
+
+function calculateBalance($acc_id, $change, $isDebit = true): float
+{
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    if ($lastTransaction) {
+        return $isDebit ? $lastTransaction->current_balance - $change : $lastTransaction->current_balance + $change;
+    }
+    $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
+    return $isDebit ? $openingBalance - $change : $openingBalance + $change;
 }

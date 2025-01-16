@@ -84,11 +84,13 @@ class PermissionsTableSeeder extends Seeder
             'view measurement unit',
             'create measurement unit',
             'edit measurement unit',
+            
             'create sale voucher',
             'view sale voucher',
             'list sale voucher',
             'edit sale voucher',
             'approve sale voucher',
+
             'create purchase invoice',
             'view purchase invoice',
             'list purchase invoice',
@@ -106,6 +108,12 @@ class PermissionsTableSeeder extends Seeder
             'list sale return',
             'edit sale return',
             'approve sale return',
+
+            'list sale receipt',
+            'view sale receipt',
+            'create sale receipt',
+            'edit sale receipt',
+            'approve sale receipt',
 
             'create employee',
             'view employee',

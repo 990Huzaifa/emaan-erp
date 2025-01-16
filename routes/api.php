@@ -7,6 +7,9 @@ use App\Http\Controllers\InventoryDetailController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\PurchaseVoucherController;
 use App\Http\Controllers\SaleQuotationController;
+use App\Http\Controllers\SaleReceiptController;
+use App\Http\Controllers\SaleReturnController;
+use App\Http\Controllers\SaleVoucherController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -139,8 +142,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('transaction',TransactionController::class)->only('index','show','update');
     
-    // Route::get('ledger',[LedgerController::class,'index']);
-    Route::get('ledger/{acc_id}',[LedgerController::class,'list']);
+    
     
     Route::apiResource('purchase-voucher',PurchaseVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-voucher',[PurchaseVoucherController::class,'updateStatus']);
@@ -158,10 +160,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('delivery-note',DeliveryNoteController::class)->only('index','store','show','update');
     Route::put('status/{id}/delivery-note',[DeliveryNoteController::class,'updateStatus']);
+    Route::get('list/dn',[DeliveryNoteController::class,'list']);
 
+    Route::apiResource('sale-receipt',SaleReceiptController::class)->only('index','store','show','update');
+    Route::put('status/{id}/sale-receipt',[SaleReceiptController::class,'updateStatus']);
+
+    Route::apiResource('sale-voucher',SaleVoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/sale-voucher',[SaleVoucherController::class,'updateStatus']);
+
+    Route::apiResource('sale-return',SaleReturnController::class)->only('index','store','show','update');
+    Route::put('status/{id}/sale-return',[SaleReturnController::class,'updateStatus']);
 
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);
+
+    // Route::get('ledger',[LedgerController::class,'index']);
+    Route::get('ledger/{acc_id}',[LedgerController::class,'list']);
+    Route::get('fetch-accounts',[LedgerController::class,'listAccounts']);
 
 });
 

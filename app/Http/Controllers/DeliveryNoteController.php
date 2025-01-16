@@ -174,7 +174,7 @@ class DeliveryNoteController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -352,7 +352,7 @@ class DeliveryNoteController extends Controller
                 foreach ($data->items as $item) {
                     $inventory_details = InventoryDetail::where('lot_id', $item->lot_id)->first();
                     $inventory_details->update([
-                        'quantity' => $inventory_details->quantity - $item->quantity,
+                        'stock' => $inventory_details->stock - $item->quantity,
                     ]);
                 }
             }
@@ -370,5 +370,30 @@ class DeliveryNoteController extends Controller
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+
+    public function list(): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list delivery notes')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            
+            $data = DeliveryNote::select('id','dn_code')->where('status',1)->where('business_id',$businessId)->get();
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }    
     }
 }

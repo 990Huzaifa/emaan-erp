@@ -18,7 +18,7 @@ return new class extends Migration
             $table->unsignedBigInteger('lot_id');
             $table->integer('quantity');
             $table->decimal('unit_price', 8, 2);
-            $table->decimal('tota', 25, 2);
+            $table->decimal('total_price', 25, 2);
             $table->foreign('sale_return_id')->references('id')->on('sale_returns')->onDelete('cascade');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');

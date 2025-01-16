@@ -8,4 +8,24 @@ use Illuminate\Database\Eloquent\Model;
 class SaleReturnItem extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'sale_return_id',
+        'product_id',
+        'lot_id',
+        'quantity',
+        'unit_price',
+        'total'
+    ];
+
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function lot()
+    {
+        return $this->belongsTo(Lot::class, 'lot_id');
+    }
 }

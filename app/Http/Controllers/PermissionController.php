@@ -91,6 +91,20 @@ class PermissionController extends Controller
                     'edit delivery notes',
                     'approve delivery notes'
                 ],
+                "Sale Receipt" =>[
+                    'list sale receipt',
+                    'view sale receipt',
+                    'create sale receipt',
+                    'edit sale receipt',
+                    'approve sale receipt'
+                ],
+                "Sale Voucher" =>[
+                    'create sale voucher',
+                    'view sale voucher',
+                    'list sale voucher',
+                    'edit sale voucher',
+                    'approve sale voucher'
+                ],
                 "Sale Return" =>[
                     'create sale return',
                     'view sale return',

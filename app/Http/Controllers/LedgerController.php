@@ -99,7 +99,7 @@ class LedgerController extends Controller
         }
     }
     
-    public  function listCOA($name):JsonResponse
+    public  function listAccounts(Request $request):JsonResponse
     {
         try{
             $user = Auth::user();
@@ -111,11 +111,12 @@ class LedgerController extends Controller
                     ], 403);
                 }
             }
-            
+            $name = $request->query('name');
+            if(empty($name)) throw new Exception('Account name Required', 400);
             $parent_code = null;
             
-            if($name == 'CUSTOMERS'){
-                $parent_code = ChartOfAccount::select('code')->where('name',$name)->where('business_id',$businessId)->get();
+            if ($name === 'CUSTOMERS') {
+                $parent_code = ChartOfAccount::select('code')->where('name',$name)->get();
             }
             else if($name == 'VENDORS'){
                 $parent_code = ChartOfAccount::select('code')->where('name',$name)->get();

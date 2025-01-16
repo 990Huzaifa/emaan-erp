@@ -19,7 +19,7 @@ return new class extends Migration
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->unsignedBigInteger('lot_id');
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
-            $table->decimal('quantity', 8, 2);
+            $table->bigInteger('quantity');
             $table->decimal('unit_price', 8, 2);
             $table->decimal('total_price', 8, 2);
             $table->decimal('tax', 10, 2)->default(0.00);
