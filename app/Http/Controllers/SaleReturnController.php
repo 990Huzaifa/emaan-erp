@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\DeliveryNote;
+use App\Models\InventoryDetail;
+use App\Models\Log;
+use App\Models\Lot;
 use App\Models\SaleOrder;
 use App\Models\SaleReturn;
 use Exception;
@@ -192,8 +195,47 @@ class SaleReturnController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function updateStatus(Request $request,string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve sale return')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = SaleReturn::find($id);
+            
+            DB::beginTransaction();
+            foreach ($data->items as $item) {
+                $inventory_detail = InventoryDetail::where('lot_id',$item->lot_id)->first();
+                $lot = Lot::find($item->lot_id);
+                $inventory_detail->update([
+                    'stock' => $inventory_detail->stock + $item->quantity,
+                ]);
+                $lot->update([
+                    'quantity' => $lot->quantity + $item->quantity,
+                ]);
+            }
+            $data->update([
+                'status' => $request->status
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Update Purchase Return Status',   
+            ]);
+            DB::commit();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
+
 }

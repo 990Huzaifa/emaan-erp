@@ -155,11 +155,15 @@ class PurchaseVoucherController extends Controller
                 }
             }
 
-            $data = PurchaseVoucher::find($id);
+            $data = PurchaseVoucher::select(
+                'purchase_vouchers.*',
+                'vendors.name as vendor_name',
+                'chart_of_accounts.name as acc_name'
+                )
+                ->join('vendors','purchase_vouchers.vendor_id','=','vendors.id')
+                ->join('chart_of_accounts','purchase_vouchers.acc_id','=','chart_of_accounts.id')
+                ->find($id);
             if (empty($data)) throw new Exception('No data found', 404);
-            // $grn_id = $data->grn_id;
-
-            // $previous_data = PurchaseVoucher::where('grn_id', $grn_id)->where('id','<>',$id)->get();
 
             return response()->json($data, 200);
         }catch(QueryException $e){

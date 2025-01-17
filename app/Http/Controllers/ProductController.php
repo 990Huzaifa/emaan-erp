@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
 
 
+
 class ProductController extends Controller
 {
     protected $user;
@@ -170,7 +171,10 @@ class ProductController extends Controller
             $subcategory = ProductSubCategory::find($request->sub_category_id);
             $acc = ChartOfAccount::find($subcategory->acc_id);
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
-            $COA = createCOA($request->title,$acc->code);
+
+            DB::beginTransaction();
+            $title = strtoupper($request->title);
+            $COA = createCOA($title,$acc->code);
             $image = null;
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
@@ -179,7 +183,7 @@ class ProductController extends Controller
                 $image = 'product-image/' . $image_name;
             }
             $product = Product::create([
-                'title' => $request->title,
+                'title' => $title,
                 'brand_name' => $request->brand_name ?? null,
                 'terms_of_payment' => $request->terms_of_payment ?? null,
                 'p_code' => $p_code,
@@ -210,11 +214,14 @@ class ProductController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User store product',
             ]);
+            DB::commit();
             return response()->json($product);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -321,7 +328,10 @@ class ProductController extends Controller
             $subcategory = ProductSubCategory::find($request->sub_category_id);
             $acc = ChartOfAccount::find($subcategory->acc_id);
             if(empty($acc)) throw new Exception('COA not found', 404);
-            $COA = updateCOA($product->acc_id,$request->title,$acc->code);
+
+            DB::beginTransaction();
+            $title = strtoupper($request->title);
+            $COA = updateCOA($product->acc_id,$title,$acc->code);
             $image = $product->image; // Keep current image by default
             $oldImagePath = public_path($product->image); // Path to the old image
 
@@ -340,7 +350,7 @@ class ProductController extends Controller
             
         
             $product->update([
-                'title' => $request->title,
+                'title' => $title,
                 'brand_name' => $request->brand_name ?? null,
                 'terms_of_payment' => $request->terms_of_payment ?? null,
                 'p_code' => $product->p_code,
@@ -360,12 +370,14 @@ class ProductController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User update product',
             ]);
-            
+            DB::commit();
             return response()->json($product,200);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -532,11 +544,12 @@ class ProductController extends Controller
                     // Get COA
                     $acc = ChartOfAccount::find($subcategory->acc_id);
                     if(empty($acc)) throw new Exception('Inventory COA not found');
-                    $COA = createCOA($data['title'], $acc->code);
+                    $title = strtoupper($data['title']);
+                    $COA = createCOA($title, $acc->code);
     
                     // Create product
                     $product = Product::create([
-                        'title' => $data['title'],
+                        'title' => $title,
                         'p_code' => $p_code,
                         'sku' => $sku_no,
                         'measurement_unit_id' => $measurementUnit->id,

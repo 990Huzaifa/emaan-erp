@@ -95,15 +95,22 @@ class EmployeeController extends Controller
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'payroll' => 'required|numeric'
+                'payroll' => 'required|numeric',
+                'is_allowance' => 'required|boolean',
+                'allowance_cycle' => 'required_if:is_allowance,true|in:monthly,yearly',
+                'allowance' => 'required_if:is_allowance,true|numeric',
+                'is_tax' => 'required|boolean',
+                'tax_cycle' => 'required_if:is_tax,true|in:monthly,yearly',
+                'tax' => 'required_if:is_tax,true|numeric',
+                'is_bonus' => 'required|boolean',
+                'bonus_cycle' => 'required_if:is_bonus,true|in:monthly,yearly',
+                'bonus' => 'required_if:is_bonus,true|numeric'
             ],[
                 'name.required' => 'Name is required',
 
                 'phone.required' => 'Phone is required',
                 'phone.digits' => 'Phone must be 11 digits',
                 'phone.regex' => 'Phone must be a valid phone number',
-
-                
 
                 'email.required' => 'Email is required',
 
@@ -121,30 +128,30 @@ class EmployeeController extends Controller
 
                 'payroll.required' => 'Pay roll is required',
                 'payroll.numeric' => 'Pay roll must be a number',
+                
+                'is_allowance.required' => 'Allowance is required',
+                'allowance_cycle.required_if' => 'Allowance cycle is required',
+                'allowance_cycle.in' => 'Allowance cycle must be either monthly or yearly',
+
+                'allowance.required_if' => 'Allowance is required',
+                'allowance.numeric' => 'Allowance must be a number',
+
+                'is_tax.required' => 'Tax is required',
+                'tax_cycle.required_if' => 'Tax cycle is required',
+                'tax_cycle.in' => 'Tax cycle must be either monthly or yearly',
+
+                'tax.required_if' => 'Tax is required',
+                'tax.numeric' => 'Tax must be a number',
+
+                'is_bonus.required' => 'Bonus is required',
+                'bonus_cycle.required_if' => 'Bonus cycle is required',
+                'bonus_cycle.in' => 'Bonus cycle must be either monthly or yearly',
+
+                'bonus.required_if' => 'Bonus is required',
+                'bonus.numeric' => 'Bonus must be a number',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $profilePic = null;
-            $cnic_front = null;
-            $cnic_back = null;
-            if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $image_name = 'profile-' . $user->id . '-' . time() . '.' . $image->getClientOriginalExtension();
-                $image->move(public_path('employee-image'), $image_name);
-                $profilePic = 'employee-image/' . $image_name;
-            }
-            if ($request->hasFile('cnic_front')) {
-                $front_image = $request->file('cnic_front');
-                $front_image_name = 'cnic_' . $user->id . '_front.' . $front_image->getClientOriginalExtension();
-                $front_image->move(public_path('employee-cnic'), $front_image_name);
-                $cnic_front = 'employee-cnic/' . $front_image_name;
-            }
-            if ($request->hasFile('cnic_back')) {
-                $back_image = $request->file('cnic_back');
-                $back_image_name = 'cnic_' . $user->id . '_back.' . $back_image->getClientOriginalExtension();
-                $back_image->move(public_path('employee-cnic'), $back_image_name);
-                $cnic_back = 'employee-cnic/' . $back_image_name;
-            }
-            $cnic_images = [$cnic_front, $cnic_back];
+            
             do {
                 $e_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Employee::where('e_code', $e_code)->exists());
@@ -154,8 +161,36 @@ class EmployeeController extends Controller
             DB::beginTransaction();
             $acc = ChartOfAccount::Where('name','EMPLOYEES SALARY')->first();
             if(empty($acc)) throw new Exception('EMPLOYEES SALARY COA not found', 404);
+
             $name = strtoupper($request->name);
             $COA = createCOA($name,$acc->code);
+            
+            // images upload creation
+            
+            $profilePic = null;
+            $cnic_front = null;
+            $cnic_back = null;
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $image_name = 'profile-' . $COA->id . '-' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('employee-image'), $image_name);
+                $profilePic = 'employee-image/' . $image_name;
+            }
+            if ($request->hasFile('cnic_front')) {
+                $front_image = $request->file('cnic_front');
+                $front_image_name = 'cnic_' . $COA->id . '_front.' . $front_image->getClientOriginalExtension();
+                $front_image->move(public_path('employee-cnic'), $front_image_name);
+                $cnic_front = 'employee-cnic/' . $front_image_name;
+            }
+            if ($request->hasFile('cnic_back')) {
+                $back_image = $request->file('cnic_back');
+                $back_image_name = 'cnic_' . $COA->id . '_back.' . $back_image->getClientOriginalExtension();
+                $back_image->move(public_path('employee-cnic'), $back_image_name);
+                $cnic_back = 'employee-cnic/' . $back_image_name;
+            }
+            $cnic_images = [$cnic_front, $cnic_back];
+            
+            
             $employee = Employee::create([
                 'name' => $name,
                 'e_code' => $e_code,
@@ -166,10 +201,19 @@ class EmployeeController extends Controller
                 'city_id' => $request->city_id,
                 'address' => $request->address,
                 'cnic'=>$request->cnic ?? null,
-                'cnic_images'=> $cnic_images,
+                'image' => $profilePic,
+                'cnic_images'=> json_encode($cnic_images),
                 'designation' => $request->designation,
                 'payroll' => $request->payroll,
-                'image' => $profilePic,
+                'is_allowance' => $request->is_allowance,
+                'allowance_cycle' => $request->allowance_cycle ?? null,
+                'allowance' => $request->allowance ?? 0.00,
+                'is_tax' => $request->is_tax,
+                'tax_cycle' => $request->tax_cycle ?? null,
+                'tax' => $request->tax ?? 0.00,
+                'is_bonus' => $request->is_bonus,
+                'bonus_cycle' => $request->bonus_cycle ?? null,
+                'bonus' => $request->bonus ?? 0.00,
                 'joining_date' => $request->joining_date,
                 'added_by' => $user->id
                 ]);
@@ -180,12 +224,10 @@ class EmployeeController extends Controller
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
-
             Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
-            
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User create employee',
@@ -303,7 +345,16 @@ class EmployeeController extends Controller
                 'city_id' => $request->city_id,
                 'address' => $request->address,
                 'designation' => $request->designation,
-                'pay_roll' => $request->pay_roll
+                'pay_roll' => $request->pay_roll,
+                'is_allowance' => $request->is_allowance,
+                'allowance_cycle' => $request->allowance_cycle ?? null,
+                'allowance' => $request->allowance ?? 0.00,
+                'is_tax' => $request->is_tax,
+                'tax_cycle' => $request->tax_cycle ?? null,
+                'tax' => $request->tax ?? 0.00,
+                'is_bonus' => $request->is_bonus,
+                'bonus_cycle' => $request->bonus_cycle ?? null,
+                'bonus' => $request->bonus ?? 0.00
             ]);
             Log::create([
                 'user_id' => $user->id,

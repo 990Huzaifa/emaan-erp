@@ -120,16 +120,31 @@ class PermissionsTableSeeder extends Seeder
             'list employee',
             'edit employee',
             'approve employee',
+
             'list sale quotations',
             'view sale quotations',
             'create sale quotations',
             'edit sale quotations',
             'approve sale quotations',
+
             'list delivery notes',
             'view delivery notes',
             'create delivery notes',
             'edit delivery notes',
             'approve delivery notes',
+
+            'list expense voucher',
+            'view expense voucher',
+            'create expense voucher',
+            'edit expense voucher',
+            'approve expense voucher',
+
+            'list salary voucher',
+            'view salary voucher',
+            'create salary voucher',
+            'edit salary voucher',
+            'approve salary voucher',
+
         ];
 
         // Loop through each permission and create it

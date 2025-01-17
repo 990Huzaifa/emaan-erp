@@ -6,11 +6,13 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\InventoryDetailController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\PurchaseVoucherController;
+use App\Http\Controllers\SalaryVoucherController;
 use App\Http\Controllers\SaleQuotationController;
 use App\Http\Controllers\SaleReceiptController;
 use App\Http\Controllers\SaleReturnController;
 use App\Http\Controllers\SaleVoucherController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ExpenseVoucherController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
 use App\Http\Controllers\COAController;
@@ -173,6 +175,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);
+
+    
+    Route::apiResource('expense-voucher',ExpenseVoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/expense-voucher',[ExpenseVoucherController::class,'updateStatus']);
+
+    Route::apiResource('salary-voucher',SalaryVoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/salary-voucher',[SalaryVoucherController::class,'updateStatus']);
 
     // Route::get('ledger',[LedgerController::class,'index']);
     Route::get('ledger/{acc_id}',[LedgerController::class,'list']);

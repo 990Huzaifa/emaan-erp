@@ -2,12 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Customer;
-use App\Models\Log;
-use App\Models\OpeningBalance;
-use App\Models\SaleVoucher;
-use App\Models\Transaction;
+use App\Models\SalaryVoucher;
 use Exception;
+use App\Models\Transaction;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class SaleVoucherController extends Controller
+class SalaryVoucherController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -28,7 +25,7 @@ class SaleVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'list salary voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -36,23 +33,21 @@ class SaleVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = SaleVoucher::select('sale_vouchers.*','customers.name as customer_name','chart_of_accounts.name as acc_name')
-            ->join('customers','sale_vouchers.customer_id', '=', 'customers.id')
-            ->join('chart_of_accounts','sale_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->where('sale_vouchers.business_id',$user->login_business)
+            $query = SalaryVoucher::select('salary_vouchers.*','employee.name as employee_name','chart_of_accounts.name as acc_name')
+            ->join('employees','salary_vouchers.employee_id', '=', 'employees.id')
+            ->join('chart_of_accounts','salary_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            ->where('salary_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query->where('sale_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
+                $query->where('salary_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
                 
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
             return response()->json($data,200);
-
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }
-        catch(Exception $e){
+        }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -67,7 +62,7 @@ class SaleVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'create salary voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -76,7 +71,7 @@ class SaleVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'customer_id' => 'required|exists:customers,id',
+                    'employee_id' => 'required|exists:employees,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
@@ -84,8 +79,8 @@ class SaleVoucherController extends Controller
                     'voucher_date' => 'required|date',
                     'voucher_amount' => 'required|numeric',
                 ], [
-                    'vendor_id.required' => 'The Vendor field is required.',
-                    'vendor_id.exists' => 'The selected Vendor is invalid.',
+                    'employee_id.required' => 'The Employee field is required.',
+                    'employee_id.exists' => 'The selected Employee is invalid.',
                     
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -110,9 +105,9 @@ class SaleVoucherController extends Controller
             DB::beginTransaction();
             do {
                 $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = SaleVoucher::create([
-                'customer_id' => $request->customer_id,
+            } while (SalaryVoucher::where('voucher_code', $voucher_code)->exists());
+            $data = SalaryVoucher::create([
+                'employee_id' => $request->employee_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
                 'payment_method' => $request->payment_method,
@@ -144,20 +139,20 @@ class SaleVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'view salary voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
 
-            $data = SaleVoucher::select(
-                'sale_vouchers.*',
-                'customers.name as customer_name',
+            $data = SalaryVoucher::select(
+                'salary_vouchers.*',
+                'employees.name as employee_name',
                 'chart_of_accounts.name as acc_name'
                 )
-                ->join('customers','sale_vouchers.customer_id','=','customers.id')
-                ->join('chart_of_accounts','sale_vouchers.acc_id','=','chart_of_accounts.id')
+                ->join('employees','salary_vouchers.employee_id','=','employees.id')
+                ->join('chart_of_accounts','salary_vouchers.acc_id','=','chart_of_accounts.id')
                 ->find($id);
             if (empty($data)) throw new Exception('No data found', 404);
 
@@ -165,77 +160,6 @@ class SaleVoucherController extends Controller
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);            
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function updateStatus(Request $request, string $id): JsonResponse
-    {
-        try{
-            $user = Auth::user();            
-            // Check if the user has the required permission
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'approve sale voucher')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-
-            $data = SaleVoucher::find($id);
-            if (empty($data)) throw new Exception('No data found', 400);
-            if ($data->status == 1) throw new Exception('Already Paid', 400);
-            DB::beginTransaction();
-            $data->update([
-                'status'=>1
-                ]);
-            // transaction
-            $customer = Customer::find($data->customer_id);
-            $customer_acc = $customer->acc_id;
-            // for products
-            $total_billed = $data->voucher_amount;
-
-            $c_cb = calculateBalance($customer_acc, $total_billed, true); // Debit customer's account
-            $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
-            
-            // Debit amount to customer's account
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $customer_acc,
-                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment made by customer: ' . $customer->name,
-                'debit' => $total_billed, // No money deducted from customer's side
-                'credit' => 0.00, // Money credited to customer
-                'current_balance' => $c_cb // Updated balance for customer account
-            ]);
-
-            // Credit amount from business's account
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $data->acc_id,
-                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment received from customer: ' . $customer->name,
-                'debit' => 0.00, // Money debited from business account
-                'credit' => $total_billed, // No money credited to business account
-                'current_balance' => $b_cb
-            ]);
-            
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
-            ]);
-
-            DB::commit();
-            return response()->json($data, 200);
-        }catch(QueryException $e){
-            DB::rollBack();
-            return response()->json(['DB error' => $e->getMessage()], 400);            
-        }catch(Exception $e){
-            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

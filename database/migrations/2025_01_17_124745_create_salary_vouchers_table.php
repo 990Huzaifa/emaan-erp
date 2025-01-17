@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('purchase_vouchers', function (Blueprint $table) {
+        Schema::create('salary_vouchers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('vendor_id');
-            $table->foreign('vendor_id')->references('id')->on('vendors')->onDelete('cascade');
+            $table->unsignedBigInteger('employee_id');
+            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
             $table->unsignedBigInteger('acc_id'); // Link to COA for tracking payments
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->unsignedBigInteger('business_id'); // Link to COA for tracking payments
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->date('cheque_date')->nullable();
             $table->decimal('voucher_amount', 15, 2);
             $table->integer('status')->default(0)->comment('0->Un Paid, 1->Paid'); // Payment status
-            $table->date('voucher_date'); 
+            $table->date('voucher_date');
             $table->timestamps();
         });
     }
@@ -35,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('purchase_vouchers');
+        Schema::dropIfExists('salary_vouchers');
     }
 };

@@ -12,6 +12,7 @@ use App\Models\BusinessHasAccount;
 use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 
 class ProductSubCategoryController extends Controller
@@ -99,15 +100,17 @@ class ProductSubCategoryController extends Controller
             $category = ProductCategory::find($request->category_id);
             $acc = ChartOfAccount::find($category->acc_id);
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            DB::beginTransaction();
             // create sub category acc
-            $COA = createCOA($request->name,$acc->code);
+            $name = strtoupper($request->name);
+            $COA = createCOA($name,$acc->code);
 
             do {
                 $psc_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (ProductSubCategory::where('psc_code', $psc_code)->exists());
 
             $subcategory = ProductSubCategory::create([
-                'name' => $request->name,
+                'name' => $name,
                 'psc_code' => $psc_code,
                 'acc_id' => $COA->id,
                 'category_id' => $request->category_id,
@@ -119,77 +122,18 @@ class ProductSubCategoryController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Product Sub-Category created successfully',
             ]);
-        
+            DB::commit();
             return response()->json($subcategory,200);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
-    public function update(Request $request, $id): JsonResponse
-    {
-        try{
-            $user = Auth::user();
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit product sub category')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-
-            $validator = Validator::make(
-                $request->all(),[
-                    'name'=>'required|string',
-                    'category_id'=>'required|string|exists:product_categories,id',
-
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-
-            $subcategory = ProductSubCategory::find($id);
-            if (!$subcategory) throw new Exception('Product Sub Category not found', 404);
-            
-            $acc = null;
-            if($request->category_id != $subcategory->category_id){
-                $category = ProductCategory::find($request->category_id);
-                $parent_acc = ChartOfAccount::find($category->acc_id);
-                if(empty($parent_acc)) throw new Exception('Chart of Account not found', 404);
-                $acc = ChartOfAccount::find($subcategory->acc_id);
-                $acc->update([
-                    'parent_code' => $parent_acc->code,
-                    'name' => $request->name,
-                ]);
-            }else{
-                $acc = ChartOfAccount::find($subcategory->acc_id);
-                if(empty($acc)) throw new Exception('Chart of Account not found', 404);
-                $acc->update([
-                    'name' => $request->name,
-                ]);
-            }
-            
-            $subcategory->update([
-                'name' => $request->name,
-                'category_id' => $request->category_id,
-            ]);
-            
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Product Sub-Category up[dated successfully',
-            ]);
-            
-            return response()->json($subcategory, 200);
-
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);
-
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
     
     public function show($id): JsonResponse
     {
@@ -222,6 +166,61 @@ class ProductSubCategoryController extends Controller
         }
     }
     
+
+    public function update(Request $request, $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit product sub category')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make(
+                $request->all(),[
+                    'name'=>'required|string',
+
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $subcategory = ProductSubCategory::find($id);
+            if (!$subcategory) throw new Exception('Product Sub Category not found', 404);
+            
+            
+            $acc = ChartOfAccount::find($subcategory->acc_id);
+            if(empty($acc)) throw new Exception('Chart of Account not found', 404);
+            DB::beginTransaction();
+            $name = strtoupper($request->name);
+            $acc->update([
+                'name' => $name,
+            ]);
+            
+            
+            $subcategory->update([
+                'name' => $name,
+            ]);
+            
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Product Sub-Category up[dated successfully',
+            ]);
+            DB::commit();
+            return response()->json($subcategory, 200);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
     public function list(Request $request, $id): JsonResponse
     {
         try{

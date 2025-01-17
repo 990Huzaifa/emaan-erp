@@ -5,21 +5,20 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ExpenseVoucher extends Model
+class SalaryVoucher extends Model
 {
     use HasFactory;
 
     protected $fillable = [
+        'employee_id',
+        'acc_id',
         'business_id',
-        'expense_acc_id',
-        'asset_acc_id',
         'voucher_code',
-        'payment_mode',
-        'cheque_no',
-        'cheque_date',
         'voucher_amount',
-        'voucher_date',
-        'approved_by',
         'status',
+        'voucher_date',
+        'payment_method',
+        'cheque_no',
+        'cheque_date'
     ];
 }
