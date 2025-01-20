@@ -90,7 +90,7 @@ class PurchaseQuotationController extends Controller
                 'business_id'=>$businessId
             ]);
             foreach ($request->products as $product) {
-                purchaseQuotationItem::create([
+                PurchaseQuotationItem::create([
                     'purchase_quotation_id' => $quotation->id,
                     'product_id' => $product['product_id'],
                     'quantity' => $product['quantity'],
