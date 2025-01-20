@@ -45,7 +45,7 @@ class PurchaseVoucherController extends Controller
             $query = PurchaseVoucher::select('purchase_vouchers.*','vendors.name as vendor_name','chart_of_accounts.name as acc_name')
             ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
             ->join('chart_of_accounts','purchase_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->where('purchase_vouchers.business_id',$user->login_business)
+            // ->where('purchase_vouchers.business_id',$businessId)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query->where('purchase_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
@@ -172,7 +172,6 @@ class PurchaseVoucherController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
     /**
      * Update the specified resource in storage.
      */
@@ -217,13 +216,14 @@ class PurchaseVoucherController extends Controller
             } else {
                 $v_cb = $vendor_t->current_balance + $total_billed; // Add billed amount to previous balance
             }
-
+            
             if (empty($business_t)) {
                 $b_ob = OpeningBalance::where('acc_id', $data->acc_id)->value('amount');
                 $b_cb = $b_ob - $total_billed; // Subtract billed amount from opening balance
             } else {
                 $b_cb = $business_t->current_balance - $total_billed; // Subtract billed amount from previous balance
             }
+            
             // Credit amount to vendor's account
             Transaction::create([
                 'business_id' => $data->business_id,
@@ -284,4 +284,6 @@ class PurchaseVoucherController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+    
+    
 }

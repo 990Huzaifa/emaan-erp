@@ -15,8 +15,8 @@ use App\Models\BusinessHasAccount;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
 
 class CustomerController extends Controller
 {
@@ -31,6 +31,7 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
+            $searchQuery = $request->query('search');
             $query = Customer::orderBy('id', 'desc')->join('cities', 'customers.city_id', '=', 'cities.id')
             ->select('customers.*', 'cities.name as city');
             if ($user->role == 'user') {
@@ -43,8 +44,7 @@ class CustomerController extends Controller
                 $query = $query->where('business_id',$businessId);
             }
             $perPage = $request->query('per_page', 10);
-            $searchQuery = $request->query('search');
-
+            
             if (!empty($searchQuery)) {
                 $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('c_code', 'like', '%' . $searchQuery . '%')
@@ -87,7 +87,7 @@ class CustomerController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'city_id'=>'required|exists:cities,id',
+                    'city_id'=>'required',
                     'email' => 'nullable|email',
                     'cnic'=>'nullable|string|max:14|unique:customers,cnic',
                     'logo' => 'nullable|image',
@@ -141,7 +141,9 @@ class CustomerController extends Controller
             $acc = ChartOfAccount::Where('name','CUSTOMERS')->first();
             if(empty($acc)) throw new Exception('Customer COA not found', 404);
 
-
+            // validate city
+            $city = City::find($request->city_id);
+            if(empty($city)) throw new Exception('City not found', 404);
             $COA = createCOA($request->name,$acc->code);
             $customer = Customer::create([
                 'name' => $request->name,
@@ -157,10 +159,12 @@ class CustomerController extends Controller
                 'address' => $request->address ?? null,
                 'logo' => $logo,
             ]);
+            
             OpeningBalance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
+            
             Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
@@ -172,6 +176,8 @@ class CustomerController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User create customer',
             ]);
+
+            
             
             return response()->json($customer);
         }catch(QueryException $e){
@@ -275,6 +281,11 @@ class CustomerController extends Controller
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            $acc = ChartOfAccount::find($customer->acc_id);
+            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
+            $acc->update([
+                'name' => $request->name,
+            ]);
             $logo = $customer->logo;
             $oldImagePath = public_path($customer->logo);
             if ($request->hasFile('logo')) {
@@ -288,7 +299,7 @@ class CustomerController extends Controller
                     unlink($oldImagePath);
                 }
             }
-
+            
             $customer->update([
                 'name'=>$request->name,
                 'city_id'=>$request->city_id,
@@ -333,7 +344,7 @@ class CustomerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
     public function list():JsonResponse
     {
         try{
@@ -360,7 +371,7 @@ class CustomerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
     public function csvCustomer()
     {
 
@@ -457,7 +468,6 @@ class CustomerController extends Controller
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);
-
                     Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,
@@ -513,5 +523,4 @@ class CustomerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
 }

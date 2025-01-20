@@ -1,18 +1,6 @@
 <?php
 
-
-use App\Http\Controllers\DeliveryNoteController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\InventoryDetailController;
-use App\Http\Controllers\LedgerController;
-use App\Http\Controllers\PurchaseVoucherController;
-use App\Http\Controllers\SalaryVoucherController;
-use App\Http\Controllers\SaleQuotationController;
-use App\Http\Controllers\SaleReceiptController;
-use App\Http\Controllers\SaleReturnController;
-use App\Http\Controllers\SaleVoucherController;
-use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\ExpenseVoucherController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
 use App\Http\Controllers\COAController;
@@ -20,19 +8,32 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\BusinessController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SaleOrderController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\MeasureUnitController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\PurchaseOrderController;
-use App\Http\Controllers\PurchaseReturnController;
+use App\Http\Controllers\SaleQuotationController;
+use App\Http\Controllers\PurchaseInvoiceController;
 use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\PurchaseVoucherController;
+use App\Http\Controllers\PurchaseReturnController;
+use App\Http\Controllers\InventoryDetailController;
 use App\Http\Controllers\PurchaseQuotationController;
 use App\Http\Controllers\ProductSubCategoryController;
-
+use App\Http\Controllers\SaleReceiptController;
+use App\Http\Controllers\SaleReturnController;
+use App\Http\Controllers\SaleVoucherController;
+use App\Http\Controllers\ExpenseVoucherController;
+use App\Http\Controllers\SalaryVoucherController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,6 +45,45 @@ use App\Http\Controllers\ProductSubCategoryController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+
+// API Routes
+Route::get('/', function () {
+    $routes = Route::getRoutes();
+    echo '
+        <table style="width: 100%; border-collapse: collapse;" border="1">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>URI</th>
+                </tr>
+            </thead>
+            <tbody>
+    ';
+    $i = 1;
+    foreach ($routes as $route) {
+        if (str_starts_with($route->uri(), 'api/')) {
+            echo "
+                <tr>
+                    <td>{$i}</td>
+                    <td>"
+                        . $route->methods()[0] .
+                        " - <a href='" . env('APP_URL') . $route->uri() . "'>"
+                        . env('APP_URL') . $route->uri()
+                        . "</a>
+                    </td>
+                </tr>
+            ";
+            $i++; 
+        };
+    }
+    echo '
+            </tbody>
+        </table>
+    ';
+    return "";
+});
+
 
 Route::get('/optimize-clear', function () {
     Artisan::call('optimize:clear');
@@ -70,9 +110,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
     
+    Route::get('profile',[AuthController::class,'profile']);
+    
     
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
     Route::get('business-list',[BusinessController::class, 'list']);
+    Route::get('business-accounts',[BusinessController::class,'businessAccounts']);
     // user
     Route::apiResource('user',UserController::class)->only('index','store','show','destroy');
     Route::post('user-update/{id}',[UserController::class,'update']);
@@ -82,8 +125,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('invite-list/user',[UserController::class,'inviteList']);
     Route::post('invite-update/{id}/user',[UserController::class,'updateInvite']);
     Route::post('setup/{id}/user',[UserController::class,'sendSetupMail']);
-
-
+    
+    
     // partners 
     
     Route::get('partner',[UserController::class,'waitPartnerList']);
@@ -91,7 +134,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
-
     Route::apiResource('customer',CustomerController::class)->only('index','store','show','update');
     Route::post('customer-update/{id}',[CustomerController::class,'update']);
     Route::get('list/customer/',[CustomerController::class,'list']);
@@ -99,6 +141,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/csv/customer/upload', [CustomerController::class, 'importCustomer']);
     
     Route::apiResource('chart-of-account',COAController::class)->only('index','store','show','update');
+    
+    Route::apiResource('measurement-unit',MeasureUnitController::class)->only('index','store','show','update');
+    
     
     Route::apiResource('product-category',ProductCategoryController::class)->only('index','store','show','update');
     Route::get('list/product-category',[ProductCategoryController::class,'list']);
@@ -112,13 +157,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/vendor/',[VendorController::class,'list']);
     Route::get('/csv/vendor', [VendorController::class, 'csvVendor']);
     Route::post('/csv/vendor/upload', [VendorController::class, 'importVendor']);
-
-
+    
+    
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);
     Route::get('/csv/employee', [EmployeeController::class, 'csvCustomer']);
     Route::post('/csv/employee/upload', [EmployeeController::class, 'importCustomer']);
-
     
     Route::apiResource('product',ProductController::class)->only('index','store','show','update');
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);
@@ -128,64 +172,73 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/csv/product/upload', [ProductController::class, 'importProduct']);
     
     Route::apiResource('purchase-quotation',PurchaseQuotationController::class)->only('index','store','show','update');
+    Route::put('status/{id}/purchase-quotation',[PurchaseQuotationController::class,'updateStatus']);
     
     Route::apiResource('purchase-order',PurchaseOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-order',[PurchaseOrderController::class,'updateStatus']);
     Route::get('list/purchase-order',[PurchaseOrderController::class,'list']);
+    Route::get('list/vendor-purchase-order',[PurchaseOrderController::class,'list2']);
     
     Route::apiResource('grn',GRNController::class)->only('index','store','show','update');
     Route::put('status/{id}/grn',[GRNController::class,'updateStatus']);
     Route::get('list/grn',[GRNController::class,'list']);
-    Route::get('approve-grn/{id}',[GRNController::class,'approveGRNShow']);
-
-    Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
-    Route::get('inventory-products',[InventoryDetailController::class,'inventoryProduct']);
-    Route::get('lots/{product_id}',[InventoryDetailController::class,'lotIndex']);
-
-    Route::apiResource('transaction',TransactionController::class)->only('index','show','update');
     
-    
+    Route::apiResource('purchase-invoice',PurchaseInvoiceController::class)->only('index','store','show','update');
+    Route::put('status/{id}/purchase-invoice',[PurchaseInvoiceController::class,'updateStatus']);
+    Route::get('list/purchase-invoice',[PurchaseInvoiceController::class,'list']);
+    Route::get('print/purchase-invoice/{id}',[PurchaseInvoiceController::class,'print']);
     
     Route::apiResource('purchase-voucher',PurchaseVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-voucher',[PurchaseVoucherController::class,'updateStatus']);
     Route::put('purchase-voucher/{grn_id}/previous',[PurchaseVoucherController::class,'previousData']);
-
+    
     Route::apiResource('purchase-return',PurchaseReturnController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-return',[PurchaseReturnController::class,'updateStatus']);
-
+    
+    
+    Route::apiResource('voucher',VoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/voucher',[VoucherController::class,'updateStatus']);
+    
+    
+    // Sale
+    
     Route::apiResource('sale-quotation',SaleQuotationController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-quotation',[SaleQuotationController::class,'updateStatus']);
-
+    
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);
     Route::get('list/sale-order',[SaleOrderController::class,'list']);
-
+    
     Route::apiResource('delivery-note',DeliveryNoteController::class)->only('index','store','show','update');
     Route::put('status/{id}/delivery-note',[DeliveryNoteController::class,'updateStatus']);
     Route::get('list/dn',[DeliveryNoteController::class,'list']);
-
+    
     Route::apiResource('sale-receipt',SaleReceiptController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-receipt',[SaleReceiptController::class,'updateStatus']);
-
+    
     Route::apiResource('sale-voucher',SaleVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-voucher',[SaleVoucherController::class,'updateStatus']);
-
+    
     Route::apiResource('sale-return',SaleReturnController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-return',[SaleReturnController::class,'updateStatus']);
-
-    Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
-    Route::post('employee-update/{id}',[EmployeeController::class,'update']);
-
+        
+    Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
+    Route::get('inventory-products',[InventoryDetailController::class,'inventoryProduct']);
+    Route::get('lots/{product_id}',[InventoryDetailController::class,'lotIndex']);
+    
+    Route::apiResource('transaction',TransactionController::class)->only('index','show','update');
+    
+    
+    // Expense
     
     Route::apiResource('expense-voucher',ExpenseVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/expense-voucher',[ExpenseVoucherController::class,'updateStatus']);
-
+    
     Route::apiResource('salary-voucher',SalaryVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/salary-voucher',[SalaryVoucherController::class,'updateStatus']);
-
+    
     // Route::get('ledger',[LedgerController::class,'index']);
     Route::get('ledger/{acc_id}',[LedgerController::class,'list']);
     Route::get('fetch-accounts',[LedgerController::class,'listAccounts']);
-
 });
 

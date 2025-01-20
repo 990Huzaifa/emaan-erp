@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Balance;
-use Exception;
-use Carbon\Carbon;
-use App\Models\Log;
-use App\Models\User;
 use App\Mail\UserMail;
-use App\Models\Business;
-use Illuminate\Http\Request;
+use Exception;
+use App\Models\User;
+use App\Models\Log;
 use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
+use App\Models\Balance;
 use App\Models\UserHasBusiness;
+use App\Models\Business;
+use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\BusinessHasAccount;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +21,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class BusinessController extends Controller
 {
@@ -47,7 +47,7 @@ class BusinessController extends Controller
             ->paginate($perPage);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User list businesses',
+                'description' => 'User list business',
             ]);
             return response()->json($data,200);
         }catch(QueryException $e){
@@ -82,6 +82,7 @@ class BusinessController extends Controller
                     'email'=>'required|email|string|unique:users,email',
                     'password'=>'required|string|min:8',
                     'confirm_password'=>'required|string|min:8',
+                    'opening_balance'=>'nullable|numeric',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -104,6 +105,8 @@ class BusinessController extends Controller
                 'logo.required' => 'Logo is required.',
                 'logo.image' => 'Logo must be an image.',
                 'logo.mimes' => 'Logo must be in jpeg, png, jpg, gif, or svg format.',
+                
+                'opening_balance.numeric'=>'Opening Balance is must be a numeric',
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -118,12 +121,12 @@ class BusinessController extends Controller
                 $logo = 'business-logo/' . $image_name;
             }
             $business = Business::create([
-                'name'=> $request->name.'Admin',
+                'name'=> $request->name,
                 'city_id'=> $request->city,
                 'email' => $request->email,
                 'cash' => $request->opening_balance ?? 0.00,
                 'logo' => $logo,
-            ]);
+            ]); 
             // validate coa
             $acc = ChartOfAccount::Where('name','CASH')->first();
             if(empty($acc)) throw new Exception('Cash COA not found', 404);
@@ -147,16 +150,13 @@ class BusinessController extends Controller
                 $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (User::where('u_code', $u_code)->exists());  
             $user = User::create([
-                'name'=>$request->name,
+                'name'=>$request->name.' Admin',
                 'u_code'=>$u_code,
                 'city_id'=>$request->city,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
-                
                 'is_verify'=>1,
             ]);
-            // $setupUrl = route('setup-account', ['code' => $setupCode])
-            // $setupUrl = config('app.frontend_url').'/setup-user/'.$setupCode;
             // sync permissions to user according to business
             $uhb = UserHasBusiness::create([
                 'business_id'=>$business->id,
@@ -243,8 +243,8 @@ class BusinessController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
-    public function businessAccounts(): JsonResponse
+    
+    public function businessAccounts(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -256,17 +256,15 @@ class BusinessController extends Controller
             //         ], 403);
             //     }
             // }
+            $type = $request->type;
+            if(!$type) throw new Exception('Type not define',400);
             // Retrieve account codes for BANK and CASH
-            $Bank_acc_code = ChartOfAccount::where('name', 'BANK')->value('code');
-            $Cash_acc_code = ChartOfAccount::where('name', 'CASH')->value('code');
+            $acc_code = ChartOfAccount::where('name', $type)->value('code');
             // Define the query with specific columns to fetch
             $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
                 ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
                 ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
-                ->where(function ($query) use ($Bank_acc_code, $Cash_acc_code) {
-                    $query->where('chart_of_accounts.parent_code', $Bank_acc_code)
-                          ->orWhere('chart_of_accounts.parent_code', $Cash_acc_code);
-                })
+                ->where('chart_of_accounts.parent_code', $acc_code)
                 ->select([
                     'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
                     'opening_balances.amount as balance', // Amount from opening balances
@@ -341,6 +339,7 @@ class BusinessController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-    
+
+
 
 }

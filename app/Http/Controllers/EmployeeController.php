@@ -283,7 +283,7 @@ class EmployeeController extends Controller
             $user = Auth::user();
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'update employee')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit employee')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

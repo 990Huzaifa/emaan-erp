@@ -4,16 +4,16 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\Log;
+use Illuminate\Support\Facades\DB;
+use App\Models\BusinessHasAccount;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\ProductCategory;
 use Illuminate\Http\JsonResponse;
-use App\Models\BusinessHasAccount;
 use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\DB;
 
 class ProductCategoryController extends Controller
 {
@@ -33,7 +33,10 @@ class ProductCategoryController extends Controller
 
             $data = ProductCategory::paginate($perPage);
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Product sub Category listed successfully',
+            ]);
             return response()->json($data,200);
 
         }catch(QueryException $e){
@@ -71,17 +74,17 @@ class ProductCategoryController extends Controller
                 'description.string' => 'Description is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            DB::beginTransaction();
+
             $acc = ChartOfAccount::where('name',"INVENTORY")->first();
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
-
+            DB::beginTransaction();
             $name = strtoupper($request->name);
             $COA = createCOA($name,$acc->code);
 
             do {
                 $pc_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (ProductCategory::where('pc_code', $pc_code)->exists());
-
+            
             $category = ProductCategory::create([
                 'name' => $name,
                 'pc_code' => $pc_code,
@@ -129,7 +132,7 @@ class ProductCategoryController extends Controller
                 'description.string' => 'Description is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            
+
             $category = ProductCategory::find($id);
             if(empty($category)) throw new Exception('Product Category not found', 404);
             $acc = ChartOfAccount::find($category->acc_id);
@@ -165,7 +168,7 @@ class ProductCategoryController extends Controller
     public function list(): JsonResponse
     {
         try{
-            $data = ProductCategory::all();
+            $data = ProductCategory::select('id','name')->get();
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data,200);

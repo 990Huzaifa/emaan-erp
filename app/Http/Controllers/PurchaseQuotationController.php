@@ -35,8 +35,8 @@ class PurchaseQuotationController extends Controller
                 $query->select('id', 'title'); // Select product name and id
             }])
             ->join('vendors', 'purchase_quotations.vendor_id', '=', 'vendors.id') // Join with vendors
-            ->select('purchase_quotations.*', 'vendors.name as vendor_name') // Select fields including vendor name
-            ->where('business_id',$businessId)
+            ->select('purchase_quotations.*', 'vendors.name as vendor_name')
+            ->where('business_id',$businessId)// Select fields including vendor name
             ->orderBy('purchase_quotations.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('quotation_code', 'like', '%' . $searchQuery . '%');
@@ -112,7 +112,7 @@ class PurchaseQuotationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id): JsonResponse
+    public function show(string $id)
     {
         try{
             $user = Auth::user();
@@ -212,7 +212,7 @@ class PurchaseQuotationController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
     public function updateStatus(Request $request, string $id): JsonResponse
     {
         try{
@@ -221,7 +221,7 @@ class PurchaseQuotationController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'approve purchase quotation')) {
+                if (!$user->hasBusinessPermission($businessId, 'approve purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

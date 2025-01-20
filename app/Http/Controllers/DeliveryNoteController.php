@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\InventoryDetail;
-use App\Models\Lot;
 use App\Models\Product;
 use App\Models\Transaction;
 use Exception;
 use App\Models\Log;
 use App\Models\DeliveryNote;
+use App\Models\InventoryDetail;
 use App\Models\DeliveryNoteItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -104,7 +103,7 @@ class DeliveryNoteController extends Controller
 
                     'items.*.product_id.required' => 'Product is required.',
                     'items.*.product_id.exists' => 'Product does not exist.',
-
+                    
                     'items.*.quantity.required' => 'Quantity is required.',
                     'items.*.quantity.numeric' => 'Quantity must be a number.',
 
@@ -132,7 +131,6 @@ class DeliveryNoteController extends Controller
             do {
                 $dn_code = 'DN-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (DeliveryNote::where('dn_code', $dn_code)->exists());
-
             $deliveryNote = DeliveryNote::create([
                 'sale_order_id' => $request->sale_order_id,
                 'business_id' => $businessId,
@@ -146,7 +144,7 @@ class DeliveryNoteController extends Controller
                 DeliveryNoteItem::create([
                     'delivery_note_id' => $deliveryNote->id,
                     'product_id' => $item['product_id'],
-                    'lot_id' => $item['lot_id'],
+                    'lot_id'=> $item['lot_id'],
                     'quantity' => $item['quantity'],
                     'delivered' => $item['delivered'],
                     'charged' => $item['charged'],
@@ -205,7 +203,7 @@ class DeliveryNoteController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -324,7 +322,6 @@ class DeliveryNoteController extends Controller
         }
     }
 
-
     public function updateStatus(Request $request, string $id): JsonResponse
     {
         try{
@@ -371,8 +368,7 @@ class DeliveryNoteController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
-
+    
     public function list(): JsonResponse
     {
         try{
@@ -396,4 +392,5 @@ class DeliveryNoteController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }    
     }
+
 }

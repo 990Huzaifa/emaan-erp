@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use DB; 
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
@@ -209,7 +209,7 @@ class UserController extends Controller
                     ], 403);
                 }
             }
-            $userData = User::findOrFail($id);
+             $userData = User::findOrFail($id);
 
             // Fetch the user's associated businesses and permissions
             $userHasBusinesses = UserHasBusiness::where('user_id', $id)->get();
@@ -339,7 +339,7 @@ class UserController extends Controller
             DB::table('model_has_permissions')->whereIn('model_id', $uhb_ids)
                 ->where('model_type', (new UserHasBusiness())->getMorphClass())
                 ->delete();
-
+            
             // Now delete the UserHasBusiness records
             UserHasBusiness::where('user_id', $id)->delete();
             
@@ -821,7 +821,7 @@ class UserController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
     public function createPartner(Request $request):JsonResponse
     {
         try{

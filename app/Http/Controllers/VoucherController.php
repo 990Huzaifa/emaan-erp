@@ -29,7 +29,6 @@ class VoucherController extends Controller
                 ], 403);
             }
             $perPage = $request->query('per_page', 10);
-            $searchQuery = $request->query('search');
             $vouchers = Voucher::where('business_id', $businessId)
             ->join('chart_of_accounts', 'vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->select('vouchers.*', 'chart_of_accounts.name as acc_name')
@@ -105,25 +104,26 @@ class VoucherController extends Controller
                 'amount'=>$request->amount,
                 'description'=>$request->description,
             ]);
-            DB::commit();
+            
             Log::create([
                 'user_id' => auth()->user()->id,
                 'description' => 'User created voucher',
             ]);
-            return response()->json($voucher);
+            DB::commit();
+            return response()->json($voucher,200);
         }catch(QueryException $e){
             DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['DB error' => $e->getMessage()], 502);
         }catch(Exception $e){
             DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -144,7 +144,6 @@ class VoucherController extends Controller
         
     }
 
-
     /**
      * Update the specified resource in storage.
      */
@@ -152,8 +151,8 @@ class VoucherController extends Controller
     {
         //
     }
-
-    public function updateStatus(Request $request, string $id)
+    
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();

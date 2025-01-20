@@ -9,7 +9,6 @@ use App\Models\Lot;
 use App\Models\Product;
 use App\Models\Transaction;
 use App\Models\Vendor;
-use Illuminate\Support\Facades\DB;
 use Exception;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -17,6 +16,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class GRNController extends Controller
 {
@@ -40,9 +40,10 @@ class GRNController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
             $query = GoodsReceiveNote::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
+                $query->select('id', 'title','measurement_unit_id')
+                ->with('measurementUnit:id,name'); // Select product name and id
             }])
-            ->where('business_id',$businessId)
+            ->where('goods_receive_notes.business_id',$businessId)
             ->join('purchase_orders','purchase_orders.id','=','goods_receive_notes.purchase_order_id')
             ->join('users', 'users.id', '=', 'goods_receive_notes.received_by') // Corrected join
             ->select('goods_receive_notes.*', 'users.name as received_by', 'purchase_orders.order_code as po_code')
@@ -152,11 +153,21 @@ class GRNController extends Controller
                     ], 403);
                 }
             }
-            $data = GoodsReceiveNote::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])
-            ->where('id', $id) // Filter by the specific purchase order ID
-            ->firstOrFail();
+            $data = GoodsReceiveNote::with(['items.product' => function ($query) use ($id) {
+            $query->select('products.id', 'products.title')
+                ->when(
+                    GoodsReceiveNote::where('id', $id)->value('status') == 1,
+                    function ($query) use ($id) {
+                        $query->join('lots', function ($join) use ($id) {
+                            $join->on('products.id', '=', 'lots.product_id')
+                                ->where('lots.grn_id', '=', $id);
+                        })
+                        ->addSelect('lots.id as lot_id', 'lots.lot_code'); // Include lot information
+                    }
+                );
+        }])
+        ->where('id', $id) // Filter by the specific GRN ID
+        ->firstOrFail();
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -273,33 +284,7 @@ class GRNController extends Controller
             $data->update([
                 'status' => $request->status
             ]);
-            // transaction start
-            $vendor = Vendor::find($data->purchase_order->vendor_id);
-            $vendor_acc = $vendor->acc_id;
-            // for products
-            $total_billed = 0;
-            foreach ($data->items as $item) {
-                $total_billed += $item->billed;
-                $product = Product::find($item->product_id);
-                $product_acc = $product->acc_id;
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id'=>$product_acc,
-                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Item is purchased by this vendor: '.$vendor->name,
-                    'credit' => 0.00,
-                    'debit' => $item->billed
-                ]);
-            }
-            // for vendor
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id'=>$vendor_acc,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'purchase item from this vendor: '.$vendor->name,
-                'credit' => $total_billed,
-                'debit' => 0.00
-            ]);
+
             // lot entry
             if($request->status == 1){
                 foreach ($data->items as $item) {
@@ -332,7 +317,6 @@ class GRNController extends Controller
                 'user_id' => $user->id,
                 'description' => 'update GRN Status',   
             ]);
-
             DB::commit();
             return response()->json($data);
         }catch(QueryException $e){
@@ -369,36 +353,4 @@ class GRNController extends Controller
         }    
     }
 
-    public function approveGRNShow($id): JsonResponse
-    {
-        try{
-            $user = Auth::user();
-            
-            // Check if the user has the required permission
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view goods received notes')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-            $data = GoodsReceiveNote::with(['items.product' => function ($query) use ($id) {
-                $query->select('products.id', 'products.title')
-                    ->join('lots', function ($join) use ($id) {
-                        $join->on('products.id', '=', 'lots.product_id')
-                            ->where('lots.grn_id', '=', $id);
-                    })
-                    ->addSelect('lots.id as lot_id', 'lots.lot_code'); // Include lot information
-            }])
-            
-            ->where('id', $id) // Filter by the specific purchase order ID
-            ->firstOrFail();
-            return response()->json($data,200);
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
 }

@@ -78,12 +78,6 @@ class SaleOrderController extends Controller
                     'total' => 'required|numeric',
                     'total_tax' => 'required|numeric',
                     'items' => 'required|array',
-                    'items.*.product_id' => 'required|exists:products,id',
-                    'items.*.lot_id' => 'required|exists:lots,id',
-                    'items.*.quantity' => 'required|numeric',
-                    'items.*.unit_price' => 'required|numeric',
-                    'items.*.total_price' => 'required|numeric',
-                    'items.*.tax' => 'required|numeric',
 
             ],[
 
@@ -101,21 +95,6 @@ class SaleOrderController extends Controller
                 'total_tax.numeric' => 'Total Tax must be a number.',
                 
                 'items.required' => 'Items are required.',
-
-                'items.*.product_id.required' => 'Product is required.',
-                'items.*.product_id.exists' => 'Product does not exist.',
-
-                'items.*.quantity.required' => 'Quantity is required.', 
-                'items.*.quantity.numeric' => 'Quantity must be a number.',
-
-                'items.*.unit_price.required' => 'Unit Price is required.',
-                'items.*.unit_price.numeric' => 'Unit Price must be a number.',
-
-                'items.*.total_price.required' => 'Total Price is required.',
-                'items.*.total_price.numeric' => 'Total Price must be a number.',
-
-                'items.*.tax.required' => 'Tax is required.',
-                'items.*.tax.numeric' => 'Tax must be a number.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             do {
@@ -255,7 +234,7 @@ class SaleOrderController extends Controller
                 } else {
                     // Create new item
                     SaleOrderItem::create([
-                        'purchase_order_id' => $id,
+                        'sale_order_id' => $id,
                         'product_id' => $item['product_id'],
                         'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity'],
@@ -293,7 +272,10 @@ class SaleOrderController extends Controller
                     ], 403);
                 }
             }
+            $status = $request->status;
+            if($status == 0) throw new Exception('Invalid status',400);
             $data = SaleOrder::find($id);
+            if($data->status != 0) throw new Exception("Status can't change",400);
             $data->update([
                 'status' => $request->status
             ]);
@@ -309,6 +291,9 @@ class SaleOrderController extends Controller
         }
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
     public function list(Request $request): JsonResponse
     {
         try{
@@ -324,8 +309,8 @@ class SaleOrderController extends Controller
                 }
             }
             $searchQuery = $request->query('search');
-            $query = SaleOrder::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
+            $query = SaleOrder::with(['items' => function ($query) {
+                $query->with(['product:id,title', 'lot:id,lot_code']);
             }])// Select fields including vendor name
             ->orderBy('sale_orders.id', 'desc')->where('sale_orders.business_id',$businessId)
             ->where('sale_orders.status','=',1);

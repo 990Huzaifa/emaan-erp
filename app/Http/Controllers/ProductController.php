@@ -5,22 +5,19 @@ namespace App\Http\Controllers;
 use Exception;
 use App\Models\Log;
 use App\Models\Product;
-use Illuminate\Http\Request;
-use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
 use App\Models\Balance;
 use App\Models\MeasurementUnit;
 use App\Models\ProductCategory;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\JsonResponse;
 use App\Models\ProductSubCategory;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+use App\Models\ChartOfAccount;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Validator;
-
-
+use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -43,6 +40,7 @@ class ProductController extends Controller
             $perPage = $request->query('per_page', 10);
             $isActive = $request->query('is_active');
             $searchQuery = $request->query('search');
+            $category_id = $request->query('category_id');
 
             $query = Product::orderBy('id', 'desc');
             $query->select(
@@ -63,19 +61,16 @@ class ProductController extends Controller
                 $query = $query->where('products.category_id', $category_id);
             }
             if (!empty($searchQuery)) {
-                // Check if the search query is numeric to search by order ID
-                if (is_numeric($searchQuery)) {
-                    $query = $query->where('products.id', $searchQuery);
-                } else {
-                    // Otherwise, search by user name or email
-                    $userIds = Product::where('title', 'like', '%' . $searchQuery . '%')
+
+                
+                $userIds = Product::where('title', 'like', '%' . $searchQuery . '%')
                         ->orWhere('sku', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('p_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
     
-                    // Filter orders by the found user IDs
-                    $query = $query->whereIn('products.id', $userIds);
-                }
+                // Filter orders by the found user IDs
+                $query = $query->whereIn('products.id', $userIds);
             }
             $data = $query->paginate($perPage);
             Log::create([
@@ -120,7 +115,8 @@ class ProductController extends Controller
                     'sub_category_id'=>'required|string',
                     'purchase_price'=>'required|string',
                     'sale_price'=>'required|numeric',
-                    'sales_tax_rate'=>'required|numeric',
+                    'opening_balance'=>'nullable|numeric',
+                    'sales_tax_rate'=>'nullable|numeric',
                     'measurement_unit_id'=>'required|string|exists:measurement_units,id',
                     'image'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:8192',
     
@@ -154,12 +150,9 @@ class ProductController extends Controller
                 'image.mimes'=>'Image is must be a image',
                 'image.max'=>'Image is must be a image',
 
-                'sales_tax_rate.required'=>'Sales Tax Rate is Required',
                 'sales_tax_rate.numeric'=>'Sales Tax Rate is must be a numeric',
-
-                'opening_balance.numeric'=>'Opening Balance is must be a numeric',
                 
-
+                'opening_balance.numeric'=>'Opening Balance is must be a numeric',
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -171,8 +164,9 @@ class ProductController extends Controller
             $subcategory = ProductSubCategory::find($request->sub_category_id);
             $acc = ChartOfAccount::find($subcategory->acc_id);
             if(empty($acc)) throw new Exception('Inventory COA not found', 404);
-
+            
             DB::beginTransaction();
+            
             $title = strtoupper($request->title);
             $COA = createCOA($title,$acc->code);
             $image = null;
@@ -196,8 +190,11 @@ class ProductController extends Controller
                 'sub_category_id' => $request->sub_category_id,
                 'purchase_price' => $request->purchase_price,
                 'sale_price' => $request->sale_price,
-                'sales_tax_rate' => $request->sales_tax_rate,
+                'sales_tax_rate' => $request->sales_tax_rate ?? 0,
                 'added_by' => $user->id,
+            ]);
+            $COA->update([
+                'ref_id' => $product->id,
             ]);
             OpeningBalance::create([
                 'acc_id' => $COA->id,
@@ -206,9 +203,6 @@ class ProductController extends Controller
             Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
-            ]);
-            $COA->update([
-                'ref_id' => $product->id,
             ]);
             Log::create([
                 'user_id' => $user->id,
@@ -243,7 +237,14 @@ class ProductController extends Controller
                 }
             }
 
-            $product = Product::find($id);
+            $product = Product::select(
+                'products.*',
+                'product_categories.name as product_category', // Assuming 'name' is the category field
+                'product_sub_categories.name as product_sub_category',// Assuming 'name' is the subcategory field
+                'measurement_units.name as measurement_unit'
+            )->join('product_categories', 'products.category_id', '=', 'product_categories.id')
+            ->leftJoin('product_sub_categories', 'products.sub_category_id', '=', 'product_sub_categories.id')
+            ->leftJoin('measurement_units', 'measurement_unit_id', '=', 'measurement_units.id')->find($id);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User show product',
@@ -328,7 +329,7 @@ class ProductController extends Controller
             $subcategory = ProductSubCategory::find($request->sub_category_id);
             $acc = ChartOfAccount::find($subcategory->acc_id);
             if(empty($acc)) throw new Exception('COA not found', 404);
-
+            
             DB::beginTransaction();
             $title = strtoupper($request->title);
             $COA = updateCOA($product->acc_id,$title,$acc->code);
@@ -404,7 +405,7 @@ class ProductController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
+    
     public function updateStatus($id):JsonResponse
     {
         try{
@@ -413,7 +414,7 @@ class ProductController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit product')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit products')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -442,21 +443,7 @@ class ProductController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
-
-    public function list():JsonResponse
-    {
-        try{
-            $product = Product::select('id','title')->where('is_active',1)->get();
-            return response()->json($product);
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
-
-
+    
     public function csvProduct()
     {
 
@@ -475,7 +462,7 @@ class ProductController extends Controller
         // Return the file as a response
         return Response::download($filePath, 'product-sample.csv', $headers);
     }
-
+    
     public function importProduct(Request $request):JsonResponse
     {
         try{
@@ -530,7 +517,7 @@ class ProductController extends Controller
                     }
     
                     // Verify measurement unit
-                    $measurementUnit = MeasurementUnit::where('name', $data['measurement_unit'])->first();
+                    $measurementUnit = MeasurementUnit::where('slug', $data['measurement_unit'])->first();
                     if (!$measurementUnit) {
                         throw new Exception("Measurement unit '{$data['measurement_unit']}' not found");
                     }
@@ -567,7 +554,7 @@ class ProductController extends Controller
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);
-
+                    
                     Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,
@@ -623,19 +610,15 @@ class ProductController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
-    public function categoryData() 
+    
+    public function list():JsonResponse
     {
-        $data= ProductSubCategory::select(
-            'product_sub_categories.*',
-            'product_categories.name as product_category'
-        )
-        ->join('product_categories', 'product_sub_categories.category_id', '=', 'product_categories.id')
-        ->get();
-
-        $pdf = Pdf::loadView('pdf.category', ['data' => $data]);
-        // return $pdf;
-        return $pdf->download('category-data-list.pdf');
+        try{
+            $product = Product::select('id','title')->where('is_active',1)->get();
+            return response()->json($product);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }
     }
 
 }

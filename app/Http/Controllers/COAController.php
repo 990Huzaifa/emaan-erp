@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
+use DB;
 use Exception;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
+use App\Models\BusinessHasAccount;
 use App\Models\OpeningBalance;
 use Illuminate\Http\JsonResponse;
-use App\Models\BusinessHasAccount;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
@@ -18,30 +18,44 @@ class COAController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+            $businessId = $user->login_business;
+    
             // Check if the user has the required permission
             if ($user->role == 'user') {
-                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list chart of account')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
+    
             $perPage = $request->query('per_page', 10);
-
-            $data = ChartOfAccount::paginate($perPage);
-
-            return response()->json($data,200);
-
-        }catch(QueryException $e){
+    
+            // Fetch chart of accounts connected with the business_has_accounts table
+            $data = ChartOfAccount::join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                ->leftJoin('opening_balances', 'chart_of_accounts.id', '=', 'opening_balances.acc_id')
+                ->where('business_has_accounts.business_id', $businessId)
+                ->select(
+                    'chart_of_accounts.id',
+                    'chart_of_accounts.name',
+                    'chart_of_accounts.code'
+                )
+                ->paginate($perPage);
+    
+            if ($data->isEmpty()) {
+                throw new Exception('No data found', 404);
+            }
+    
+            return response()->json($data);
+    
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-
-        }catch(Exception $e){
+    
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -66,7 +80,7 @@ class COAController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string|unique:chart_of_accounts,name',
-                    'type'=>'required|string|in:BANK,CASH',
+                    'type'=>'required|string|in:BANK,CASH,EXPENSES',
                     'opening_balance'=>'required|numeric',
 
             ],[
@@ -85,11 +99,13 @@ class COAController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             // Split the parent code into levels
             $type = $request->type;
+            if($type == 'EXPENSES'){
+                $type = 'BUSINESS EXPENSE';
+            }
             $acc = ChartOfAccount::where('name',$type)->first();
             if(empty($acc)) throw new Exception(`$type COA not found`, 404);
             DB::beginTransaction();
-            $check = ChartOfAccount::where('name',$request->name)->exists();
-            if($check) throw new Exception('Name is Already in use', 400);
+            
             $COA = createCOA($request->name,$acc->code);
 
 
@@ -122,6 +138,7 @@ class COAController extends Controller
     {
         //
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -182,5 +199,4 @@ class COAController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
 }

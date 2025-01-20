@@ -36,7 +36,7 @@ class PurchaseOrderController extends Controller
             $query = PurchaseOrder::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])
-            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with vendors
+            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
             ->where('business_id',$businessId)
             ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
             ->orderBy('purchase_orders.id', 'desc');
@@ -136,7 +136,7 @@ class PurchaseOrderController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -165,13 +165,6 @@ class PurchaseOrderController extends Controller
         }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
 
     /**
      * Update the specified resource in storage.
@@ -275,7 +268,10 @@ class PurchaseOrderController extends Controller
                     ], 403);
                 }
             }
+            $status = $request->status;
+            if($status == 0) throw new Exception('Invalid status',400);
             $data = PurchaseOrder::find($id);
+            if($data->status != 0) throw new Exception("Status can't change",400);
             $data->update([
                 'status' => $request->status
             ]);
@@ -289,14 +285,6 @@ class PurchaseOrderController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 
     public function list(Request $request): JsonResponse
@@ -314,10 +302,38 @@ class PurchaseOrderController extends Controller
                 }
             }
             $searchQuery = $request->query('search');
-            $query = PurchaseOrder::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])// Select fields including vendor name
-            ->orderBy('purchase_orders.id', 'desc')->where('status',1)->where('purchase_orders.business_id',$businessId);
+            $query = PurchaseOrder::select('id','order_code')->where('status',1)->where('business_id',$businessId)
+            ->orderBy('purchase_orders.id', 'desc');
+            if (!empty($searchQuery)) {
+                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+            }
+            // Execute the query with pagination
+            $data = $query->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+    
+    public function list2(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list purchase orders')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $searchQuery = $request->query('search');
+            $query = PurchaseOrder::select('id','order_code')->where('status',1)->where('vendor_id',$request->vendor_id)->where('business_id',$businessId)
+            ->orderBy('purchase_orders.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }

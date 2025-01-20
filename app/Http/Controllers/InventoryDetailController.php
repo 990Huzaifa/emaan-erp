@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use Exception;
 use App\Models\Lot;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\InventoryDetail;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\QueryException;
 
 class InventoryDetailController extends Controller
@@ -24,7 +24,7 @@ class InventoryDetailController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list purchase orders')) {
+                if (!$user->hasBusinessPermission($businessId, 'list inventory detail')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -32,16 +32,21 @@ class InventoryDetailController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = InventoryDetail::with(['product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])->join('lots', 'inventory_details.lot_id', '=', 'lots.id') // Join with vendors
-            ->select('inventory_details.*', 'lots.lot_code')->orderBy('inventory_details.id', 'desc');
+            $query = InventoryDetail::join('lots', 'inventory_details.lot_id', '=', 'lots.id')
+            ->join('products', 'inventory_details.product_id', '=', 'products.id')
+            ->select(
+                'products.id',
+                'products.title',
+                DB::raw('SUM(inventory_details.stock) as total_quantity'),
+                'lots.status'
+            )
+            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
+            ->orderBy('inventory_details.id', 'desc');
+
             if (!empty($searchQuery)) {
                 $query->where(function ($q) use ($searchQuery) {
                     $q->where('lots.lot_code', 'like', '%' . $searchQuery . '%')
-                      ->orWhereHas('product', function ($q) use ($searchQuery) {
-                          $q->where('title', 'like', '%' . $searchQuery . '%');
-                      });
+                      ->orWhere('products.title', 'like', '%' . $searchQuery . '%');
                 });
             }
             // Execute the query with pagination
@@ -81,7 +86,7 @@ class InventoryDetailController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view inventory details')) {
+                if (!$user->hasBusinessPermission($businessId, 'list purchase orders')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -89,8 +94,9 @@ class InventoryDetailController extends Controller
             }
             $data = InventoryDetail::with(['product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
-            }])
-            ->where('id', $id) // Filter by the specific purchase order ID
+            }])->join('lots', 'inventory_details.lot_id', '=', 'lots.id') // Join with vendors
+            ->select('inventory_details.*', 'lots.lot_code','lots.purchase_unit_price','lots.sale_unit_price')
+            ->where('inventory_details.id', $id) // Filter by the specific Inventory Detail ID
             ->firstOrFail();
             return response()->json($data,200);
         }catch(QueryException $e){
@@ -115,8 +121,7 @@ class InventoryDetailController extends Controller
     {
         //
     }
-
-
+    
     public function inventoryProduct(): JsonResponse
     {
         try{
@@ -160,13 +165,16 @@ class InventoryDetailController extends Controller
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view inventory details')) {
+                if (!$user->hasBusinessPermission($businessId, 'view inventory detail')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            $data = Lot::where('product_id',$product_id)->get();
+            $data = Lot::select('lots.*','inventory_details.stock as quantity')
+            ->join('inventory_details','inventory_details.lot_id','=','lots.id')
+            ->where('inventory_details.product_id',$product_id)
+            ->get();
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -174,4 +182,6 @@ class InventoryDetailController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+    
+    
 }

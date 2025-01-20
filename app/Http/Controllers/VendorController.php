@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Balance;
 use App\Models\City;
 use Exception;
 use App\Models\Log;
@@ -10,6 +9,7 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
+use App\Models\Balance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -173,6 +173,7 @@ class VendorController extends Controller
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
+            
             Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
@@ -476,7 +477,7 @@ class VendorController extends Controller
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);
-
+                    
                     Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,

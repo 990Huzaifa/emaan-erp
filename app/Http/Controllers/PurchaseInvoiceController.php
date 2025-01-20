@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use App\Models\GoodsReceiveNote;
+use DB;
+use Exception;
 use App\Models\Log;
+use App\Models\GoodsReceiveNote;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\PurchaseOrder;
-use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -164,7 +164,6 @@ class PurchaseInvoiceController extends Controller
         }
     }
 
-
     /**
      * Update the specified resource in storage.
      */
@@ -172,7 +171,7 @@ class PurchaseInvoiceController extends Controller
     {
         //
     }
-
+    
     public function updateStatus(Request $request, string $id)
     {
         try{
@@ -213,7 +212,7 @@ class PurchaseInvoiceController extends Controller
     {
         //
     }
-
+    
     public function list(): JsonResponse
     {
         try{
@@ -237,7 +236,8 @@ class PurchaseInvoiceController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }    
     }
-
+    
+    
 
     public function print(string $id)
     {
@@ -284,4 +284,5 @@ class PurchaseInvoiceController extends Controller
             return redirect()->back()->with('error', $e->getMessage());
         }
     }
+
 }

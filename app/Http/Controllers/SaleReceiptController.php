@@ -99,12 +99,12 @@ class SaleReceiptController extends Controller
             DB::beginTransaction();
 
             $saleReceipt = SaleReceipt::create([
-                'dn_id' => $request->dn_id,
+                'customer_id' => $SO->customer_id,
                 'so_no' => $SO->order_code,
+                'dn_id' => $request->dn_id,
+                'business_id' => $businessId,
                 'receipt_no' => $receipt_no,
                 'receipt_date' => $request->receipt_date,
-                'customer_id' => $SO->customer_id,
-                'business_id' => $businessId,
             ]);
 
             // Map DN items to PI items
@@ -150,12 +150,12 @@ class SaleReceiptController extends Controller
                 $query->select('id', 'title');
             }])
             ->join('businesses', 'sale_receipts.business_id', '=', 'businesses.id')
-            ->join('customer', 'sale_receipts.vendor_id', '=', 'customers.id') // Join with vendors
+            ->join('customers', 'sale_receipts.customer_id', '=', 'customers.id') // Join with vendors
             ->join('cities', 'customers.city_id', '=', 'cities.id')
             ->select('sale_receipts.*',
             'customers.name as customer_name',
             'customers.address as customer_address',
-            'customers.phone as customer_phone',
+            'customers.telephone as customer_telephone',
             'businesses.name as business_name',
             'cities.name as city_name'
             ) // Select fields including vendor name
@@ -174,81 +174,7 @@ class SaleReceiptController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        try{
-            $user = Auth::user();
-            // Check if the user has the required permission
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create sale receipt')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-            $validator = Validator::make(
-                $request->all(),[
-                    'dn_id'=>'required|exists:delivery_notes,id',
-                    'receipt_date'=> 'required',
-                ],[
-                'dn_id.required' => 'The dnn_id is required.',
-                'dn_id.exists' => 'The dn_id is invalid.',
-
-                'receipt_date.required' => 'Receipt Date is required.'
-            ]);
-
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $DN = DeliveryNote::with('items')->where('status',1)->find($request->dn_id);
-            if (!$DN) throw new Exception('Delivery Note is not approved yet.', 400);
-
-            $SOID = $DN->sale_order_id;
-            $SO = SaleOrder::find($SOID);
-            if (!$SO) throw new Exception('Sale Order not found.', 404);
-
-            DB::beginTransaction();
-
-            $saleReceipt = SaleReceipt::where('id', $id)->first();
-            $saleReceipt->update([
-                'dn_id' => $request->dn_id,
-                'receipt_date' => $request->receipt_date,
-                'customer_id' => $SO->customer_id,
-                'business_id' => $businessId,
-            ]);
-
-            // Map DN items to PI items
-            foreach ($DN->items as $item) {
-                if($item['id'] == null){
-                    SaleReceiptItem::create([
-                        'sale_receipt_id' => $saleReceipt->id,
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'unit_price' => $item->unit_price,
-                        'total' => $item->total_price,
-                        'tax' => $item->tax,
-                    ]);
-                }else{
-                    SaleReceiptItem::where('id', $item['id'])->update([
-                        'product_id' => $item->product_id,
-                        'quantity' => $item->quantity,
-                        'unit_price' => $item->unit_price,
-                        'total' => $item->total_price,
-                        'tax' => $item->tax,
-                    ]);
-                }
-                
-            }
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'User update sale receipt',
-            ]);
-            DB::commit();
-            return response()->json($saleReceipt, 200);
-        }catch(QueryException $e){
-            DB::rollBack();
-            return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
-            DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
+        //
     }
 
     public function updateStatus(Request $request, string $id)
