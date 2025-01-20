@@ -38,6 +38,8 @@ return new class extends Migration
             $table->boolean('is_tax')->default(0)->comment('1 = Yes, 0 = No');
             $table->enum('tax_cycle', ['monthly', 'yearly'])->nullable();
             $table->decimal('tax', 18, 2)->default(0.00);
+            $table->boolean('is_loan')->default(0)->comment('1 = Yes, 0 = No');
+            $table->decimal('loan', 18, 2)->default(0.00); 
             $table->string('added_by');
             $table->date('joining_date');
             $table->boolean('status')->default(1)->comment('1 = Working, 0 = Resigned');
