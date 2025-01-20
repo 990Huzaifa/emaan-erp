@@ -48,8 +48,10 @@ jobs:
           resources/views/*
           bootstrap/cache/*
           public/*
+          tests/*
           .env
           .git-ftp-*
           *.md
           composer.json
+          package.json
           composer.lock

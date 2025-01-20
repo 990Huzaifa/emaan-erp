@@ -35,7 +35,7 @@ class SalaryVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = SalaryVoucher::select('salary_vouchers.*','employee.name as employee_name','chart_of_accounts.name as acc_name')
+            $query = SalaryVoucher::select('salary_vouchers.*','employees.name as employee_name','chart_of_accounts.name as acc_name')
             ->join('employees','salary_vouchers.employee_id', '=', 'employees.id')
             ->join('chart_of_accounts','salary_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->where('salary_vouchers.business_id',$user->login_business)
