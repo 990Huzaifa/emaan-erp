@@ -12,8 +12,8 @@ jobs:
 
     steps:
     # Checkout the code
-    #- name: Get latest code
-    #  uses: actions/checkout@v2
+    - name: Get latest code
+      uses: actions/checkout@v2
 
     # Install PHP and dependencies
     # - name: Set up PHP
