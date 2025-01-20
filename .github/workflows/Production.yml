@@ -43,6 +43,19 @@ jobs:
         exclude: |
           .git*
           node_modules/*
-          vendors/*
-          storage/logs/*
+          vendor/*
+          storage/*
+          resources/views/*
+          bootstrap/cache/*
+          public/*
           .env
+          .git-ftp-*
+          *.md
+          composer.json
+          composer.lock
+        include: |
+          app/Http/Controllers/*
+          app/Models/*
+          database/migrations/*
+          database/seeds/*
+          routes/*
