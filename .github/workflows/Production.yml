@@ -24,6 +24,14 @@ jobs:
     - name: Install Composer Dependencies
       run: composer install --prefer-dist --no-progress
 
+    # Clear Laravel Cache
+    - name: Clear Laravel Cache
+      run: |
+        php artisan cache:clear
+        php artisan config:clear
+        php artisan route:clear
+        php artisan view:clear
+
     # Deploy files via FTP
     - name: Sync files
       uses: SamKirkland/FTP-Deploy-Action@4.0.0
@@ -35,6 +43,5 @@ jobs:
         exclude: |
           .git*
           node_modules/*
-          vendor/*
           storage/logs/*
           .env
