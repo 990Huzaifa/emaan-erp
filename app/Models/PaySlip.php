@@ -14,6 +14,6 @@ class PaySlip extends Model
         'employee_id',
         'slip_no',
         'status',
-        'slip_date'
+        'issue_date'
     ];
 }

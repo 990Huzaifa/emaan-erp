@@ -53,9 +53,3 @@ jobs:
           *.md
           composer.json
           composer.lock
-        include: |
-          app/Http/Controllers/*
-          app/Models/*
-          database/migrations/*
-          database/seeds/*
-          routes/*
