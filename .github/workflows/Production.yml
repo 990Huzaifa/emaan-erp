@@ -12,16 +12,14 @@ jobs:
 
     steps:
     # Checkout the code
-    - name: Checkout Code
+    - name: Get latest code
       uses: actions/checkout@v3
 
     # Install PHP and dependencies
     - name: Set up PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.1' # Adjust based on your Laravel requirements
-        extensions: mbstring, bcmath, pdo, curl, dom, json, openssl
-        coverage: none
+        php-version: '8.2'
 
     - name: Install Composer Dependencies
       run: composer install --no-dev --no-interaction --prefer-dist
@@ -33,24 +31,10 @@ jobs:
         npm run prod
 
     # Deploy files via FTP
-    - name: Deploy via FTP
-      uses: SamKirkland/FTP-Deploy-Action@4.5.0
+    - name: Sync files
+      uses: SamKirkland/FTP-Deploy-Action@4.0.0
       with:
         server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
-        port: 21
-        protocol: ftp
-        local-dir: ./
         server-dir: /home/zetdsqxs/eeman.zetdigi.comm
-        log-level: verbose
-
-    # Set file permissions
-    - name: Set Permissions
-      run: |
-        lftp -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} <<EOF
-        chmod -R 755 /home/zetdsqxs/eeman.zetdigi.com
-        chmod -R 775 /home/zetdsqxs/eeman.zetdigi.com/storage
-        chmod -R 775 /home/zetdsqxs/eeman.zetdigi.com/bootstrap/cache
-        bye
-        EOF
