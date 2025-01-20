@@ -45,4 +45,3 @@ jobs:
           node_modules/*
           storage/logs/*
           .env
-        dry-run: false
