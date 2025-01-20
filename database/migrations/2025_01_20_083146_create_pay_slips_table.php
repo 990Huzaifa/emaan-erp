@@ -15,12 +15,13 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_id');
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
-            $table->unsignedBigInteger('business_id');
+            $table->unsignedBigInteger(column: 'business_id');
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
             $table->string('slip_no')->unique();
             $table->date('pay_period_start'); // Start date of the pay period
             $table->date('pay_period_end'); // End date of the pay period
             $table->date('issue_date'); // Date the payslip is issued
+            $table->decimal('basic_salary', 18, 2); 
             $table->decimal('loan_deduction', 18, 2)->default(0.00); // Loan deductions for this period
             $table->decimal('tax_deduction', 18, 2)->default(0.00); // Tax deductions for this period
             $table->decimal('allowance', 18, 2)->default(0.00); // Allowances added for this period

@@ -104,7 +104,9 @@ class EmployeeController extends Controller
                 'tax' => 'required_if:is_tax,true|numeric',
                 'is_bonus' => 'required|boolean',
                 'bonus_cycle' => 'required_if:is_bonus,true|in:monthly,yearly',
-                'bonus' => 'required_if:is_bonus,true|numeric'
+                'bonus' => 'required_if:is_bonus,true',
+                'is_loan' => 'required|boolean',
+                'loan' => 'required_if:is_loan,true'
             ],[
                 'name.required' => 'Name is required',
 
@@ -149,6 +151,10 @@ class EmployeeController extends Controller
 
                 'bonus.required_if' => 'Bonus is required',
                 'bonus.numeric' => 'Bonus must be a number',
+
+                'is_loan.required' => 'Loan is required',
+
+                'loan.required_if' => 'Loan is required',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             
@@ -214,6 +220,8 @@ class EmployeeController extends Controller
                 'is_bonus' => $request->is_bonus,
                 'bonus_cycle' => $request->bonus_cycle ?? null,
                 'bonus' => $request->bonus ?? 0.00,
+                'is_loan' => $request->is_loan,
+                'loan' => $request->loan ?? 0.00,
                 'joining_date' => $request->joining_date,
                 'added_by' => $user->id
                 ]);
@@ -354,7 +362,9 @@ class EmployeeController extends Controller
                 'tax' => $request->tax ?? 0.00,
                 'is_bonus' => $request->is_bonus,
                 'bonus_cycle' => $request->bonus_cycle ?? null,
-                'bonus' => $request->bonus ?? 0.00
+                'bonus' => $request->bonus ?? 0.00,
+                'is_loan' => $request->is_loan,
+                'loan' => $request->loan ?? 0.00
             ]);
             Log::create([
                 'user_id' => $user->id,

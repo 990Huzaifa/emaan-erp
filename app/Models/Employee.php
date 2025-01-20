@@ -33,6 +33,8 @@ class Employee extends Model
         'is_tax',
         'tax_cycle',
         'tax',
+        'is_loan',
+        'loan',
         'image',
         'added_by',
     ];

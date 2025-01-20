@@ -76,8 +76,25 @@ class PaySlipController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'employee_id' => 'required|exists:employees,id',
-                    'slip_date' =>'required'
+                    'pay_period_start' =>'required',
+                    'pay_period_end' => 'required',
+                    'issue_date' => 'required',
+                    'basic_salary' => 'required',
+                    'loan_deduction' => 'required',
+                    'tax_deduction' => 'required',
+                    'allowance' => 'required',
+                    'bonus' => 'required',
+                    'net_salary' => 'required',
                 ],[
+                    'employee_id.required' => 'Employee is required',
+                    'pay_period_start.required' => 'Pay period start is required',
+                    'pay_period_end.required' => 'Pay period end is required',
+                    'issue_date.required' => 'Issue date is required',
+                    'basic_salary.required' => 'Basic salary is required',
+                    'loan_deduction.required' => 'Loan deduction is required',
+                    'tax_deduction.required' => 'Tax deduction is required',
+                    'allowance.required' => 'Allowance is required',
+                    'bonus.required' => 'Bonus is required',
                     
                 ]);
 
@@ -85,12 +102,20 @@ class PaySlipController extends Controller
                     $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (PaySlip::where('slip_no', $slip_no)->exists());
 
-                PaySlip::create([
+                $data = PaySlip::create([
                     "slip_date" => $request->slip_date,
                     "slip_no" => $slip_no,
                     "business_id" => $user->login_business,
+                    "employee_id" => $request->employee_id,
+                    "pay_period_start" => $request->pay_period_start,
+                    "pay_period_end" => $request->pay_period_end,
+                    "issue_date" => $request->issue_date,
+                    "basic_salary" => $request->basic_salary,
+                    "loan_deduction" => $request->loan_deduction,
 
                 ]);
+
+                return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
