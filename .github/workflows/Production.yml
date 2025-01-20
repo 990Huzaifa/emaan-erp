@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  deploy:
+  web-deploy:
     name: Deploy Laravel Project via FTP
     runs-on: ubuntu-latest
 
@@ -21,8 +21,18 @@ jobs:
       with:
         php-version: '8.2'
 
+    # Cache composer dependencies    
+     - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
     - name: Install Composer Dependencies
-      run: composer install --no-dev --no-interaction --prefer-dist
+      run: composer install --prefer-dist --no-progress
 
     # Deploy files via FTP
     - name: Sync files
