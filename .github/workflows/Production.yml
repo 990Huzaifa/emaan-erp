@@ -22,7 +22,7 @@ jobs:
         php-version: '8.2'
 
     - name: Install Composer Dependencies
-      run: composer install --prefer-dist --no-progress
+      run: composer install
 
     # Clear Laravel Cache
     - name: Clear Laravel Cache
