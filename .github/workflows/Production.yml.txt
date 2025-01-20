@@ -12,25 +12,25 @@ jobs:
 
     steps:
     # Checkout the code
-    - name: Get latest code
-      uses: actions/checkout@v2
+    #- name: Get latest code
+    #  uses: actions/checkout@v2
 
     # Install PHP and dependencies
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
+    # - name: Set up PHP
+    #   uses: shivammathur/setup-php@v2
+    #   with:
+    #     php-version: '8.2'
 
-    - name: Install Composer Dependencies
-      run: composer install
+    # - name: Install Composer Dependencies
+    #   run: composer install
 
     # Clear Laravel Cache
-    - name: Clear Laravel Cache
-      run: |
-        php artisan cache:clear
-        php artisan config:clear
-        php artisan route:clear
-        php artisan view:clear
+    # - name: Clear Laravel Cache
+    #   run: |
+    #     php artisan cache:clear
+    #     php artisan config:clear
+    #     php artisan route:clear
+    #     php artisan view:clear
 
     # Deploy files via FTP
     - name: Sync files
@@ -43,5 +43,6 @@ jobs:
         exclude: |
           .git*
           node_modules/*
+          vendors/*
           storage/logs/*
           .env
