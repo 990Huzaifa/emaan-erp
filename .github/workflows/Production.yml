@@ -21,14 +21,18 @@ jobs:
       with:
         php-version: '8.2'
 
+     - name: Cache Composer packages
+        id: composer-cache
+        uses: actions/cache@v2
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-
+
     - name: Install Composer Dependencies
       run: composer install --no-dev --no-interaction --prefer-dist
 
-    # Build frontend assets (if needed)
-    - name: Install NPM Dependencies and Build Assets
-      run: |
-        npm install
-        npm run prod
 
     # Deploy files via FTP
     - name: Sync files
