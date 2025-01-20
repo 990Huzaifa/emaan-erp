@@ -1,6 +1,5 @@
-name: Production
+name: Laravel Deployment via FTP
 
-# Trigger deployment only on push to main branch
 on:
   push:
     branches:
@@ -8,35 +7,50 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to EC2 on main branch push
+    name: Deploy Laravel Project via FTP
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the files
-        uses: actions/checkout@v2
-        
-      - name: Validate composer.json and composer.lock
-        run: composer validate
+    # Checkout the code
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-suggest
-        
-      - name: Clear Application Cache
-        run: php artisan cache:clear
+    # Install PHP and dependencies
+    - name: Set up PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1' # Adjust based on your Laravel requirements
+        extensions: mbstring, bcmath, pdo, curl, dom, json, openssl
+        coverage: none
 
-      - name: Clear Route Cache
-        run: php artisan route:clear
+    - name: Install Composer Dependencies
+      run: composer install --no-dev --no-interaction --prefer-dist
 
-      - name: Clear Config Cache
-        run: php artisan config:clear
+    # Build frontend assets (if needed)
+    - name: Install NPM Dependencies and Build Assets
+      run: |
+        npm install
+        npm run prod
 
-      - name: Clear Compiled Views
-        run: php artisan view:clear
-        
-      - name: Deploy to EC2
-        uses: easingthemes/ssh-deploy@main
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          REMOTE_HOST: ${{ secrets.EC2_HOST }}
-          REMOTE_USER: ${{ secrets.EC2_USERNAME }}
-          TARGET: ${{ secrets.TARGET_DIR }}
+    # Deploy files via FTP
+    - name: Deploy via FTP
+      uses: SamKirkland/FTP-Deploy-Action@4.5.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        port: 21
+        protocol: ftp
+        local-dir: ./
+        server-dir: /home/zetdsqxs/eeman.zetdigi.comm
+        log-level: verbose
+
+    # Set file permissions
+    - name: Set Permissions
+      run: |
+        lftp -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} <<EOF
+        chmod -R 755 /home/zetdsqxs/eeman.zetdigi.com
+        chmod -R 775 /home/zetdsqxs/eeman.zetdigi.com/storage
+        chmod -R 775 /home/zetdsqxs/eeman.zetdigi.com/bootstrap/cache
+        bye
+        EOF
