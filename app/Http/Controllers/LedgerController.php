@@ -122,7 +122,7 @@ class LedgerController extends Controller
                 $parent_code = ChartOfAccount::select('code')->where('name',$name)->get();
             }
             else if($name == 'EMPLOYEE_SALARY'){
-                $parent_code = ChartOfAccount::select('code')->where('name','EMPLOYEE SALARY')->get();
+                $parent_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->get();
             }
             else if($name == 'BUSINESS_EXPENSE'){
                 $parent_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->get();

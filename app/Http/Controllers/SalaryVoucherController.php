@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
+use App\Models\Log;
 use App\Models\SalaryVoucher;
 use Exception;
 use App\Models\Transaction;
@@ -183,8 +185,71 @@ class SalaryVoucherController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve salary voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $data = SalaryVoucher::find($id);
+            if (empty($data)) throw new Exception('No data found', 400);
+            if ($data->status == 1) throw new Exception('Already Paid', 400);
+            DB::beginTransaction();
+            // transaction
+            $acc = $data->acc_id;
+            $employee_acc = Employee::where('id', $data->employee_id)->first()->value('acc_id');
+            $total_billed = $data->voucher_amount;
+            $a_cb = calculateBalance($acc, $total_billed, true);
+            $e_cb = calculateBalance($employee_acc, $total_billed, false);
+            
+
+            // Credit the asset account (money is leaving)
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $acc,
+                'transaction_type' => 2, // 2 -> Expense
+                'description' => 'Payment for expense voucher.',
+                'debit' => 0.00, // No money added to the asset account
+                'credit' => $total_billed, // Money leaving the asset account
+                'current_balance' => $a_cb // Updated balance for the asset account
+            ]);
+
+            // Debit the employee account (money recorded as an employee)
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $employee_acc,
+                'transaction_type' => 2, // 2 -> Expense
+                'description' => 'Recording expense payment.',
+                'debit' => $total_billed, // Money recorded as an employee
+                'credit' => 0.00, // No money leaving the employee account
+                'current_balance' => $e_cb // Updated balance for the employee account
+            ]);
+            $data->update([
+                'status'=>1,
+                'approved_by'=>$user->id
+                ]);
+
+            
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
+            ]);
+            DB::commit();
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);            
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
