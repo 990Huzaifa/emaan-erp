@@ -99,7 +99,7 @@ class COAController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             // Split the parent code into levels
             $type = $request->type;
-            if($type == 'EXPENSES'){
+            if($type == 'BUSINESS_EXPENSES'){
                 $type = 'BUSINESS EXPENSE';
             }
             $acc = ChartOfAccount::where('name',$type)->first();
