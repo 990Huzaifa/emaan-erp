@@ -386,4 +386,31 @@ class EmployeeController extends Controller
     {
         //
     }
+
+    public function list():JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list employee')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $employee = Employee::select('id','name')->get();
+
+            return response()->json($employee,200);
+            
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }
