@@ -80,7 +80,7 @@ class COAController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string|unique:chart_of_accounts,name',
-                    'type'=>'required|string|in:BANK,CASH,EXPENSES',
+                    'type'=>'required|string|in:BANK,CASH,BUSINESS_EXPENSES',
                     'opening_balance'=>'required|numeric',
 
             ],[
