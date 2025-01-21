@@ -161,7 +161,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);
-    Route::get('list/employee',[EmployeeController::class,'list']);
+    Route::get('list/employees',[EmployeeController::class,'list']);
     Route::get('/csv/employee', [EmployeeController::class, 'csvCustomer']);
     Route::post('/csv/employee/upload', [EmployeeController::class, 'importCustomer']);
     

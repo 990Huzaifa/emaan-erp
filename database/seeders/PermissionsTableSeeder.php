@@ -145,6 +145,16 @@ class PermissionsTableSeeder extends Seeder
             'edit salary voucher',
             'approve salary voucher',
 
+            'list department',
+            'view department',
+            'create department',
+            'edit department',
+
+            'list designation',
+            'view designation',
+            'create designation',
+            'edit designation',
+
         ];
 
         // Loop through each permission and create it

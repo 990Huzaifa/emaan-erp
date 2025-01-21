@@ -121,7 +121,19 @@ class PermissionController extends Controller
                     'list sale return',
                     'edit sale return',
                     'approve sale return',
-                ], 
+                ],
+                "Department" => [
+                    'list department',
+                    'view department',
+                    'create department',
+                    'edit department',
+                ],
+                "Designation" => [
+                    'list designation',
+                    'view designation',
+                    'create designation',
+                    'edit designation',
+                ],
                 "Employee" => [
                     'list employee',
                     'view employee',
