@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\DesignationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -158,6 +160,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/csv/vendor', [VendorController::class, 'csvVendor']);
     Route::post('/csv/vendor/upload', [VendorController::class, 'importVendor']);
     
+    Route::apiResource('department',DepartmentController::class)->only('index','store','show','update');
+    Route::get('list/department',[DepartmentController::class,'list']);
+    
+    Route::apiResource('designation',DesignationController::class)->only('index','store','show','update');
+    Route::get('list/sub-category/{id}',[DesignationController::class,'list']);
     
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);
