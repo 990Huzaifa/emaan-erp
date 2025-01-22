@@ -196,6 +196,13 @@ class DepartmentController extends Controller
                     ], 403);
                 }
             }
+            $validator = Validator::make($request->all(), [
+                "status" => "required"
+            ],[
+                "status.required" => "Status is required",
+            ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             $data = Department::find($id);
             if($data->status == $request->status) throw new Exception('Status already updated', 400);
