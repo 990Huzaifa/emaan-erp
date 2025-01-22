@@ -83,7 +83,7 @@ class DesignationController extends Controller
             DB::beginTransaction();
             do {
                 $d_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (Designation::where('dpt_code', $d_code)->exists());
+            } while (Designation::where('d_code', $d_code)->exists());
             $data = Designation::create([
                 "name" => strtoupper($request->name),
                 "department_id" => $request->department_id,
