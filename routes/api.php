@@ -165,6 +165,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('designation',DesignationController::class)->only('index','store','show','update');
     Route::get('list/designation/{id}',[DesignationController::class,'list']);
+    Route::get('filter/designation/{id}',[DesignationController::class,'filterIndex']);
+    
     
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);

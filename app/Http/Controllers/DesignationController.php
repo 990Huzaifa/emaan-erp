@@ -31,8 +31,13 @@ class DesignationController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            
-            $data = Designation::paginate($perPage);
+            $query = Designation::orderBy('id', 'desc');
+
+            if (!empty($searchQuery)) {
+                $query = $query->where('d_code', 'like', '%' . $searchQuery . '%')
+                ->orWhere('name', 'like', '%' . $searchQuery . '%');
+            }
+            $data = $query->paginate($perPage);
 
             Log::create([
                 'user_id' => $user->id,
@@ -103,9 +108,32 @@ class DesignationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view designation')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = Designation::select('designation.*','departments.name as department_name')
+            ->leftJoin('departments', 'departments.id', '=', 'designation.department_id')
+            ->find($id);
+            if (empty($data)) throw new Exception('No data found', 404);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Designation view successfully',
+            ]);
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(["DB error" => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(["error" => $e->getMessage()], 400);
+        }
     }
 
     /**
@@ -130,5 +158,35 @@ class DesignationController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function list(): JsonResponse
+    {
+        try{
+            $data = Designation::select('id','name')->get();
+
+            if ($data->isEmpty()) throw new Exception('No data found', 404);
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function filterIndex($id):JsonResponse
+    {
+        try{
+            $data = Designation::where('department_id',$id)->get();
+            if ($data->isEmpty()) throw new Exception('No data found', 404);
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
