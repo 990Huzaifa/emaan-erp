@@ -135,17 +135,87 @@ class DepartmentController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit department')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $validator = Validator::make($request->all(), [
+                        "name" => "required|string|unique:departments,name,".$id,
+                        "description" => "nullable|string",
+                    ],[
+                        "name.required" => "Name is required",
+                        "name.string" => "Name must be a string",
+                        "name.unique" => "Name already exists",
+                        "description.string" => "Description must be a string",
+                    ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            DB::beginTransaction();
+            $data = Department::find($id);
+            if (empty($data)) throw new Exception('No data found', 404);
+            $data->update([
+                "name" => strtoupper($request->name),
+                "description" => $request->description ?? null,
+            ]);
+            DB::commit();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Department updated successfully',
+            ]);
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(["DB error" => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage(),], 400);
         
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit department')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            DB::beginTransaction();
+            $data = Department::find($id);
+            if($data->status == $request->status) throw new Exception('Status already updated', 400);
+            $data->update([
+                "status" => $request->status
+            ]);
+            DB::commit();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Department status updated successfully',
+            ]);
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(["DB error" => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(["error" => $e->getMessage()], 400);
+        }
     }
 
     public function list(): JsonResponse
