@@ -120,8 +120,8 @@ class DesignationController extends Controller
                     ], 403);
                 }
             }
-            $data = Designation::select('designation.*','departments.name as department_name')
-            ->leftJoin('departments', 'departments.id', '=', 'designation.department_id')
+            $data = Designation::select('designations.*','departments.name as department_name')
+            ->leftJoin('departments', 'departments.id', '=', 'designations.department_id')
             ->find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             Log::create([
