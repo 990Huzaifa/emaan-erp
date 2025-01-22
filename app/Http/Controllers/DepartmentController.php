@@ -30,12 +30,18 @@ class DepartmentController extends Controller
                 }
             }
             $perPage = $request->query('per_page', 10);
+            $searchQuery = $request->query('search');
+            $query = Department::orderBy('id', 'desc');
 
-            $data = Department::paginate($perPage);
+            if (!empty($searchQuery)) {
+                $query = $query->where('dpt_code', 'like', '%' . $searchQuery . '%')
+                ->orWhere('name', 'like', '%' . $searchQuery . '%');
+            }
+            $data = $query->paginate($perPage);
 
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Product sub Category listed successfully',
+                'description' => 'department listed successfully',
             ]);
             return response()->json($data,200);
 
@@ -79,13 +85,13 @@ class DepartmentController extends Controller
             } while (Department::where('dpt_code', $dpt_code)->exists());
             $data = Department::create([
                 "name" => strtoupper($request->name),
-                "description" => $request->description,
+                "description" => $request->description ?? null,
                 "dpt_code" => $dpt_code
             ]);
             DB::commit();
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Product sub Category created successfully',
+                'description' => 'Department created successfully',
             ]);
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -116,7 +122,7 @@ class DepartmentController extends Controller
             if (empty($data)) throw new Exception('No data found', 404);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Product view department successfully',
+                'description' => 'Department view successfully',
             ]);
             return response()->json($data,200);
         }catch(QueryException $e){
@@ -140,5 +146,21 @@ class DepartmentController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function list(): JsonResponse
+    {
+        try{
+            $data = Department::select('id','name')->get();
+
+            if ($data->isEmpty()) throw new Exception('No data found', 404);
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
