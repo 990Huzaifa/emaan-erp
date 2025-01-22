@@ -78,7 +78,7 @@ class DepartmentController extends Controller
                 $dpt_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Department::where('dpt_code', $dpt_code)->exists());
             $data = Department::create([
-                "name" => $request->name,
+                "name" => strtoupper($request->name),
                 "description" => $request->description,
                 "dpt_code" => $dpt_code
             ]);
