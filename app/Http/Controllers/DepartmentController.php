@@ -160,6 +160,7 @@ class DepartmentController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             $data = Department::find($id);
+            if(empty($data)) throw new Exception('No data found', 404);
             if (empty($data)) throw new Exception('No data found', 404);
             $data->update([
                 "name" => strtoupper($request->name),
@@ -205,6 +206,7 @@ class DepartmentController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             $data = Department::find($id);
+            if(empty($data)) throw new Exception('No data found', 404);
             if($data->status == $request->status) throw new Exception('Status already updated', 400);
             $data->update([
                 "status" => $request->status
