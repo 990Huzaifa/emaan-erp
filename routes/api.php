@@ -171,7 +171,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('filter/designation/{id}',[DesignationController::class,'filterIndex']);
 
     Route::apiResource('pay-policy',PayPolicyController::class)->only('index','store','show','update');
-    Route::get('list/pay-policy/{id}',[PayPolicyController::class,'list']);
+    Route::get('list/pay-policy/',[PayPolicyController::class,'list']);
     Route::put('status/{id}/pay-policy',[PayPolicyController::class,'updateStatus']);
     
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
