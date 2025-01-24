@@ -91,7 +91,7 @@ class PayPolicyController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             do {
-                $policy_code = 'PV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $policy_code = 'P-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PayPolicy::where('policy_code', $policy_code)->exists());
             $data = PayPolicy::create([
                 'name' => $request->name,
