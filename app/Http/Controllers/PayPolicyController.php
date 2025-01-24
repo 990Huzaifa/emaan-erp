@@ -182,7 +182,7 @@ class PayPolicyController extends Controller
                 'deductions.required' => 'Deductions is required',
                 'tax_rate.required' => 'Tax rate is required'
             ]);
-            if ($validator->fails())throw new Exception($validator->errors(), 400);
+            if ($validator->fails())throw new Exception($validator->errors()->first(), 400);
 
             $data = PayPolicy::find($id);
             if(empty($data)) throw new Exception('No data found', 404);
@@ -230,7 +230,7 @@ class PayPolicyController extends Controller
             ],[
                 'Status.required' => 'Status is required',
             ]);
-            if ($validator->fails())throw new Exception($validator->errors(), 400);
+            if ($validator->fails())throw new Exception($validator->errors()->first(), 400);
 
             $data = PayPolicy::find($id);
             if(empty($data)) throw new Exception('No data found', 404);
