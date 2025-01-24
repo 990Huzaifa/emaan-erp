@@ -269,7 +269,7 @@ class PayPolicyController extends Controller
                 }
             }
             $searchQuery = $request->query('search');
-            $query = PayPolicy::select('pay_policies.name','pay_policies.id');
+            $query = PayPolicy::select('pay_policies.id','pay_policies.name');
             if ($searchQuery) {
                 $query->where('pay_policies.name', 'like', '%' . $searchQuery . '%');
             }
