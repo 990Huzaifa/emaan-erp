@@ -36,27 +36,16 @@ class EmployeeController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = Employee::orderBy('id', 'desc')->join('cities', 'employees.city_id', '=', 'cities.id')
-            ->select('employees.*', 'cities.name as city');
-            if ($user->role == 'user') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list customers')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-                $query = $query->where('business_id',$businessId);
-            }
+            $query = Employee::orderBy('id', 'desc')
+            ->join('cities', 'employees.city_id', '=', 'cities.id')
+            ->join('departments', 'employees.department_id', '=', 'departments.id')
+            ->join('designations', 'employees.designation_id', '=', 'designations.id')
+            ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation');
+            $query = $query->where('business_id',$user->login_business);
             
 
             if (!empty($searchQuery)) {
-                $customerIds = Employee::where('name', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('e_code', 'like', '%' . $searchQuery . '%')
-                        ->pluck('id')
-                        ->toArray();
-    
-                    // Filter orders by the found Employees IDs
-                    $query = $query->whereIn('id', $customerIds);
+                $query = $query->where('employees.e_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
@@ -91,22 +80,12 @@ class EmployeeController extends Controller
                 'email' => 'required',
                 'city_id' => 'required|exists:cities,id',
                 'address' => 'required|max:255',
-                'designation' => 'required',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'payroll' => 'required|numeric',
-                'is_allowance' => 'required|boolean',
-                'allowance_cycle' => 'required_if:is_allowance,true|in:monthly,yearly',
-                'allowance' => 'required_if:is_allowance,true|numeric',
-                'is_tax' => 'required|boolean',
-                'tax_cycle' => 'required_if:is_tax,true|in:monthly,yearly',
-                'tax' => 'required_if:is_tax,true|numeric',
-                'is_bonus' => 'required|boolean',
-                'bonus_cycle' => 'required_if:is_bonus,true|in:monthly,yearly',
-                'bonus' => 'required_if:is_bonus,true',
-                'is_loan' => 'required|boolean',
-                'loan' => 'required_if:is_loan,true'
+                'department_id' => 'required|exists:departments,id',
+                'designation_id' => 'required|exists:designations,id',
+                'pay_policy_id' => 'required|exists:pay_policies,id',
             ],[
                 'name.required' => 'Name is required',
 
@@ -122,39 +101,26 @@ class EmployeeController extends Controller
                 'address.required' => 'Address is required',
                 'address.max' => 'Address must be less than 255 characters',
 
-                'designation.required' => 'Designation is required',
-
                 'image.image' => 'Image must be an image',
                 'image.mimes' => 'Image must be a file of type: jpeg, png, jpg, gif, svg',
                 'image.max' => 'Image must not exceed 2MB',
 
-                'payroll.required' => 'Pay roll is required',
-                'payroll.numeric' => 'Pay roll must be a number',
-                
-                'is_allowance.required' => 'Allowance is required',
-                'allowance_cycle.required_if' => 'Allowance cycle is required',
-                'allowance_cycle.in' => 'Allowance cycle must be either monthly or yearly',
+                'cnic_front.image' => 'CNIC Front must be an image',
+                'cnic_front.mimes' => 'CNIC Front must be a file of type: jpeg, png, jpg, gif, svg',
+                'cnic_front.max' => 'CNIC Front must not exceed 2MB',
 
-                'allowance.required_if' => 'Allowance is required',
-                'allowance.numeric' => 'Allowance must be a number',
+                'cnic_back.image' => 'CNIC Back must be an image',
+                'cnic_back.mimes' => 'CNIC Back must be a file of type: jpeg, png, jpg, gif, svg',
+                'cnic_back.max' => 'CNIC Back must not exceed 2MB',
 
-                'is_tax.required' => 'Tax is required',
-                'tax_cycle.required_if' => 'Tax cycle is required',
-                'tax_cycle.in' => 'Tax cycle must be either monthly or yearly',
+                'department_id.required' => 'Department is required',
+                'department_id.exists' => 'Department does not exist',
 
-                'tax.required_if' => 'Tax is required',
-                'tax.numeric' => 'Tax must be a number',
+                'designation_id.required' => 'Designation is required',
+                'designation_id.exists' => 'Designation does not exist',
 
-                'is_bonus.required' => 'Bonus is required',
-                'bonus_cycle.required_if' => 'Bonus cycle is required',
-                'bonus_cycle.in' => 'Bonus cycle must be either monthly or yearly',
-
-                'bonus.required_if' => 'Bonus is required',
-                'bonus.numeric' => 'Bonus must be a number',
-
-                'is_loan.required' => 'Loan is required',
-
-                'loan.required_if' => 'Loan is required',
+                'pay_policy_id.required' => 'Pay Policy is required',
+                'pay_policy_id.exists' => 'Pay Policy does not exist',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             
@@ -202,6 +168,9 @@ class EmployeeController extends Controller
                 'e_code' => $e_code,
                 'business_id' => $businessId,
                 'acc_id' => $COA->id,
+                'pay_policy_id' => $request->pay_policy_id,
+                'department_id' => $request->department_id,
+                'designation_id' => $request->designation_id,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'city_id' => $request->city_id,
@@ -209,19 +178,6 @@ class EmployeeController extends Controller
                 'cnic'=>$request->cnic ?? null,
                 'image' => $profilePic,
                 'cnic_images'=> json_encode($cnic_images),
-                'designation' => $request->designation,
-                'payroll' => $request->payroll,
-                'is_allowance' => $request->is_allowance,
-                'allowance_cycle' => $request->allowance_cycle ?? null,
-                'allowance' => $request->allowance ?? 0.00,
-                'is_tax' => $request->is_tax,
-                'tax_cycle' => $request->tax_cycle ?? null,
-                'tax' => $request->tax ?? 0.00,
-                'is_bonus' => $request->is_bonus,
-                'bonus_cycle' => $request->bonus_cycle ?? null,
-                'bonus' => $request->bonus ?? 0.00,
-                'is_loan' => $request->is_loan,
-                'loan' => $request->loan ?? 0.00,
                 'joining_date' => $request->joining_date,
                 'added_by' => $user->id
                 ]);
@@ -269,8 +225,10 @@ class EmployeeController extends Controller
             }
             $employee = DB::table('employees')
             ->join('cities', 'employees.city_id', '=', 'cities.id')
+            ->join('departments', 'employees.department_id', '=', 'departments.id')
+            ->join('designations', 'employees.designation_id', '=', 'designations.id')
+            ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation')
             ->where('employees.id', $id)
-            ->select('employees.*', 'cities.name as city_name') // Select customer fields and city name only
             ->first();
             if (empty($employee)) throw new Exception('No Employee found', 404);
             return response()->json($employee,200);
