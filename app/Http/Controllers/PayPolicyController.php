@@ -94,7 +94,7 @@ class PayPolicyController extends Controller
                 $policy_code = 'P-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PayPolicy::where('policy_code', $policy_code)->exists());
             $data = PayPolicy::create([
-                'name' => $request->name,
+                'name' => strtoupper($request->name),
                 'policy_code' => $policy_code,
                 'basic_pay' => $request->basic_pay,
                 'loan_limit' => $request->loan_limit,
@@ -188,7 +188,7 @@ class PayPolicyController extends Controller
             if(empty($data)) throw new Exception('No data found', 404);
             DB::beginTransaction();
             $data->update([
-                'name' => $request->name,
+                'name' => strtoupper($request->name),
                 'basic_pay' => $request->basic_pay,
                 'loan_limit' => $request->loan_limit,
                 'bonus_percentage' => $request->bonus_percentage,
