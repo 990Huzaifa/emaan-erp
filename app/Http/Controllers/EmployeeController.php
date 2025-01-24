@@ -243,7 +243,7 @@ class EmployeeController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -261,9 +261,10 @@ class EmployeeController extends Controller
                 'email' => 'required',
                 'city_id' => 'required|exists:cities,id',
                 'address' => 'required|max:255',
-                'designation' => 'required',
+                'designation_id' => 'required|exists:designations,id',
+                'department_id' => 'required|exists:departments,id',
+                'pay_policy_id' => 'required|exists:pay_policies,id',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                'pay_roll' => 'required|numeric'
             ],[
                 'name.required' => 'Name is required',
 
@@ -279,14 +280,15 @@ class EmployeeController extends Controller
                 'address.required' => 'Address is required',
                 'address.max' => 'Address must be less than 255 characters',
 
-                'designation.required' => 'Designation is required',
+                'designation_id.required' => 'Designation is required',
+                'designation_id.exists' => 'Designation does not exist',
+
+                'department_id.required' => 'Department is required',
+                'department_id.exists' => 'Department does not exist',
 
                 'image.image' => 'Image must be an image',
                 'image.mimes' => 'Image must be a JPEG, PNG, JPG, GIF or SVG file',
                 'image.max' => 'Image size must not exceed 2MB',
-
-                'pay_roll.required' => 'Pay Roll is required',
-                'pay_roll.numeric' => 'Pay Roll must be a number',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $employee = Employee::find($id);
@@ -304,25 +306,19 @@ class EmployeeController extends Controller
                     'image' => $profilePic,
                 ]);
             }
+            $name = strtoupper($request->name);
             $employee->update([
-                'name' => $request->name,
+                'name' => $name,
                 'phone' => $request->phone,
                 'email' => $request->email,
                 'city_id' => $request->city_id,
                 'address' => $request->address,
-                'designation' => $request->designation,
-                'pay_roll' => $request->pay_roll,
-                'is_allowance' => $request->is_allowance,
-                'allowance_cycle' => $request->allowance_cycle ?? null,
-                'allowance' => $request->allowance ?? 0.00,
-                'is_tax' => $request->is_tax,
-                'tax_cycle' => $request->tax_cycle ?? null,
-                'tax' => $request->tax ?? 0.00,
-                'is_bonus' => $request->is_bonus,
-                'bonus_cycle' => $request->bonus_cycle ?? null,
-                'bonus' => $request->bonus ?? 0.00,
-                'is_loan' => $request->is_loan,
-                'loan' => $request->loan ?? 0.00
+                'department_id' => $request->department_id,
+                'designation_id' => $request->designation_id,
+                'pay_policy_id' => $request->pay_policy_id,
+            ]);
+            ChartOfAccount::where('id', $employee->acc_id)->update([
+                'name' => $name
             ]);
             Log::create([
                 'user_id' => $user->id,
