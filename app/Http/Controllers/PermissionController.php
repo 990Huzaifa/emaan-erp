@@ -134,6 +134,13 @@ class PermissionController extends Controller
                     'create designation',
                     'edit designation',
                 ],
+                "Pay Policy" => [
+                    'list pay policy',
+                    'view pay policy',
+                    'create pay policy',
+                    'edit pay policy',
+                    'approve pay policy'
+                ],
                 "Employee" => [
                     'list employee',
                     'view employee',

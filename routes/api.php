@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
+use App\Http\Controllers\PayPolicyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -168,13 +169,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/designation/{id}',[DesignationController::class,'list']);
     Route::put('status/{id}/designation',[DesignationController::class,'updateStatus']);
     Route::get('filter/designation/{id}',[DesignationController::class,'filterIndex']);
-    
+
+    Route::apiResource('pay-policy',PayPolicyController::class)->only('index','store','show','update');
+    Route::get('list/pay-policy/{id}',[PayPolicyController::class,'list']);
+    Route::put('status/{id}/pay-policy',[PayPolicyController::class,'updateStatus']);
     
     Route::apiResource('employee',EmployeeController::class)->only('index','store','show','update');
     Route::post('employee-update/{id}',[EmployeeController::class,'update']);
     Route::get('list/employees',[EmployeeController::class,'list']);
     Route::get('/csv/employee', [EmployeeController::class, 'csvCustomer']);
     Route::post('/csv/employee/upload', [EmployeeController::class, 'importCustomer']);
+
+    
     
     Route::apiResource('product',ProductController::class)->only('index','store','show','update');
     Route::put('status/{id}/product',[ProductController::class,'updateStatus']);

@@ -155,6 +155,12 @@ class PermissionsTableSeeder extends Seeder
             'create designation',
             'edit designation',
 
+            'list pay policy',
+            'view pay policy',
+            'create pay policy',
+            'edit pay policy',
+            'approve pay policy',
+
         ];
 
         // Loop through each permission and create it
