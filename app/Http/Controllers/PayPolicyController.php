@@ -274,7 +274,6 @@ class PayPolicyController extends Controller
                 $query->where('pay_policies.name', 'like', '%' . $searchQuery . '%');
             }
             $data = $query->get();
-            if (empty($data)) throw new Exception('No data found', 404);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User fetch list of pay policies',

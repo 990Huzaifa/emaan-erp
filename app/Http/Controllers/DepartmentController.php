@@ -232,7 +232,6 @@ class DepartmentController extends Controller
         try{
             $data = Department::select('id','name')->get();
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data,200);
 
         }catch(QueryException $e){

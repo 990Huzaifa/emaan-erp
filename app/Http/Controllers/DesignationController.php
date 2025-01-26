@@ -241,7 +241,6 @@ class DesignationController extends Controller
         try{
             $data = Designation::select('id','name')->get();
 
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data,200);
 
         }catch(QueryException $e){
@@ -256,7 +255,6 @@ class DesignationController extends Controller
     {
         try{
             $data = Designation::where('department_id',$id)->get();
-            if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
