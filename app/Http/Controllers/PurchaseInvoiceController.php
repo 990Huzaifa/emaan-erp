@@ -265,7 +265,8 @@ class PurchaseInvoiceController extends Controller
                 'vendors.address as vendor_address',
                 'vendors.phone as vendor_phone',
                 'businesses.name as business_name',
-                'cities.name as city_name'
+                'businesses.logi as business_logo',
+                'cities.name as vendor_city'
             )
             ->where('purchase_invoices.id', $id)->first();
     

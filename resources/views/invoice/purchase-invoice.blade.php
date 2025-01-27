@@ -147,15 +147,12 @@ Corporate City, BZ 54321</p>
                     <h3>Bill To:</h3>
                     <p>{{$data->vendor_name}}</p>
                     <p class="whitespace-pre-line">{{$data->vendor_address}}</p>
+                    <p class="whitespace-pre-line">{{$data->vendor_city}}</p>
                 </div>
                 <div class="text-right">
                     <div class="mb-2">
                         <i class="fas fa-calendar icon"></i>
-                        <span>Date: 2023-05-15</span>
-                    </div>
-                    <div>
-                        <i class="fas fa-calendar icon"></i>
-                        <span>Due Date: 2023-06-14</span>
+                        <span>Date: {{$data->invoice_date}}</span>
                     </div>
                 </div>
             </div>
@@ -170,12 +167,21 @@ Corporate City, BZ 54321</p>
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                    $subtotal = 0;
+                    $tax = 0;
+                    @endphp
                     @foreach ($data->items as $item )
                     <tr>
                         <td>{{$item['product']['title']}}</td>
                         <td class="text-right">{{$item->quantity}}</td>
                         <td class="text-right">PKR {{$item->unit_price}}</td>
                         <td class="text-right">PKR {{$item->total}}</td>
+
+                        @php
+                        $subtotal += $item->total;
+                        $tax += $item->tax;
+                        @endphp
                     </tr>
                     @endforeach
                 </tbody>
@@ -186,15 +192,15 @@ Corporate City, BZ 54321</p>
                 <div class="text-right">
                     <div class="flex justify-between mb-2">
                         <span class="font-semibold mr-8">Subtotal:</span>
-                        <span>$1755.00</span>
+                        <span>PKR {{$subtotal}}</span>
                     </div>
                     <div class="flex justify-between mb-2">
-                        <span class="font-semibold mr-8">Tax (10%):</span>
-                        <span>$175.50</span>
+                        <span class="font-semibold mr-8">Tax:</span>
+                        <span>PKR {{$tax}}</span>
                     </div>
                     <div class="flex justify-between text-lg font-semibold">
                         <span class="mr-8">Total:</span>
-                        <span>$1930.50</span>
+                        <span>PKR {{$subtotal + $tax}}</span>
                     </div>
                 </div>
             </div>
