@@ -102,8 +102,12 @@ class JournalVoucherController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
 
             DB::beginTransaction();
+            do {
+                $voucher_code = 'JV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
             $journalVoucher = JournalVoucher::create([
                 'acc_id'=>$request->acc_id,
+                'voucher_code'=>$voucher_code,
                 'business_id'=>$user->login_business,
                 'partner_id'=>$request->partner_id,
                 'voucher_amount'=>$request->voucher_amount,
