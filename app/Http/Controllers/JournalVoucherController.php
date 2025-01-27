@@ -67,7 +67,7 @@ class JournalVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'Voucher_date'=>'required|date',
+                    'voucher_date'=>'required|date',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
                     'partner_id'=>'required|exists:users,id',
                     'voucher_amount'=>'required|numeric',
@@ -75,27 +75,27 @@ class JournalVoucherController extends Controller
                     'cheque_no'=>'required_if:payment_method,BANK|string',
                     'cheque_date'=>'required_if:payment_method,BANK|date',
                 ],[
-
-                    'voucher_date.required'=>'Voucher Date is Required',
-                    'voucher_date.date'=>'Voucher Date must be a date',
-
+                    
                     'acc_id.required'=>'Account is Required',
                     'acc_id.exists'=>'Account is Invalid',
-
+                    
                     'partner_id.required'=>'Partner is Required',
                     'partner_id.exists'=>'Partner is Invalid',
-
+                    
                     'voucher_amount.numeric'=>'Amount must be a number',
                     'voucher_amount.required'=>'Amount is Required',
-
+                    
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
-
+                    
                     'cheque_no.required_if'=>'Cheque No is Required',
                     'cheque_no.string'=>'Cheque No must be a string',
-
+                    
                     'cheque_date.required_if'=>'Cheque Date is Required',
                     'cheque_date.date'=>'Cheque Date must be a date',
+                    
+                    'voucher_date.required'=>'Voucher Date is Required',
+                    'voucher_date.date'=>'Voucher Date must be a date',
                 ]
             );
 
@@ -103,13 +103,14 @@ class JournalVoucherController extends Controller
 
             DB::beginTransaction();
             $journalVoucher = JournalVoucher::create([
-                'Voucher_date'=>$request->Voucher_date,
                 'acc_id'=>$request->acc_id,
+                'business_id'=>$user->login_business,
                 'partner_id'=>$request->partner_id,
                 'voucher_amount'=>$request->voucher_amount,
                 'payment_method'=>$request->payment_method,
                 'cheque_no'=>$request->cheque_no,
                 'cheque_date'=>$request->cheque_date,
+                'Voucher_date'=>$request->Voucher_date,
             ]);
             DB::commit();
             return response()->json([$journalVoucher,200]);
