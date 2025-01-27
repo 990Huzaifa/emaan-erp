@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use App\Models\JournalVoucher;
 use Exception;
 use App\Models\Transaction;
@@ -154,8 +155,34 @@ class JournalVoucherController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function updateStatus(Request $request, string $id)
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve journal voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $journalVoucher = JournalVoucher::findOrFail($id);
+            if (empty($journalVoucher)) throw new Exception('No Journal Voucher found', 404);
+
+            $acc_id = $journalVoucher->acc_id;
+            $partner_id = $journalVoucher->partner_id;
+
+            $EquityCOA = ChartOfAccount::where('name','EQUITY')->where('level2',0)->value('code');
+
+            $BusinessCOA = ChartOfAccount::where('parent_code',$EquityCOA)->where('ref_id',$businessId)->value('code');
+
+            $PartnerCOA = ChartOfAccount::where('parent_code',$BusinessCOA)->where('ref_id',$partner_id)->value('code');
+
+            dd($PartnerCOA);
+            $journalVoucher->update([
+                'status'=>$request->status,
+            ]);
+        }
     }
 }
