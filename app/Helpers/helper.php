@@ -67,7 +67,7 @@ function createCOA($name, $parent_code): ChartOfAccount
     } elseif ($numLevels == 4) {
         $level5 = $i;
     }
-
+    $name = strtoupper($name);
     return ChartOfAccount::create([
         'name' => $name,
         'parent_code' => $parent_code,

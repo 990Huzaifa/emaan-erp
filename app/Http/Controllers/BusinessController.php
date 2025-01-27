@@ -151,8 +151,9 @@ class BusinessController extends Controller
             do {
                 $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (User::where('u_code', $u_code)->exists());  
+            $owner_name= $request->name.' Owner';
             $user = User::create([
-                'name'=>$request->name.' Admin',
+                'name'=>$owner_name,
                 'u_code'=>$u_code,
                 'city_id'=>$request->city,
                 'email' => $request->email,
@@ -160,7 +161,7 @@ class BusinessController extends Controller
                 'is_verify'=>1,
             ]);
 
-            $OwnerCOA = createCOA($request->name,$BusinessCOA->code);
+            $OwnerCOA = createCOA($owner_name,$BusinessCOA->code);
             BusinessHasAccount::create([
                 'business_id' => $business->id,
                 'chart_of_account_id' => $OwnerCOA->id,
