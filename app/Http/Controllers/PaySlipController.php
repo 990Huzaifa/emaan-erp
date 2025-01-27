@@ -100,6 +100,7 @@ class PaySlipController extends Controller
                     
                 ]);
 
+                if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
                 do {
                     $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (PaySlip::where('slip_no', $slip_no)->exists());
