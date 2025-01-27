@@ -141,6 +141,13 @@ class PermissionController extends Controller
                     'edit pay policy',
                     'approve pay policy'
                 ],
+                "Pay Slip" => [
+                    'list pay slip',
+                    'view pay slip',
+                    'create pay slip',
+                    'edit pay slip',
+                    'approve pay slip'
+                ],
                 "Employee" => [
                     'list employee',
                     'view employee',

@@ -161,6 +161,12 @@ class PermissionsTableSeeder extends Seeder
             'edit pay policy',
             'approve pay policy',
 
+            'list pay slip',
+            'view pay slip',
+            'create pay slip',
+            'edit pay slip',
+            'approve pay slip',
+
         ];
 
         // Loop through each permission and create it
