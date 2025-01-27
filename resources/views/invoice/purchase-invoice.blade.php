@@ -6,18 +6,11 @@
     <title>Invoice</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f3f4f6;
-            margin: 0;
-            padding: 0;
-        }
         .container {
             max-width: 48rem;
-            margin: 3rem auto;
+            margin: 0;
+            font-family: Arial, sans-serif;
             background-color: white;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            border-radius: 0.5rem;
             overflow: hidden;
         }
         .invoice-content {
