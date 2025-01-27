@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('business_id'); // Link to COA for tracking payments
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
             $table->string('voucher_code')->unique();
-            $table->enum('payment_method', ['CASH', 'CHEQUE'])->default('CASH');
+            $table->enum('payment_method', ['CASH', 'BANK'])->default('CASH');
             $table->string('cheque_no')->nullable();
             $table->date('cheque_date')->nullable();
             $table->date('voucher_date')->nullable();

@@ -31,7 +31,7 @@ class JournalVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name','uses.name as partner_name')
+            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name','users.name as partner_name')
             ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->join('users', 'journal_vouchers.partner_id', '=', 'users.id')
             ->orderBy('id', 'desc');
@@ -117,7 +117,7 @@ class JournalVoucherController extends Controller
                 'Voucher_date'=>$request->Voucher_date,
             ]);
             DB::commit();
-            return response()->json([$journalVoucher,200]);
+            return response()->json($journalVoucher,200);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
