@@ -40,4 +40,10 @@ class UserHasBusiness extends Model
         // Check if the relationship exists and if the permission is assigned
         return $userHasBusiness && $userHasBusiness->hasPermissionTo($permission);
     }
+
+    public function chartOfAccount()
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'business_id', 'ref_id');
+    }
+    
 }

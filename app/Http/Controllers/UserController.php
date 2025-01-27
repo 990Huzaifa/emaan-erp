@@ -943,11 +943,95 @@ class UserController extends Controller
         }
     }
     
-    public function waitPartnerList(Request $request):JsonResponse
-    {
-        try{
-            $user = Auth::user();
+    // public function waitPartnerList(Request $request):JsonResponse
+    // {
+    //     try{
+    //         $user = Auth::user();
             
+    //         // Check if the user has the required permission
+    //         if ($user->role == 'user') {
+    //             $businessId = $user->login_business;
+    //             if (!$user->hasBusinessPermission($businessId, 'list users')) {
+    //                 return response()->json([
+    //                     'error' => 'User does not have the required permission.'
+    //                 ], 403);
+    //             }
+    //         }
+    //         $perPage = $request->query('per_page', 10);
+    //         $searchQuery = $request->query('search');
+            
+    //         $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
+
+    //         $userIdsQuery = User::where('users.role', 'user');
+    //         if($request ->has('is_verify')){
+    //             $userIdsQuery->where('users.is_verify', $request->is_verify);
+    //         }
+
+    //         $userIdsQuery->where('users.id', '<>', $user->id)
+    //         ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
+    //         ->whereIn('user_has_businesses.business_id', $userBusinesses)
+    //         ->distinct()
+    //         ->pluck('users.id'); // Get distinct user IDs only
+
+    //     // Step 2: Use the list of IDs to fetch the actual user data, including additional columns
+    //     $query = User::whereIn('users.id', $userIdsQuery)
+    //         ->orderBy('users.id', 'desc')
+    //         ->join('cities', 'users.city_id', '=', 'cities.id')
+    //         ->select('users.*', 'cities.name as city');
+            
+    //         if (!empty($searchQuery)) {
+    //             // Check if the search query is numeric to search by order ID
+    //             if (is_numeric($searchQuery)) {
+    //                 $query = $query->where('id', $searchQuery);
+    //             } else {
+    //                 // Otherwise, search by user name or email
+    //                 $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
+    //                     ->orWhere('email', 'like', '%' . $searchQuery . '%')
+    //                     ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
+    //                     ->pluck('id')
+    //                     ->toArray();
+    //                     $query = $query->whereIn('users.id', $userIds);
+    //             }
+    //         }
+    //         // Execute the query with pagination
+    //         $data = $query->paginate($perPage);
+    //         $data->getCollection()->transform(function ($user) {
+    //             // Fetch business ids and names from businesses table via user_has_businesses
+    //             $businesses = DB::table('user_has_businesses')
+    //                 ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
+    //                 ->where('user_has_businesses.user_id', $user->id)
+    //                 ->select('businesses.id', 'businesses.name')
+    //                 ->get();
+            
+    //             // Append the business array (with id and name) to the user object
+    //             $user->business_names = $businesses->map(function($business) {
+    //                 return [
+    //                     'id' => $business->id,
+    //                     'name' => $business->name
+    //                 ];
+    //             })->toArray();
+            
+    //             return $user;
+    //         });
+    //         Log::create([
+    //             'user_id' => $user->id,
+    //             'description' => 'User fetch invite list of users',
+    //         ]);
+    //         return response()->json($data,200);
+
+    //     }catch(QueryException $e){
+    //         return response()->json(['DB error' => $e->getMessage()], 400);
+
+    //     }catch(Exception $e){
+    //         return response()->json(['error' => $e->getMessage()], 400);
+    //     }
+    // }
+
+    public function waitPartnerList(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
             // Check if the user has the required permission
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
@@ -957,93 +1041,128 @@ class UserController extends Controller
                     ], 403);
                 }
             }
+
+            // Retrieve query parameters with default values
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            
-            $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
 
+            // Get all business IDs associated with the authenticated user
+            $userBusinesses = UserHasBusiness::where('user_id', $user->id)
+                ->pluck('business_id')
+                ->toArray();
+
+            // Initialize the user query with role filtering
             $userIdsQuery = User::where('users.role', 'user');
-            if($request ->has('is_verify')){
+
+            // Apply verification filter if present
+            if ($request->has('is_verify')) {
                 $userIdsQuery->where('users.is_verify', $request->is_verify);
             }
 
-            // code to merge partner coa
+            // === Code to Merge Partner COA ===
 
-
+            // Retrieve the 'Equity' Chart of Account (COA)
             $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
-            if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
+            if (empty($equityCOA)) {
+                throw new Exception('Equity COA not found', 404);
+            }
 
+            // Get COA codes under 'Equity' for the user's businesses
             $businessCOA = ChartOfAccount::where('parent_code', $equityCOA->code)
-            ->whereIn('ref_id', $userBusinesses)
-            ->pluck('code')->toArray();
-            if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
+                ->whereIn('ref_id', $userBusinesses)
+                ->pluck('code')
+                ->toArray();
 
+            if (empty($businessCOA)) {
+                throw new Exception('Business COA not found', 404);
+            }
 
+            // === End of COA Merging ===
 
-            // end
-
-
-
-
-
-
+            // Filter users based on business associations and COA codes
             $userIdsQuery->where('users.id', '<>', $user->id)
-            ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
-            ->whereIn('user_has_businesses.business_id', $userBusinesses)
-            ->distinct()
-            ->pluck('users.id'); // Get distinct user IDs only
+                ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
+                ->whereIn('user_has_businesses.business_id', $userBusinesses)
+                ->join('chart_of_accounts', function($join) use ($businessCOA) {
+                    $join->on('user_has_businesses.business_id', '=', 'chart_of_accounts.ref_id')
+                        ->whereIn('chart_of_accounts.code', $businessCOA);
+                })
+                ->distinct()
+                ->pluck('users.id'); // Retrieve distinct user IDs
 
-        // Step 2: Use the list of IDs to fetch the actual user data, including additional columns
-        $query = User::whereIn('users.id', $userIdsQuery)
-            ->orderBy('users.id', 'desc')
-            ->join('cities', 'users.city_id', '=', 'cities.id')
-            ->select('users.*', 'cities.name as city');
-            
+            // Step 2: Fetch the actual user data with additional joins
+            $query = User::whereIn('users.id', $userIdsQuery)
+                ->orderBy('users.id', 'desc')
+                ->join('cities', 'users.city_id', '=', 'cities.id')
+                ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
+                ->join('chart_of_accounts', 'chart_of_accounts.ref_id', '=', 'user_has_businesses.business_id')
+                ->whereIn('chart_of_accounts.code', $businessCOA)
+                ->select(
+                    'users.id',
+                    'users.name',
+                    'users.email',
+                    'users.u_code',
+                    'users.is_verify',
+                    'cities.name as city',
+                    'chart_of_accounts.id as chart_of_account_id' // Include COA ID
+                );
+
+            // Apply search filters if provided
             if (!empty($searchQuery)) {
-                // Check if the search query is numeric to search by order ID
                 if (is_numeric($searchQuery)) {
-                    $query = $query->where('id', $searchQuery);
+                    // Search by user ID if the query is numeric
+                    $query->where('users.id', $searchQuery);
                 } else {
-                    // Otherwise, search by user name or email
+                    // Search by name, email, or u_code otherwise
                     $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('email', 'like', '%' . $searchQuery . '%')
                         ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
-                        $query = $query->whereIn('users.id', $userIds);
+                    $query->whereIn('users.id', $userIds);
                 }
             }
+
             // Execute the query with pagination
             $data = $query->paginate($perPage);
+
+            // Transform the paginated data to include business names
             $data->getCollection()->transform(function ($user) {
-                // Fetch business ids and names from businesses table via user_has_businesses
+                // Fetch associated businesses for each user
                 $businesses = DB::table('user_has_businesses')
                     ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
                     ->where('user_has_businesses.user_id', $user->id)
                     ->select('businesses.id', 'businesses.name')
                     ->get();
-            
-                // Append the business array (with id and name) to the user object
+
+                // Append the business information to the user object
                 $user->business_names = $businesses->map(function($business) {
                     return [
                         'id' => $business->id,
                         'name' => $business->name
                     ];
                 })->toArray();
-            
+
                 return $user;
             });
+
+            // Log the action
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User fetch invite list of users',
+                'description' => 'User fetched invite list of users',
             ]);
-            return response()->json($data,200);
 
-        }catch(QueryException $e){
+            // Return the paginated data as JSON
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
+            // Handle database-related exceptions
             return response()->json(['DB error' => $e->getMessage()], 400);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
+            // Handle general exceptions
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 }

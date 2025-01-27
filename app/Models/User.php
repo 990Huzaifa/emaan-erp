@@ -64,4 +64,9 @@ class User extends Authenticatable
         // Check if the relationship exists and if the permission is assigned
         return $userHasBusiness && $userHasBusiness->hasPermissionTo($permission);
     }
+
+    public function businesses()
+    {
+        return $this->hasMany(UserHasBusiness::class);
+    }
 }
