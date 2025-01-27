@@ -136,15 +136,7 @@ class JournalVoucherController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id): JsonResponse
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -189,8 +181,11 @@ class JournalVoucherController extends Controller
                     ], 403);
                 }
             }
+            
+            if($request->status == 0) throw new Exception('Status is Invalid', 400);
             $data = JournalVoucher::findOrFail($id);
             if (empty($data)) throw new Exception('No Journal Voucher found', 404);
+            if($request->status == $data->status) throw new Exception('Status is already updated', 400);
 
             $acc_id = $data->acc_id;
             $partner_id = $data->partner_id;

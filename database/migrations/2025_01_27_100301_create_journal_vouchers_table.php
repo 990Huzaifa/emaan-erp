@@ -26,6 +26,7 @@ return new class extends Migration
             $table->date('cheque_date')->nullable();
             $table->date('voucher_date')->nullable();
             $table->decimal('voucher_amount', 15, 2);
+            $table->integer('status')->default(0)->comment('0->Un Paid, 1->Paid'); // Payment status
             $table->timestamps();
         });
     }
