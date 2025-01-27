@@ -18,4 +18,8 @@ class Transaction extends Model
         'credit',
         'current_balance',
     ];
+    public function chartOfAccount()
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'acc_id');
+    }
 }
