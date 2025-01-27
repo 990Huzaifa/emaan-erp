@@ -35,12 +35,14 @@ function generateSetupCode($length = 64)
 function createCOA($name, $parent_code): ChartOfAccount
 {
     $newCode = null;
-    for ($i = 1; $i <= 9; $i++) {
+    $i=1;
+    while ($newCode === null) {
         $generatedCode = $parent_code . '-' . $i;
         if (!ChartOfAccount::where('code', $generatedCode)->exists()) {
             $newCode = $generatedCode;
             break;
         }
+        $i++;
     }
 
     if ($newCode === null) {
