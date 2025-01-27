@@ -223,11 +223,12 @@ class EmployeeController extends Controller
                     ], 403);
                 }
             }
-            $employee = Employee::with('policy')
+            $employee = Employee::orderBy('id', 'desc')
+            ->join('pay_policies', 'employees.pay_policy_id', '=', 'pay_policies.id')
             ->join('cities', 'employees.city_id', '=', 'cities.id')
             ->join('departments', 'employees.department_id', '=', 'departments.id')
             ->join('designations', 'employees.designation_id', '=', 'designations.id')
-            ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation')
+            ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation', 'pay_policies.*')
             ->where('employees.id', $id)
             ->first();
             if (empty($employee)) throw new Exception('No Employee found', 404);

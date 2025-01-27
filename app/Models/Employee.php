@@ -30,8 +30,4 @@ class Employee extends Model
         'added_by',
     ];
 
-    public function policy()
-    {
-        return $this->hasMany(PayPolicy::class, 'pay_policy_id');
-    }
 }
