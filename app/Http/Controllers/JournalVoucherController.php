@@ -155,7 +155,7 @@ class JournalVoucherController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function updateStatus(Request $request, string $id)
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -167,22 +167,32 @@ class JournalVoucherController extends Controller
                     ], 403);
                 }
             }
-            $journalVoucher = JournalVoucher::findOrFail($id);
-            if (empty($journalVoucher)) throw new Exception('No Journal Voucher found', 404);
+            $data = JournalVoucher::findOrFail($id);
+            if (empty($data)) throw new Exception('No Journal Voucher found', 404);
 
-            $acc_id = $journalVoucher->acc_id;
-            $partner_id = $journalVoucher->partner_id;
+            $acc_id = $data->acc_id;
+            $partner_id = $data->partner_id;
 
             $EquityCOA = ChartOfAccount::where('name','EQUITY')->where('level2',0)->value('code');
 
             $BusinessCOA = ChartOfAccount::where('parent_code',$EquityCOA)->where('ref_id',$businessId)->value('code');
 
-            $PartnerCOA = ChartOfAccount::where('parent_code',$BusinessCOA)->where('ref_id',$partner_id)->value('code');
+            $partner_acc_id = ChartOfAccount::where('parent_code',$BusinessCOA)->where('ref_id',$partner_id)->value('id');
 
-            dd($PartnerCOA);
-            $journalVoucher->update([
+
+            $total_billed = $data->voucher_amount;
+            $a_cb = calculateBalance($acc_id, $total_billed, true);
+            $p_cb = calculateBalancePartners($partner_acc_id, $total_billed, false);
+            dd($a_cb);
+            $data->update([
                 'status'=>$request->status,
             ]);
+
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 }

@@ -260,3 +260,12 @@ function calculateBalance($acc_id, $change, $isDebit = true): float
     $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
     return $isDebit ? $openingBalance - $change : $openingBalance + $change;
 }
+
+function calculateBalancePartners($acc_id, $change, $isDebit = true): float
+{
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    if ($lastTransaction) {
+        return $isDebit ? $lastTransaction->current_balance - $change : $lastTransaction->current_balance + $change;
+    }
+    return $isDebit ? 0 - $change : 0 + $change;
+}
