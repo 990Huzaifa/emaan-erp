@@ -167,6 +167,19 @@ class PermissionsTableSeeder extends Seeder
             'edit pay slip',
             'approve pay slip',
 
+            'list partner',
+            'view partner',
+            'create partner',
+            'edit partner',
+            'approve partner',
+            
+            'list journal voucher',
+            'view journal voucher',
+            'create journal voucher',
+            'edit journal voucher',
+            'approve journal voucher'
+                
+
         ];
 
         // Loop through each permission and create it

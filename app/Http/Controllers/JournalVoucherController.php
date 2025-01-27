@@ -23,7 +23,7 @@ class JournalVoucherController extends Controller
             $user = Auth::user();
             if ($user->role == 'user') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list goods received notes')) {
+                if (!$user->hasBusinessPermission($businessId, 'list journal voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

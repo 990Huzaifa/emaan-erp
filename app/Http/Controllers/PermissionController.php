@@ -16,7 +16,7 @@ class PermissionController extends Controller
         try {
             // Fetch all permissions
             $permissions = Permission::select('id', 'name')->get();
-    
+
             // Define the structure for organizing permissions
             $groupedPermissions = [
                 "Users" => ['list users', 'view users', 'create users', 'edit users', 'delete users'],
@@ -64,7 +64,7 @@ class PermissionController extends Controller
                     'edit goods received notes',
                     'approve goods received notes'
                 ],
-                "Purchase Invoice" =>[
+                "Purchase Invoice" => [
                     'create purchase invoice',
                     'view purchase invoice',
                     'list purchase invoice',
@@ -78,7 +78,7 @@ class PermissionController extends Controller
                     'edit purchase return',
                     'approve purchase return',
                 ],
-                "Purchase Voucher" =>['create purchase voucher','view purchase voucher','list purchase voucher','edit purchase voucher','approve purchase voucher'],
+                "Purchase Voucher" => ['create purchase voucher', 'view purchase voucher', 'list purchase voucher', 'edit purchase voucher', 'approve purchase voucher'],
                 "Sale Quotation" => [
                     'list sale quotations',
                     'view sale quotations',
@@ -101,21 +101,21 @@ class PermissionController extends Controller
                     'edit delivery notes',
                     'approve delivery notes'
                 ],
-                "Sale Receipt" =>[
+                "Sale Receipt" => [
                     'list sale receipt',
                     'view sale receipt',
                     'create sale receipt',
                     'edit sale receipt',
                     'approve sale receipt'
                 ],
-                "Sale Voucher" =>[
+                "Sale Voucher" => [
                     'create sale voucher',
                     'view sale voucher',
                     'list sale voucher',
                     'edit sale voucher',
                     'approve sale voucher'
                 ],
-                "Sale Return" =>[
+                "Sale Return" => [
                     'create sale return',
                     'view sale return',
                     'list sale return',
@@ -155,26 +155,40 @@ class PermissionController extends Controller
                     'edit employee',
                     'approve employee'
                 ],
-                "Expense Voucher"=>[
+                "Expense Voucher" => [
                     'list expense voucher',
                     'view expense voucher',
                     'create expense voucher',
                     'edit expense voucher',
                     'approve expense voucher',
                 ],
-                "Salary Voucher"=>[
+                "Salary Voucher" => [
                     'list salary voucher',
                     'view salary voucher',
                     'create salary voucher',
                     'edit salary voucher',
                     'approve salary voucher',
                 ],
-                "Voucher"=>['create voucher', 'view voucher', 'list voucher', 'edit voucher', 'approve voucher'],
+                "Voucher" => ['create voucher', 'view voucher', 'list voucher', 'edit voucher', 'approve voucher'],
+                "Partner"=>[
+                    'list partner',
+                    'view partner',
+                    'create partner',
+                    'edit partner',
+                    'approve partner'
+                ],
+                "Journal Voucher" => [
+                    'list journal voucher',
+                    'view journal voucher',
+                    'create journal voucher',
+                    'edit journal voucher',
+                    'approve journal voucher'
+                ],
             ];
-    
+
             // Prepare an empty array to store structured permissions
             $structuredPermissions = [];
-    
+
             // Loop through each permission group
             foreach ($groupedPermissions as $group => $permissionsList) {
                 $structuredPermissions[$group] = $permissions
@@ -187,10 +201,10 @@ class PermissionController extends Controller
                     })
                     ->toArray();
             }
-    
+
             // Return the structured permissions as JSON
             return response()->json($structuredPermissions, 200);
-    
+
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
@@ -199,28 +213,32 @@ class PermissionController extends Controller
     }
 
 
-    public function store(Request $request):JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        try{
+        try {
             $validator = Validator::make(
-                $request->all(),[
-                    'name'=>'required|string|max:115|unique:permissions'
+                $request->all(),
+                [
+                    'name' => 'required|string|max:115|unique:permissions'
 
-            ],[
-                'name.required'=>'Name is Required',
-                'name.string'=>'Name is must be a string',
-                'name.max'=>'Name cannot exceed 115 characters.',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+                ],
+                [
+                    'name.required' => 'Name is Required',
+                    'name.string' => 'Name is must be a string',
+                    'name.max' => 'Name cannot exceed 115 characters.',
+                ]
+            );
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
             $permission = Permission::create([
-                'name'=>$request->name
+                'name' => $request->name
             ]);
 
             return response()->json($permission);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
