@@ -87,6 +87,7 @@ class PaySlipController extends Controller
                     'net_pay' => 'required',
                 ],[
                     'employee_id.required' => 'Employee is required',
+                    'employee_id.exists' => 'Employee does not exist',
                     'pay_period_start.required' => 'Pay period start is required',
                     'pay_period_end.required' => 'Pay period end is required',
                     'issue_date.required' => 'Issue date is required',
