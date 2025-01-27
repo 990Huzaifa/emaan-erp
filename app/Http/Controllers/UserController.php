@@ -880,9 +880,14 @@ class UserController extends Controller
                 'email' => $request->email,
                 'setup_code' => $setupCode,
             ]);
+
+            // code to creata partner coa
+
+
             $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
             if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
-            $businessCOA = ChartOfAccount::where('code', $equityCOA->code)
+
+            $businessCOA = ChartOfAccount::where('parent_code', $equityCOA->code)
             ->where('ref_id', $user->login_business)
             ->first();
             if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
@@ -891,6 +896,10 @@ class UserController extends Controller
             $userCOA->update([
                 'ref_id' => $user->id
             ]);
+
+            // end
+
+
             $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
             $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
             // sync permissions to user according to business
@@ -952,6 +961,14 @@ class UserController extends Controller
             if($request ->has('is_verify')){
                 $userIdsQuery->where('users.is_verify', $request->is_verify);
             }
+
+            // code to merge partner acc
+
+
+
+
+
+
             $userIdsQuery->where('users.id', '<>', $user->id)
             ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
             ->whereIn('user_has_businesses.business_id', $userBusinesses)
