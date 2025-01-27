@@ -128,12 +128,13 @@ class BusinessController extends Controller
             ]); 
             // validate coa
             $acc = ChartOfAccount::Where('name','CASH')->first();
-            $equity_acc = ChartOfAccount::Where('name','EQUITY')->first();
             if(empty($acc)) throw new Exception('Cash COA not found', 404);
+            $equity_acc = ChartOfAccount::Where('name','EQUITY')->first();
+            if(empty($equity_acc)) throw new Exception('Cash COA not found', 404);
 
             // creating COA
             $COA = createCOA('CASH IN HAND',$acc->code);
-            $BusinessCOA = createCOA(strtoupper($request->name),$equity_acc->code);
+            $BusinessCOA = createCOA($request->name,$equity_acc->code);
 
             $BusinessCOA->update([
                 'ref_id' => $business->id,
@@ -159,7 +160,7 @@ class BusinessController extends Controller
                 'is_verify'=>1,
             ]);
 
-            $OwnerCOA = createCOA(strtoupper($request->name),$BusinessCOA->code);
+            $OwnerCOA = createCOA($request->name,$BusinessCOA->code);
             BusinessHasAccount::create([
                 'business_id' => $business->id,
                 'chart_of_account_id' => $OwnerCOA->id,
