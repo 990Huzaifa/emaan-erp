@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('payment_method', ['CASH', 'CHEQUE'])->default('CASH');
             $table->string('cheque_no')->nullable();
             $table->date('cheque_date')->nullable();
+            $table->date('voucher_date')->nullable();
             $table->decimal('voucher_amount', 15, 2);
             $table->timestamps();
         });
