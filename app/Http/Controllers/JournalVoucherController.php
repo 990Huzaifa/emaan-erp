@@ -73,6 +73,7 @@ class JournalVoucherController extends Controller
                     'partner_id'=>'required|exists:users,id',
                     'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
+                    'type'=>'required|string|in:WITHDRAW,DEPOSIT',
                     'cheque_no'=>'required_if:payment_method,BANK|string',
                     'cheque_date'=>'required_if:payment_method,BANK|date',
                 ],[
@@ -97,6 +98,9 @@ class JournalVoucherController extends Controller
                     
                     'voucher_date.required'=>'Voucher Date is Required',
                     'voucher_date.date'=>'Voucher Date must be a date',
+
+                    'type.required'=>'Type is Required',
+                    'type.in'=>'Type is Invalid',
                 ]
             );
 
@@ -113,6 +117,7 @@ class JournalVoucherController extends Controller
                 'partner_id'=>$request->partner_id,
                 'voucher_amount'=>$request->voucher_amount,
                 'payment_method'=>$request->payment_method,
+                'type'=>$request->type,
                 'cheque_no'=>$request->cheque_no,
                 'cheque_date'=>$request->cheque_date,
                 'Voucher_date'=>$request->Voucher_date,
@@ -139,9 +144,26 @@ class JournalVoucherController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit journal voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = JournalVoucher::findOrFail($id);
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
@@ -180,10 +202,65 @@ class JournalVoucherController extends Controller
             $partner_acc_id = ChartOfAccount::where('parent_code',$BusinessCOA)->where('ref_id',$partner_id)->value('id');
 
 
-            $total_billed = $data->voucher_amount;
-            $a_cb = calculateBalance($acc_id, $total_billed, true);
-            $p_cb = calculateBalancePartners($partner_acc_id, $total_billed, false);
-            dd($a_cb);
+            $total_amount = $data->voucher_amount;
+            if ($data->type === 'WITHDRAW') {
+                // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
+                $a_cb = calculateBalance($acc_id, $total_amount, true); // Business asset account
+                $p_cb = calculateBalancePartners($partner_acc_id, $total_amount, false); // Partner equity account
+    
+                // Credit the asset account (money is leaving the business)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $acc_id,
+                    'transaction_type' => 2, // Withdrawal
+                    'description' => 'Partner withdrawal.',
+                    'debit' => 0.00,
+                    'credit' => $total_amount,
+                    'current_balance' => $a_cb
+                ]);
+    
+                // Debit the partner's equity account
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $partner_acc_id,
+                    'transaction_type' => 2, // Withdrawal
+                    'description' => 'Reduction in partner equity due to withdrawal.',
+                    'debit' => $total_amount,
+                    'credit' => 0.00,
+                    'current_balance' => $p_cb
+                ]);
+            } elseif ($data->type === 'DEPOSIT') {
+                // Contribution: Debit Business Account, Credit Partner Account (money enters business, increases equity)
+                $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
+                $p_cb = calculateBalancePartners($partner_acc_id, $total_amount, true); // Partner equity account
+    
+                // Debit the asset account (money is added to the business)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $acc_id,
+                    'transaction_type' => 1, // Contribution
+                    'description' => 'Partner contribution.',
+                    'debit' => $total_amount,
+                    'credit' => 0.00,
+                    'current_balance' => $a_cb
+                ]);
+    
+                // Credit the partner's equity account
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $partner_acc_id,
+                    'transaction_type' => 1, // Contribution
+                    'description' => 'Increase in partner equity due to contribution.',
+                    'debit' => 0.00,
+                    'credit' => $total_amount,
+                    'current_balance' => $p_cb
+                ]);
+            } else {
+                throw new Exception('Invalid voucher type.');
+            }
+
+
+
             $data->update([
                 'status'=>$request->status,
             ]);
