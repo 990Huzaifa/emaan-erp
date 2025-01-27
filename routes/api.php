@@ -138,7 +138,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('partner',[UserController::class,'createPartner']);
 
     Route::apiResource('journal-voucher',JournalVoucherController::class)->only('index','store','show','update');
-
+    Route::put('status/{id}/journal-voucher',[JournalVoucherController::class,'updateStatus']);
 
 
     Route::get('login/{id}/permissions',[AuthController::class,'loginPermissions']);
