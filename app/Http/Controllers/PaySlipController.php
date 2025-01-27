@@ -101,6 +101,7 @@ class PaySlipController extends Controller
                 ]);
 
                 if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
+                DB::beginTransaction();
                 do {
                     $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (PaySlip::where('slip_no', $slip_no)->exists());
@@ -119,15 +120,17 @@ class PaySlipController extends Controller
                     "allowance" => $request->allowance,
                     "bonus" => $request->bonus,
                     "net_pay" => $request->net_pay,
-                    "status" => $request->status
+                    "status" => 0 // 0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid
 
                 ]);
-
+                DB::commit();
                 return response()->json($data,200);
 
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
