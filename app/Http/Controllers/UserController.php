@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChartOfAccount;
 use DB; 
 use Exception;
 use Carbon\Carbon;
@@ -870,6 +871,7 @@ class UserController extends Controller
             do {
                 $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (User::where('u_code', $u_code)->exists());
+            DB::beginTransaction();
             $setupCode = generateSetupCode(); 
             $user = User::create([
                 'name'=>$request->name,
@@ -877,6 +879,17 @@ class UserController extends Controller
                 'u_code'=>$u_code,
                 'email' => $request->email,
                 'setup_code' => $setupCode,
+            ]);
+            $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
+            if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
+            $businessCOA = ChartOfAccount::where('code', $equityCOA->code)
+            ->where('ref_id', $user->login_business)
+            ->first();
+            if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
+
+            $userCOA = createCOA($request->name,$businessCOA->code);
+            $userCOA->update([
+                'ref_id' => $user->id
             ]);
             $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
             $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
@@ -904,12 +917,14 @@ class UserController extends Controller
                 'user_id' => $Auser->id,
                 'description' => 'User create user',
             ]);    
-            
+            DB::commit();
             return response()->json($user);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
