@@ -224,7 +224,7 @@ class EmployeeController extends Controller
                 }
             }
             $employee = Employee::orderBy('id', 'desc')
-            ->join('pay_policies', 'employees.pay_policy_id', '=', 'pay_policies.id')
+            ->leftjoin('pay_policies', 'employees.pay_policy_id', '=', 'pay_policies.id')
             ->join('cities', 'employees.city_id', '=', 'cities.id')
             ->join('departments', 'employees.department_id', '=', 'departments.id')
             ->join('designations', 'employees.designation_id', '=', 'designations.id')
