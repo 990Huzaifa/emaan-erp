@@ -133,10 +133,10 @@
             <div class="flex justify-between items-start mb-8">
                 <div>
                     <h1>Invoice</h1>
-                    <p class="mt-1">Invoice Number: INV-2023-001</p>
+                    <p class="mt-1">Invoice Number: {{$data->invoice_no}}</p>
                 </div>
                 <div class="text-right">
-                    <h2>Acme Corporation</h2>
+                    <h2>{{$data->business_name}}</h2>
                     <p class="mt-1 whitespace-pre-line">123 Business St.
 Corporate City, BZ 54321</p>
                 </div>
@@ -145,9 +145,8 @@ Corporate City, BZ 54321</p>
             <div class="flex justify-between mb-8">
                 <div>
                     <h3>Bill To:</h3>
-                    <p>John Doe</p>
-                    <p class="whitespace-pre-line">456 Client Ave.
-Customer Town, CT 98765</p>
+                    <p>{{$data->vendor_name}}</p>
+                    <p class="whitespace-pre-line">{{$data->vendor_address}}</p>
                 </div>
                 <div class="text-right">
                     <div class="mb-2">
@@ -171,24 +170,14 @@ Customer Town, CT 98765</p>
                     </tr>
                 </thead>
                 <tbody>
+                    @foreach ($data->items as $item )
                     <tr>
-                        <td>Web Design Services</td>
-                        <td class="text-right">1</td>
-                        <td class="text-right">$1500.00</td>
-                        <td class="text-right">$1500.00</td>
+                        <td>{{$item['product']['title']}}</td>
+                        <td class="text-right">{{$item->quantity}}</td>
+                        <td class="text-right">PKR {{$item->unit_price}}</td>
+                        <td class="text-right">PKR {{$item->total}}</td>
                     </tr>
-                    <tr>
-                        <td>Hosting (12 months)</td>
-                        <td class="text-right">12</td>
-                        <td class="text-right">$20.00</td>
-                        <td class="text-right">$240.00</td>
-                    </tr>
-                    <tr>
-                        <td>Domain Registration</td>
-                        <td class="text-right">1</td>
-                        <td class="text-right">$15.00</td>
-                        <td class="text-right">$15.00</td>
-                    </tr>
+                    @endforeach
                 </tbody>
             </table>
 
@@ -213,14 +202,6 @@ Customer Town, CT 98765</p>
             <div class="border-t pt-8 mb-8">
                 <h3>Notes:</h3>
                 <p>Thank you for your business. Please make payment within 30 days.</p>
-            </div>
-
-            <div class="flex justify-between">
-                <div></div>
-                <button class="button">
-                    <i class="fas fa-print"></i>
-                    Print Invoice
-                </button>
             </div>
         </div>
     </div>
