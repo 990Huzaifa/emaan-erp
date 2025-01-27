@@ -962,9 +962,13 @@ class UserController extends Controller
             
             $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
 
-            $userIdsQuery = User::where('users.role', 'user')
-            ->where('users.is_verify', 0)
-            ->where('users.id', '<>', $user->id)
+            $userIdsQuery = User::where('users.role', 'user');
+            if($request->has('is_verify')) {
+                $userIdsQuery = $userIdsQuery->where('users.is_verify', $request->input('is_verify'));
+
+            }
+
+            $userIdsQuery = $userIdsQuery->where('users.id', '<>', $user->id)
             ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
             ->whereIn('user_has_businesses.business_id', $userBusinesses)
             ->distinct()
