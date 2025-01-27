@@ -4,124 +4,225 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome for icons -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.1;
-            z-index: 0;
-            pointer-events: none;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 48rem;
+            margin: 3rem auto;
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .invoice-content {
+            padding: 2rem 1.5rem;
+        }
+        .flex {
+            display: flex;
+        }
+        .justify-between {
+            justify-content: space-between;
+        }
+        .items-start {
+            align-items: flex-start;
+        }
+        .mb-8 {
+            margin-bottom: 2rem;
+        }
+        .text-right {
+            text-align: right;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin: 0;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0;
+        }
+        h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 0.5rem 0;
+        }
+        p {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin: 0;
+        }
+        .mt-1 {
+            margin-top: 0.25rem;
+        }
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        .whitespace-pre-line {
+            white-space: pre-line;
+        }
+        .icon {
+            color: #6b7280;
+            margin-right: 0.5rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+        }
+        th, td {
+            padding: 1rem 0;
+            text-align: left;
+        }
+        th {
+            font-weight: 600;
+            color: #1f2937;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        td {
+            color: #4b5563;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .font-semibold {
+            font-weight: 600;
+        }
+        .text-lg {
+            font-size: 1.125rem;
+        }
+        .border-t {
+            border-top: 1px solid #e5e7eb;
+        }
+        .pt-8 {
+            padding-top: 2rem;
+        }
+        .button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            background-color: #3b82f6;
+            border: none;
+            border-radius: 0.375rem;
+            cursor: pointer;
+        }
+        .button:hover {
+            background-color: #2563eb;
+        }
+        .button i {
+            margin-right: 0.5rem;
         }
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="card shadow-lg position-relative">
-            <!-- Watermark -->
-            <div class="watermark">
-                <img src="{{ $watermarkUrl }}" alt="Watermark">
+    <div class="container">
+        <div class="invoice-content">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1>Invoice</h1>
+                    <p class="mt-1">Invoice Number: INV-2023-001</p>
+                </div>
+                <div class="text-right">
+                    <h2>Acme Corporation</h2>
+                    <p class="mt-1 whitespace-pre-line">123 Business St.
+Corporate City, BZ 54321</p>
+                </div>
             </div>
 
-            <div class="card-body p-4 position-relative">
-                <!-- Header Section -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h1 class="h2 fw-bold text-dark">Invoice</h1>
-                        <p class="text-muted small">Invoice Number: {{ $invoiceNumber }}</p>
-                    </div>
-                    <div class="col-md-6 text-md-end">
-                        <h2 class="h3 fw-semibold text-dark">{{ $companyName }}</h2>
-                        <p class="text-muted small white-space-pre-line">{{ $companyAddress }}</p>
-                    </div>
+            <div class="flex justify-between mb-8">
+                <div>
+                    <h3>Bill To:</h3>
+                    <p>John Doe</p>
+                    <p class="whitespace-pre-line">456 Client Ave.
+Customer Town, CT 98765</p>
                 </div>
-
-                <!-- Client & Date Section -->
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <h3 class="fw-semibold text-dark mb-2">Bill To:</h3>
-                        <p class="text-muted small mb-0">{{ $clientName }}</p>
-                        <p class="text-muted small white-space-pre-line">{{ $clientAddress }}</p>
+                <div class="text-right">
+                    <div class="mb-2">
+                        <i class="fas fa-calendar icon"></i>
+                        <span>Date: 2023-05-15</span>
                     </div>
-                    <div class="col-md-6 text-md-end">
-                        <div class="mb-2">
-                            <i class="fas fa-calendar-alt text-muted me-2"></i>
-                            <span class="text-muted small">Date: {{ $date }}</span>
-                        </div>
-                        <div>
-                            <i class="fas fa-calendar-alt text-muted me-2"></i>
-                            <span class="text-muted small">Due Date: {{ $dueDate }}</span>
-                        </div>
+                    <div>
+                        <i class="fas fa-calendar icon"></i>
+                        <span>Due Date: 2023-06-14</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Items Table -->
-                <div class="table-responsive mb-4">
-                    <table class="table">
-                        <thead>
-                            <tr class="border-bottom">
-                                <th class="text-dark fw-semibold">Description</th>
-                                <th class="text-end text-dark fw-semibold">Qty</th>
-                                <th class="text-end text-dark fw-semibold">Unit Price</th>
-                                <th class="text-end text-dark fw-semibold">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($items as $item)
-                            <tr class="border-bottom">
-                                <td class="text-muted small">{{ $item['description'] }}</td>
-                                <td class="text-muted small text-end">{{ $item['quantity'] }}</td>
-                                <td class="text-muted small text-end">${{ number_format($item['unitPrice'], 2) }}</td>
-                                <td class="text-muted small text-end">${{ number_format($item['quantity'] * $item['unitPrice'], 2) }}</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Web Design Services</td>
+                        <td class="text-right">1</td>
+                        <td class="text-right">$1500.00</td>
+                        <td class="text-right">$1500.00</td>
+                    </tr>
+                    <tr>
+                        <td>Hosting (12 months)</td>
+                        <td class="text-right">12</td>
+                        <td class="text-right">$20.00</td>
+                        <td class="text-right">$240.00</td>
+                    </tr>
+                    <tr>
+                        <td>Domain Registration</td>
+                        <td class="text-right">1</td>
+                        <td class="text-right">$15.00</td>
+                        <td class="text-right">$15.00</td>
+                    </tr>
+                </tbody>
+            </table>
 
-                <!-- Totals Section -->
-                <div class="row mb-4">
-                    <div class="col-md-6 offset-md-6">
-                        <div class="text-end">
-                            <div class="d-flex justify-content-end mb-2">
-                                <span class="fw-semibold text-dark me-3">Subtotal:</span>
-                                <span class="text-muted">${{ number_format($subtotal, 2) }}</span>
-                            </div>
-                            <div class="d-flex justify-content-end mb-2">
-                                <span class="fw-semibold text-dark me-3">Tax (10%):</span>
-                                <span class="text-muted">${{ number_format($tax, 2) }}</span>
-                            </div>
-                            <div class="d-flex justify-content-end">
-                                <span class="h5 fw-bold text-dark me-3 mb-0">Total:</span>
-                                <span class="h5 fw-bold text-dark mb-0">${{ number_format($total, 2) }}</span>
-                            </div>
-                        </div>
+            <div class="flex justify-between mb-8">
+                <div></div>
+                <div class="text-right">
+                    <div class="flex justify-between mb-2">
+                        <span class="font-semibold mr-8">Subtotal:</span>
+                        <span>$1755.00</span>
+                    </div>
+                    <div class="flex justify-between mb-2">
+                        <span class="font-semibold mr-8">Tax (10%):</span>
+                        <span>$175.50</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-semibold">
+                        <span class="mr-8">Total:</span>
+                        <span>$1930.50</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Notes Section -->
-                <div class="border-top pt-4 mb-4">
-                    <h3 class="fw-semibold text-dark mb-2">Notes:</h3>
-                    <p class="text-muted small">Thank you for your business. Please make payment within 30 days.</p>
-                </div>
+            <div class="border-t pt-8 mb-8">
+                <h3>Notes:</h3>
+                <p>Thank you for your business. Please make payment within 30 days.</p>
+            </div>
 
-                <!-- Print Button -->
-                <div class="text-end">
-                    <button class="btn btn-primary" onclick="window.print()">
-                        <i class="fas fa-print me-2"></i>
-                        Print Invoice
-                    </button>
-                </div>
+            <div class="flex justify-between">
+                <div></div>
+                <button class="button">
+                    <i class="fas fa-print"></i>
+                    Print Invoice
+                </button>
             </div>
         </div>
     </div>
-
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

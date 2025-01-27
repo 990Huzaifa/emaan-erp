@@ -275,7 +275,7 @@ class PurchaseInvoiceController extends Controller
     
             // Use the Blade file to generate the PDF
             $pdf = PDF::loadView('invoice.purchase-invoice', compact('data'));
-    
+            
             // Return the generated PDF for download
             return $pdf->download('purchase-invoice-' . $id . '.pdf');
         } catch (QueryException $e) {
