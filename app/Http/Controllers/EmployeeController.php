@@ -223,7 +223,7 @@ class EmployeeController extends Controller
                     ], 403);
                 }
             }
-            $employee = DB::table('employees')
+            $employee = Employee::with('pay_policy')
             ->join('cities', 'employees.city_id', '=', 'cities.id')
             ->join('departments', 'employees.department_id', '=', 'departments.id')
             ->join('designations', 'employees.designation_id', '=', 'designations.id')
