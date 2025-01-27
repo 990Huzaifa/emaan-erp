@@ -872,6 +872,22 @@ class UserController extends Controller
                 $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (User::where('u_code', $u_code)->exists());
             DB::beginTransaction();
+
+            // code to create partner coa
+
+
+            $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
+            if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
+
+            $businessCOA = ChartOfAccount::where('parent_code', $equityCOA->code)
+            ->where('ref_id', $Auser->login_business)
+            ->first();
+            if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
+
+            $userCOA = createCOA($request->name,$businessCOA->code);
+
+            // end
+
             $setupCode = generateSetupCode(); 
             $user = User::create([
                 'name'=>$request->name,
@@ -881,23 +897,12 @@ class UserController extends Controller
                 'setup_code' => $setupCode,
             ]);
 
-            // code to creata partner coa
-
-
-            $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
-            if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
-
-            $businessCOA = ChartOfAccount::where('parent_code', $equityCOA->code)
-            ->where('ref_id', $user->login_business)
-            ->first();
-            if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
-
-            $userCOA = createCOA($request->name,$businessCOA->code);
+            
             $userCOA->update([
                 'ref_id' => $user->id
             ]);
 
-            // end
+            
 
 
             $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
@@ -962,7 +967,20 @@ class UserController extends Controller
                 $userIdsQuery->where('users.is_verify', $request->is_verify);
             }
 
-            // code to merge partner acc
+            // code to merge partner coa
+
+
+            $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
+            if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
+
+            $businessCOA = ChartOfAccount::where('parent_code', $equityCOA->code)
+            ->whereIn('ref_id', $userBusinesses)
+            ->pluck('code')->toArray();
+            if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
+
+
+
+            // end
 
 
 
