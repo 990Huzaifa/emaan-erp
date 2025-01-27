@@ -8,7 +8,6 @@ use App\Models\User;
 use App\Models\Log;
 use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
-use App\Models\Balance;
 use App\Models\UserHasBusiness;
 use App\Models\Business;
 use Illuminate\Http\Request;
@@ -138,10 +137,6 @@ class BusinessController extends Controller
                 'chart_of_account_id' => $COA->id,
             ]);
             OpeningBalance::create([
-                'acc_id' => $COA->id,
-                'amount' => $request->opening_balance ?? 0,
-            ]);
-            Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
