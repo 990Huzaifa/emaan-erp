@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Log;
 use App\Models\PaySlip;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -124,6 +125,11 @@ class PaySlipController extends Controller
 
                 ]);
                 DB::commit();
+
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Pay Slip Created Updated successfully',
+                ]);
                 return response()->json($data,200);
 
         }catch(QueryException $e){
@@ -140,7 +146,24 @@ class PaySlipController extends Controller
      */
     public function show(string $id)
     {
-        //
+        try{
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view pay slip')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = PaySlip::find($id);
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
@@ -162,8 +185,44 @@ class PaySlipController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit pay policy')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make($request->all(), [
+                'status' => 'required',
+            ],[
+                'Status.required' => 'Status is required',
+            ]);
+            if ($validator->fails())throw new Exception($validator->errors()->first(), 400);
+
+            $data = PaySlip::find($id);
+            if(empty($data)) throw new Exception('No data found', 404);
+            $data->update([
+                'status' => $request->status,
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Pay Slip Status Updated successfully',
+            ]);
+            DB::commit();
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(["DB error" => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(["error" => $e->getMessage()], 400);
+        }
     }
 }
