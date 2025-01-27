@@ -3,6 +3,7 @@
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\PayPolicyController;
+use App\Http\Controllers\PaySlipController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -179,6 +180,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/employees',[EmployeeController::class,'list']);
     Route::get('/csv/employee', [EmployeeController::class, 'csvCustomer']);
     Route::post('/csv/employee/upload', [EmployeeController::class, 'importCustomer']);
+
+    Route::apiResource('pay-slip',PaySlipController::class)->only('index','store','show','update');
+    Route::put('status/{id}/pay-slip',[PaySlipController::class,'updateStatus']);
 
     
     

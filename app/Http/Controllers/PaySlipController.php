@@ -79,22 +79,23 @@ class PaySlipController extends Controller
                     'pay_period_start' =>'required',
                     'pay_period_end' => 'required',
                     'issue_date' => 'required',
-                    'basic_salary' => 'required',
+                    'basic_pay' => 'required',
                     'loan_deduction' => 'required',
                     'tax_deduction' => 'required',
                     'allowance' => 'required',
                     'bonus' => 'required',
-                    'net_salary' => 'required',
+                    'net_pay' => 'required',
                 ],[
                     'employee_id.required' => 'Employee is required',
                     'pay_period_start.required' => 'Pay period start is required',
                     'pay_period_end.required' => 'Pay period end is required',
                     'issue_date.required' => 'Issue date is required',
-                    'basic_salary.required' => 'Basic salary is required',
+                    'basic_pay.required' => 'Basic salary is required',
                     'loan_deduction.required' => 'Loan deduction is required',
                     'tax_deduction.required' => 'Tax deduction is required',
                     'allowance.required' => 'Allowance is required',
                     'bonus.required' => 'Bonus is required',
+                    'net_pay.required' => 'Net pay is required',
                     
                 ]);
 
@@ -110,8 +111,13 @@ class PaySlipController extends Controller
                     "pay_period_start" => $request->pay_period_start,
                     "pay_period_end" => $request->pay_period_end,
                     "issue_date" => $request->issue_date,
-                    "basic_salary" => $request->basic_salary,
+                    "basic_pay" => $request->basic_pay,
                     "loan_deduction" => $request->loan_deduction,
+                    "tax_deduction" => $request->tax_deduction,
+                    "allowance" => $request->allowance,
+                    "bonus" => $request->bonus,
+                    "net_pay" => $request->net_pay,
+                    "status" => $request->status
 
                 ]);
 

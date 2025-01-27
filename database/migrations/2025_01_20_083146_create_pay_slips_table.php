@@ -21,12 +21,12 @@ return new class extends Migration
             $table->date('pay_period_start'); // Start date of the pay period
             $table->date('pay_period_end'); // End date of the pay period
             $table->date('issue_date'); // Date the payslip is issued
-            $table->decimal('basic_salary', 18, 2); 
+            $table->decimal('basic_pay', 18, 2); 
             $table->decimal('loan_deduction', 18, 2)->default(0.00); // Loan deductions for this period
             $table->decimal('tax_deduction', 18, 2)->default(0.00); // Tax deductions for this period
             $table->decimal('allowance', 18, 2)->default(0.00); // Allowances added for this period
             $table->decimal('bonus', 18, 2)->default(0.00); // Bonus added for this period
-            $table->decimal('net_salary', 18, 2); // Final salary after deductions
+            $table->decimal('net_pay', 18, 2); // Final salary after deductions
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid');
             $table->timestamps();
         });
