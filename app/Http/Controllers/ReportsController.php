@@ -79,4 +79,29 @@ class ReportsController extends Controller
 
         return response()->json($response);
     }
+
+
+    public function financialReport(): JsonResponse
+    {
+        $totalPurchases = DB::table('transactions')->where('transaction_type', 0)->sum('debit');
+        $totalSales = DB::table('transactions')->where('transaction_type', 1)->sum('credit');
+        $totalExpenses = DB::table('transactions')->where('transaction_type', 2)->sum('debit');
+        $totalIncome = DB::table('transactions')->where('transaction_type', 3)->sum('credit');
+
+        $Purchases = DB::table('transactions')->where('transaction_type', 0)->get();
+        $Sales = DB::table('transactions')->where('transaction_type', 1)->get();
+        $Expenses = DB::table('transactions')->where('transaction_type', 2)->get();
+        $Income = DB::table('transactions')->where('transaction_type', 3)->get();
+
+        $netProfit = ($totalSales + $totalIncome) - ($totalPurchases + $totalExpenses);
+
+        return response()->json([
+            'purchases' => [$Purchases,$totalPurchases],
+            'sales' => [$Sales,$totalSales],
+            'expenses' => [$Expenses,$totalExpenses],
+            'income' => [$Income,$totalIncome],
+            'net_profit' => $netProfit,
+        ]);
+    }
+
 }
