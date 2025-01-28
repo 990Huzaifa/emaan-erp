@@ -273,7 +273,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Reports
 
     Route::get('inventory-report',[ReportsController::class,'inventoryReport']);
-    Route::get('inventory-report/detail',[ReportsController::class,'inventoryReportDetail']);
+    Route::get('inventory-report/{id}/detail',[ReportsController::class,'inventoryReportDetail']);
 
 
 
