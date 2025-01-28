@@ -96,10 +96,18 @@ class ReportsController extends Controller
         $netProfit = ($totalSales + $totalIncome) - ($totalPurchases + $totalExpenses);
 
         return response()->json([
-            'purchases' => [$Purchases,$totalPurchases],
-            'sales' => [$Sales,$totalSales],
-            'expenses' => [$Expenses,$totalExpenses],
-            'income' => [$Income,$totalIncome],
+            'purchases' => [
+                'data' => $Purchases, 'total' => $totalPurchases
+            ],
+            'sales' => [
+                'data' => $Sales, 'total' => $totalSales
+            ],
+            'expenses' => [
+                'data' => $Expenses, 'total' => $totalExpenses
+            ],
+            'income' => [
+                'data' => $Income, 'total' => $totalIncome
+            ],
             'net_profit' => $netProfit,
         ]);
     }
