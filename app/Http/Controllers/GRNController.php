@@ -289,6 +289,37 @@ class GRNController extends Controller
             if($request->status == 1){
                 foreach ($data->items as $item) {
                     $product = Product::find($item->product_id);
+                    $vendor = Vendor::find($data->purchase_order->vendor_id);
+                    // hit transaction
+                    $total_billed = $item->billed;
+                    $p_cb = calculateBalance($product->acc_id,true);
+                    $v_cb = calculateBalance($vendor->acc_id,false);
+
+                    // Debit amount from Product's account
+                    Transaction::create([
+                        'business_id' => $businessId,
+                        'acc_id' => $product->acc_id,
+                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                        'description' => 'debit amount from product account by GRN',
+                        'debit' => $total_billed, // Money debited from business account
+                        'credit' => 0.00, // No money credited to business account
+                        'current_balance' => $p_cb
+                    ]);
+
+                    // Credit amount to Vendor's account
+                    Transaction::create([
+                        'business_id' => $businessId,
+                        'acc_id' => $vendor->acc_id,
+                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                        'description' => 'credit amount to vendor account by GRN',
+                        'debit' => 0.00, // No money debited from business account
+                        'credit' => $total_billed, // Money credited to business account
+                        'current_balance' => $v_cb
+                    ]);
+
+
+
+                    // hit inventory
                     do {
                         $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                     } while (Lot::where('lot_code', $lot_code)->exists());

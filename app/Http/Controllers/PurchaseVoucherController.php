@@ -202,27 +202,11 @@ class PurchaseVoucherController extends Controller
             // for products
             $total_billed = $data->voucher_amount;
 
-            // for vendor trasaction
-            $vendor_t = Transaction::where('acc_id', $vendor_acc)->orderBy('id', 'desc')->first();
-            $v_cb = $total_billed;
+            // Calculate Cash/Bank Account Current Balance (Post-Credit)
+            $b_cb = calculateBalance($data->acc_id, $total_billed, true); // Cash account is credited (reduced)
 
-            $business_t = Transaction::where('acc_id', $data->acc_id)->orderBy('id', 'desc')->first();
-            $b_cb = $total_billed;
-            
-            // Calculate updated balances
-            if (empty($vendor_t)) {
-                $v_ob = OpeningBalance::where('acc_id', $vendor_acc)->value('amount');
-                $v_cb = $v_ob + $total_billed; // Add opening balance to the billed amount
-            } else {
-                $v_cb = $vendor_t->current_balance + $total_billed; // Add billed amount to previous balance
-            }
-            
-            if (empty($business_t)) {
-                $b_ob = OpeningBalance::where('acc_id', $data->acc_id)->value('amount');
-                $b_cb = $b_ob - $total_billed; // Subtract billed amount from opening balance
-            } else {
-                $b_cb = $business_t->current_balance - $total_billed; // Subtract billed amount from previous balance
-            }
+            // Calculate Vendor Account Current Balance (Post-Debit)
+            $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
             
             // Credit amount to vendor's account
             Transaction::create([
@@ -230,8 +214,8 @@ class PurchaseVoucherController extends Controller
                 'acc_id' => $vendor_acc,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'Payment received by vendor: ' . $vendor->name,
-                'debit' => 0.00, // No money deducted from vendor's side
-                'credit' => $total_billed, // Money credited to vendor
+                'debit' => $total_billed, // Money debited from vendor's account
+                'credit' => 0.00, // No money credited to vendor's account
                 'current_balance' => $v_cb // Updated balance for vendor account
             ]);
 
@@ -241,8 +225,8 @@ class PurchaseVoucherController extends Controller
                 'acc_id' => $data->acc_id,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'Payment send to vendor: ' . $vendor->name,
-                'debit' => $total_billed, // Money debited from business account
-                'credit' => 0.00, // No money credited to business account
+                'debit' => 0.00, // No money debited to business account
+                'credit' => $total_billed, // Money credited from business account
                 'current_balance' => $b_cb
             ]);
             
