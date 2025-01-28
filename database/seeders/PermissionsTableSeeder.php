@@ -177,9 +177,13 @@ class PermissionsTableSeeder extends Seeder
             'view journal voucher',
             'create journal voucher',
             'edit journal voucher',
-            'approve journal voucher'
-                
-
+            'approve journal voucher',
+            
+            'list loan',
+            'view loan',
+            'create loan',
+            'edit loan',
+            'approve loan',
         ];
 
         // Loop through each permission and create it

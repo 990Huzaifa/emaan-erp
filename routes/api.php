@@ -3,6 +3,7 @@
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\JournalVoucherController;
+use App\Http\Controllers\LoanController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PayPolicyController;
 use App\Http\Controllers\PaySlipController;
@@ -189,6 +190,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('pay-slip',PaySlipController::class)->only('index','store','show','update');
     Route::put('status/{id}/pay-slip',[PaySlipController::class,'updateStatus']);
+    
+    Route::apiResource('loan',LoanController::class)->only('index','store','show','update');
+    Route::put('status/{id}/loan',[LoanController::class,'updateStatus']);
 
     
     

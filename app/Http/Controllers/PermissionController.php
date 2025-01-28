@@ -155,6 +155,13 @@ class PermissionController extends Controller
                     'edit employee',
                     'approve employee'
                 ],
+                "Loan" => [
+                    'list loan',
+                    'view loan',
+                    'create loan',
+                    'edit loan',
+                    'approve loan'
+                ],
                 "Expense Voucher" => [
                     'list expense voucher',
                     'view expense voucher',
