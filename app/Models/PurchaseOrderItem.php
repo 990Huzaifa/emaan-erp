@@ -14,7 +14,7 @@ class PurchaseOrderItem extends Model
         'product_id',
         'quantity',
         'unit_price',
-        'total',
+        'total_price',
         'total_tax',
     ];
 
