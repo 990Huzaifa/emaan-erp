@@ -57,13 +57,13 @@ class ReportsController extends Controller
 
         // Fetch purchase (IN) data
         $inData = GoodsReceiveNoteItem::where('product_id', $product->id)
-            ->select('receive', 'created_at')
+            ->select('receive  as quantity', 'created_at')
             ->orderBy('created_at', 'desc')
             ->get();
 
         // Fetch sales (OUT) data
         $outData = DeliveryNoteItem::where('product_id', $product->id)
-            ->select('delivered', 'created_at')
+            ->select('delivered as quantity', 'created_at')
             ->orderBy('created_at', 'desc')
             ->get();
 
