@@ -292,8 +292,8 @@ class GRNController extends Controller
                     $vendor = Vendor::find($data->purchase_order->vendor_id);
                     // hit transaction
                     $total_billed = $item->billed;
-                    $p_cb = calculateBalance($product->acc_id,true);
-                    $v_cb = calculateBalance($vendor->acc_id,false);
+                    $p_cb = calculateBalance($product->acc_id,$total_billed,true);
+                    $v_cb = calculateBalance($vendor->acc_id,$total_billed,false);
 
                     // Debit amount from Product's account
                     Transaction::create([
