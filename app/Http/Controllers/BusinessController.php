@@ -269,10 +269,29 @@ class BusinessController extends Controller
             //         ], 403);
             //     }
             // }
-            $type = $request->type;
-            if(!$type) throw new Exception('Type not define',400);
+            $name = $request->type;
+            if(!$name) throw new Exception('Type not define',400);
             // Retrieve account codes for BANK and CASH
-            $acc_code = ChartOfAccount::where('name', $type)->value('code');
+            $acc_code = null;
+            
+            if ($name === 'BANK') {
+                $acc_code = ChartOfAccount::select('code')->where('name',$name)->get();
+            }
+            else if($name == 'CASH'){
+                $acc_code = ChartOfAccount::select('code')->where('name',$name)->get();
+            }
+            else if($name == 'EMPLOYEE_SALARY'){
+                $acc_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->get();
+            }
+            else if($name == 'BUSINESS_EXPENSE'){
+                $acc_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->get();
+            }
+            else{
+                 throw new Exception('Invalid Account', 400);
+            }
+
+
+
             // Define the query with specific columns to fetch
             $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
                 ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
