@@ -11,8 +11,12 @@ use Illuminate\Http\Request;
 
 class ReportsController extends Controller
 {
-    public function inventoryReport(): JsonResponse
+    public function inventoryReport(Request $request): JsonResponse
     {
+
+
+
+        $perpage = $request->input('perpage', 10);
         // Sum quantities of products from purchase orders (IN)
         $purchasedItems = PurchaseOrderItem::select('product_id', DB::raw('SUM(quantity) as total_in'))
             ->groupBy('product_id');
@@ -32,7 +36,7 @@ class ReportsController extends Controller
                 DB::raw('COALESCE(purchased.total_in, 0) as total_in'),
                 DB::raw('COALESCE(sold.total_out, 0) as total_out')
             )
-            ->get();
+            ->paginate($perpage);
     
         return response()->json($inventoryReport);
     }
