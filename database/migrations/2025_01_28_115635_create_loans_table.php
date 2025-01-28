@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('loan_date');
             $table->decimal('remaining_amount', 10, 2)->default(0.00);
             $table->integer('installments');
-            $table->decimal('installment_amount', 10, 2);
+            $table->decimal('installment_amount', 10, 2)->default(0.00);
             $table->string('status')->default(0);
             $table->timestamps();
         });

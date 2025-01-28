@@ -40,17 +40,11 @@ class LoanController extends Controller
                 'employee_id' => 'required|exists:employees,id',
                 'loan_amount' => 'required',
                 'loan_date' => 'required',
-                'installments' => 'required',
-                'installment_amount' => 'required',
-                'remaining_amount' => 'required', 
             ],[
                 'employee_id.required' => 'Employee ID is required',
                 'employee_id.exists' => 'Employee ID does not exist',
                 'loan_amount.required' => 'Loan amount is required',
                 'loan_date.required' => 'Loan date is required',
-                'installments.required' => 'Installments is required',
-                'installment_amount.required' => 'Installment amount is required',
-                'remaining_amount.required' => 'Remaining amount is required',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
@@ -59,9 +53,9 @@ class LoanController extends Controller
                 'employee_id' => $request->employee_id,
                 'loan_amount' => $request->loan_amount,
                 'loan_date' => $request->loan_date,
-                'installments' => $request->installments,    
-                'installment_amount' => $request->installment_amount,
-                'remaining_amount' => $request->remaining_amount
+                'installments' => 0,    
+                'installment_amount' => 0,
+                'remaining_amount' => $request->loan_amount
             ]);
 
             return response()->json($data, 200);
