@@ -22,7 +22,7 @@ class ProductCategoryController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list product category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -55,7 +55,7 @@ class ProductCategoryController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'create product category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -114,7 +114,7 @@ class ProductCategoryController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'edit product category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'

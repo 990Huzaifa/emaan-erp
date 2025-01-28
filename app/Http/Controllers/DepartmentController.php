@@ -22,7 +22,7 @@ class DepartmentController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list department')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -60,7 +60,7 @@ class DepartmentController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create department')) {
                     return response()->json([
@@ -110,7 +110,7 @@ class DepartmentController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view department')) {
                     return response()->json([ 
@@ -139,7 +139,7 @@ class DepartmentController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit department')) {
                     return response()->json([
@@ -189,7 +189,7 @@ class DepartmentController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit department')) {
                     return response()->json([

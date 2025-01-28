@@ -22,7 +22,7 @@ class PurchaseQuotationController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -58,7 +58,7 @@ class PurchaseQuotationController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
             $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create purchase quotations')) {
                     return response()->json([
@@ -117,7 +117,7 @@ class PurchaseQuotationController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'view purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -149,7 +149,7 @@ class PurchaseQuotationController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'edit purchase quotations')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -219,7 +219,7 @@ class PurchaseQuotationController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'approve purchase quotations')) {
                     return response()->json([

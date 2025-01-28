@@ -28,7 +28,7 @@ class VendorController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list vendors')) {
                     return response()->json([
@@ -83,7 +83,7 @@ class VendorController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create vendors')) {
                     return response()->json([
@@ -204,7 +204,7 @@ class VendorController extends Controller
 
             // Check if the user has the required permission
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'view vendors')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -240,7 +240,7 @@ class VendorController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit vendors')) {
                     return response()->json([
@@ -360,7 +360,7 @@ class VendorController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list vendors')) {
                     return response()->json([
@@ -407,7 +407,7 @@ class VendorController extends Controller
             $user = Auth::user();
 
             // Check user permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create vendors')) {
                     return response()->json([

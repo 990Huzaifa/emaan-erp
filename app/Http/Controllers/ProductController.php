@@ -31,7 +31,7 @@ class ProductController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list products')) {
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -97,7 +97,7 @@ class ProductController extends Controller
         try{
             $user = Auth::user();            
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create products')) {
                     return response()->json([
@@ -228,7 +228,7 @@ class ProductController extends Controller
         try{
             $user = Auth::user();            
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view products')) {
                     return response()->json([
@@ -267,7 +267,7 @@ class ProductController extends Controller
         try{
             $user = Auth::user();            
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit products')) {
                     return response()->json([
@@ -412,7 +412,7 @@ class ProductController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit products')) {
                     return response()->json([
@@ -469,7 +469,7 @@ class ProductController extends Controller
             $user = Auth::user();
 
             // Check user permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create products')) {
                     return response()->json([

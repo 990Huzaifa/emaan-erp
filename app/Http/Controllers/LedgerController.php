@@ -19,7 +19,7 @@ class LedgerController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list products')) {
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -56,7 +56,7 @@ class LedgerController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list ledger')) {
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -105,7 +105,7 @@ class LedgerController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list ledger')) {
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

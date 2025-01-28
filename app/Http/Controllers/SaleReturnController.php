@@ -26,7 +26,7 @@ class SaleReturnController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list sale return')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -62,7 +62,7 @@ class SaleReturnController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create sale return')) {
                     return response()->json([
@@ -144,7 +144,7 @@ class SaleReturnController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view sale return')) {
                     return response()->json([
@@ -199,7 +199,7 @@ class SaleReturnController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'approve sale return')) {
                     return response()->json([

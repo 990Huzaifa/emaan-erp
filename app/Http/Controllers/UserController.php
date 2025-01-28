@@ -33,7 +33,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list users')) {
                     return response()->json([
@@ -202,7 +202,7 @@ class UserController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view users')) {
                     return response()->json([
@@ -248,7 +248,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([
@@ -381,7 +381,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([
@@ -419,7 +419,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([
@@ -452,7 +452,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list users')) {
                     return response()->json([
@@ -526,7 +526,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list users')) {
                     return response()->json([
@@ -596,7 +596,7 @@ class UserController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create users')) {
                     return response()->json([
@@ -634,7 +634,7 @@ class UserController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'delete users')) {
                     return response()->json([
@@ -663,7 +663,7 @@ class UserController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit profile')) {
                     return response()->json([
@@ -756,7 +756,7 @@ class UserController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit users')) {
                     return response()->json([

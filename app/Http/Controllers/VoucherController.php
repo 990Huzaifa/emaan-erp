@@ -52,7 +52,7 @@ class VoucherController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create voucher')) {
                     return response()->json([

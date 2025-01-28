@@ -34,7 +34,7 @@ class CustomerController extends Controller
             $searchQuery = $request->query('search');
             $query = Customer::orderBy('id', 'desc')->join('cities', 'customers.city_id', '=', 'cities.id')
             ->select('customers.*', 'cities.name as city');
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list customers')) {
                     return response()->json([
@@ -75,7 +75,7 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create customers')) {
                     return response()->json([
@@ -197,7 +197,7 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view customers')) {
                     return response()->json([
@@ -230,7 +230,7 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit customers')) {
                     return response()->json([
@@ -351,7 +351,7 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list customers')) {
                     return response()->json([
@@ -397,7 +397,7 @@ class CustomerController extends Controller
             $user = Auth::user();
 
             // Check user permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create customers')) {
                     return response()->json([

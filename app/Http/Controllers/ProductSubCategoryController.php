@@ -22,7 +22,7 @@ class ProductSubCategoryController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list product sub category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -74,7 +74,7 @@ class ProductSubCategoryController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'create product sub category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -139,7 +139,7 @@ class ProductSubCategoryController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit product sub category')) {
                     return response()->json([
@@ -192,7 +192,7 @@ class ProductSubCategoryController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view product sub category')) {
                     return response()->json([
@@ -224,7 +224,7 @@ class ProductSubCategoryController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list product sub category')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'

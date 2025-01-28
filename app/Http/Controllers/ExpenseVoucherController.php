@@ -22,7 +22,7 @@ class ExpenseVoucherController extends Controller
     {
         try {
             $user = Auth::user();
-                if ($user->role == 'user') {
+                if ($user->role != 'admin') {
                     $businessId = $user->login_business;
                     if (!$user->hasBusinessPermission($businessId, 'list expense voucher')) {
                         return response()->json([
@@ -77,7 +77,7 @@ class ExpenseVoucherController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'create expense voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -145,7 +145,7 @@ class ExpenseVoucherController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view expense voucher')) {
                     return response()->json([
@@ -183,7 +183,7 @@ class ExpenseVoucherController extends Controller
         try{
             $user = Auth::user();            
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'approve expense voucher')) {
                     return response()->json([

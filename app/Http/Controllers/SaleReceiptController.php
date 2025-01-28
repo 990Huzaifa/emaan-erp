@@ -25,7 +25,7 @@ class SaleReceiptController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list sale receipt')) {
                     return response()->json([
@@ -64,7 +64,7 @@ class SaleReceiptController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create sale receipt')) {
                     return response()->json([
@@ -138,7 +138,7 @@ class SaleReceiptController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view sale receipt')) {
                     return response()->json([
@@ -183,7 +183,7 @@ class SaleReceiptController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'approve sale receipt')) {
                     return response()->json([

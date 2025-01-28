@@ -22,7 +22,7 @@ class PaySlipController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list pay slip')) {
                     return response()->json([
@@ -65,7 +65,7 @@ class PaySlipController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create pay slip')) {
                     return response()->json([
@@ -149,7 +149,7 @@ class PaySlipController extends Controller
         try{
             $user = Auth::user();
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view pay slip')) {
                     return response()->json([
@@ -189,7 +189,7 @@ class PaySlipController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit pay policy')) {
                     return response()->json([

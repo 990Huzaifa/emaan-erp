@@ -25,7 +25,7 @@ class COAController extends Controller
             $businessId = $user->login_business;
     
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list chart of account')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -68,7 +68,7 @@ class COAController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'create chart of account')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -168,7 +168,7 @@ class COAController extends Controller
             $data = $chartOfAccountsWithoutRelation;
 
             // Step 3: Check if the user is a regular user ('role' is 'user')
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
 
                 // Check if the user has permission to list the chart of accounts for the business

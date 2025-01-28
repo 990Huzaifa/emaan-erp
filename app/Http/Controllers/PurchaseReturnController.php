@@ -25,7 +25,7 @@ class PurchaseReturnController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list purchase return')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -61,7 +61,7 @@ class PurchaseReturnController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create purchase return')) {
                     return response()->json([
@@ -132,7 +132,7 @@ class PurchaseReturnController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view purchase return')) {
                     return response()->json([
@@ -184,7 +184,7 @@ class PurchaseReturnController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'approve purchase return')) {
                     return response()->json([

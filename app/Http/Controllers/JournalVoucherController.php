@@ -22,7 +22,7 @@ class JournalVoucherController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list journal voucher')) {
                     return response()->json([
@@ -57,7 +57,7 @@ class JournalVoucherController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create journal voucher')) {
                     return response()->json([
@@ -140,7 +140,7 @@ class JournalVoucherController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'edit journal voucher')) {
                     return response()->json([
@@ -165,7 +165,7 @@ class JournalVoucherController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'create journal voucher')) {
                     return response()->json([
@@ -245,7 +245,7 @@ class JournalVoucherController extends Controller
     {
         try{
             $user = Auth::user();
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'approve journal voucher')) {
                     return response()->json([

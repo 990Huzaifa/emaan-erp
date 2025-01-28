@@ -21,7 +21,7 @@ class MeasureUnitController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'list measurement unit')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -52,7 +52,7 @@ class MeasureUnitController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'create measurement unit')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
@@ -99,7 +99,7 @@ class MeasureUnitController extends Controller
         try{
             $user = Auth::user();            
             // Check if the user has the required permission
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'view measurement unit')) {
                     return response()->json([
@@ -130,7 +130,7 @@ class MeasureUnitController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-            if ($user->role == 'user') {
+            if ($user->role != 'admin') {
                 if (!$user->hasBusinessPermission($businessId, 'edit measurement unit')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
