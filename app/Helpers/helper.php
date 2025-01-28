@@ -269,3 +269,36 @@ function calculateBalancePartners($acc_id, $change, $isDebit = true): float
     }
     return $isDebit ? 0 - $change : 0 + $change;
 }
+
+
+function notUsedfunc($acc_id, $change, $isDebit = true): float
+{
+    // Retrieve the account type
+    $accountType = ChartOfAccount::where('id', $acc_id)->value('level1');
+    
+    if (!$accountType) {
+        throw new Exception("Account type not found for account ID: {$acc_id}");
+    }
+
+    // Retrieve the last transaction
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    $last_balance = $lastTransaction ? $lastTransaction->current_balance : (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+
+    // Determine the new balance based on account type and transaction nature
+    switch ($accountType) {
+        case '1':  // Assets
+        case '2':  // Liabilities
+        case '3':  // Equity
+        case '4':  // Expenses
+            // For assets and expenses, Debit increases and Credit decreases
+            return $isDebit ? ($last_balance + $change) : ($last_balance - $change);
+        case '5':  // Revenue
+             // For liabilities, equity, and revenues, Debit decreases and Credit increases
+             return $isDebit ? ($last_balance - $change) : ($last_balance + $change);
+
+           
+        
+        default:
+            throw new Exception("Unsupported account type: {$accountType}");
+    }
+}

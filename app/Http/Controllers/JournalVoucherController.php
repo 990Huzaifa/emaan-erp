@@ -272,8 +272,8 @@ class JournalVoucherController extends Controller
             $total_amount = $data->voucher_amount;
             if ($data->type === 'WITHDRAW') {
                 // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
-                $a_cb = calculateBalance($acc_id, $total_amount, true); // Business asset account
-                $p_cb = calculateBalancePartners($partner_acc_id, $total_amount, false); // Partner equity account
+                $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
+                $p_cb = calculateBalancePartners($partner_acc_id, $total_amount, true); // Partner equity account
     
                 // Credit the asset account (money is leaving the business)
                 Transaction::create([
@@ -281,8 +281,9 @@ class JournalVoucherController extends Controller
                     'acc_id' => $acc_id,
                     'transaction_type' => 2, // Withdrawal
                     'description' => 'Partner withdrawal.',
-                    'debit' => 0.00,
-                    'credit' => $total_amount,
+                    'debit' => $total_amount,
+                    'credit' => 0.00,
+                    
                     'current_balance' => $a_cb
                 ]);
     
@@ -292,8 +293,8 @@ class JournalVoucherController extends Controller
                     'acc_id' => $partner_acc_id,
                     'transaction_type' => 2, // Withdrawal
                     'description' => 'Reduction in partner equity due to withdrawal.',
-                    'debit' => $total_amount,
-                    'credit' => 0.00,
+                    'debit' => 0.00,
+                    'credit' => $total_amount,
                     'current_balance' => $p_cb
                 ]);
             } elseif ($data->type === 'DEPOSIT') {
@@ -307,8 +308,8 @@ class JournalVoucherController extends Controller
                     'acc_id' => $acc_id,
                     'transaction_type' => 1, // Contribution
                     'description' => 'Partner contribution.',
-                    'debit' => $total_amount,
-                    'credit' => 0.00,
+                    'debit' => 0.00,
+                    'credit' => $total_amount,
                     'current_balance' => $a_cb
                 ]);
     
@@ -318,8 +319,8 @@ class JournalVoucherController extends Controller
                     'acc_id' => $partner_acc_id,
                     'transaction_type' => 1, // Contribution
                     'description' => 'Increase in partner equity due to contribution.',
-                    'debit' => 0.00,
-                    'credit' => $total_amount,
+                    'debit' => $total_amount,
+                    'credit' => 0.00,
                     'current_balance' => $p_cb
                 ]);
             } else {
