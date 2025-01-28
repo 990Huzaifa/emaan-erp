@@ -128,7 +128,7 @@ class PaySlipController extends Controller
 
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'Pay Slip Created Updated successfully',
+                    'description' => 'Pay Slip Created  successfully',
                 ]);
                 return response()->json($data,200);
 
@@ -144,7 +144,7 @@ class PaySlipController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -167,19 +167,86 @@ class PaySlipController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'edit pay slip')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make(
+                $request->all(),[
+                    'employee_id' => 'required|exists:employees,id',
+                    'pay_period_start' =>'required',
+                    'pay_period_end' => 'required',
+                    'issue_date' => 'required',
+                    'basic_pay' => 'required',
+                    'loan_deduction' => 'required',
+                    'tax_deduction' => 'required',
+                    'allowance' => 'required',
+                    'bonus' => 'required',
+                    'net_pay' => 'required',
+                ],[
+                    'employee_id.required' => 'Employee is required',
+                    'employee_id.exists' => 'Employee does not exist',
+                    'pay_period_start.required' => 'Pay period start is required',
+                    'pay_period_end.required' => 'Pay period end is required',
+                    'issue_date.required' => 'Issue date is required',
+                    'basic_pay.required' => 'Basic salary is required',
+                    'loan_deduction.required' => 'Loan deduction is required',
+                    'tax_deduction.required' => 'Tax deduction is required',
+                    'allowance.required' => 'Allowance is required',
+                    'bonus.required' => 'Bonus is required',
+                    'net_pay.required' => 'Net pay is required',
+                    
+                ]);
+
+                if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
+                DB::beginTransaction();
+                do {
+                    $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (PaySlip::where('slip_no', $slip_no)->exists());
+                $data = PaySlip::find($id);
+                if(empty($data)) throw new Exception('No data found', 404);
+                $data->update([
+                    "slip_date" => $request->slip_date,
+                    "slip_no" => $slip_no,
+                    "business_id" => $user->login_business,
+                    "employee_id" => $request->employee_id,
+                    "pay_period_start" => $request->pay_period_start,
+                    "pay_period_end" => $request->pay_period_end,
+                    "issue_date" => $request->issue_date,
+                    "basic_pay" => $request->basic_pay,
+                    "loan_deduction" => $request->loan_deduction,
+                    "tax_deduction" => $request->tax_deduction,
+                    "allowance" => $request->allowance,
+                    "bonus" => $request->bonus,
+                    "net_pay" => $request->net_pay,
+
+                ]);
+                DB::commit();
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Pay Slip Updated successfully',
+                ]);
+                return response()->json($data,200);
+
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**
