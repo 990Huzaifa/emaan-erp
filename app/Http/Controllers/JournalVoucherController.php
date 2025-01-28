@@ -161,9 +161,81 @@ class JournalVoucherController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
-        //
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create journal voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make(
+                $request->all(),[
+                    'voucher_date'=>'required|date',
+                    'acc_id'=>'required|exists:chart_of_accounts,id',
+                    'partner_id'=>'required|exists:users,id',
+                    'voucher_amount'=>'required|numeric',
+                    'payment_method'=>'required|string|in:CASH,BANK,OTHER',
+                    'type'=>'required|string|in:WITHDRAW,DEPOSIT',
+                    'cheque_no'=>'required_if:payment_method,BANK|string',
+                    'cheque_date'=>'required_if:payment_method,BANK|date',
+                ],[
+                    
+                    'acc_id.required'=>'Account is Required',
+                    'acc_id.exists'=>'Account is Invalid',
+                    
+                    'partner_id.required'=>'Partner is Required',
+                    'partner_id.exists'=>'Partner is Invalid',
+                    
+                    'voucher_amount.numeric'=>'Amount must be a number',
+                    'voucher_amount.required'=>'Amount is Required',
+                    
+                    'payment_method.required'=>'Payment Method is Required',
+                    'payment_method.in'=>'Payment Method is Invalid',
+                    
+                    'cheque_no.required_if'=>'Cheque No is Required',
+                    'cheque_no.string'=>'Cheque No must be a string',
+                    
+                    'cheque_date.required_if'=>'Cheque Date is Required',
+                    'cheque_date.date'=>'Cheque Date must be a date',
+                    
+                    'voucher_date.required'=>'Voucher Date is Required',
+                    'voucher_date.date'=>'Voucher Date must be a date',
+
+                    'type.required'=>'Type is Required',
+                    'type.in'=>'Type is Invalid',
+                ]
+            );
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
+
+            DB::beginTransaction();
+            $journalVoucher = JournalVoucher::findOrFail($id);
+            $journalVoucher->update([
+                'acc_id'=>$request->acc_id,
+                'partner_id'=>$request->partner_id,
+                'voucher_amount'=>$request->voucher_amount,
+                'payment_method'=>$request->payment_method,
+                'type'=>$request->type,
+                'cheque_no'=>$request->cheque_no  ?? null,
+                'cheque_date'=>$request->cheque_date ?? null,
+                'Voucher_date'=>$request->Voucher_date,
+            ]);
+            DB::commit();
+            return response()->json($journalVoucher,200);
+
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**

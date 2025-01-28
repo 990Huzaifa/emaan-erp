@@ -251,7 +251,7 @@ class PartnerController extends Controller
                     ], 403);
                 }
             }
-             $userData = User::findOrFail($id);
+             $userData = User::find($id);
 
             // Fetch the user's associated businesses and permissions
             $userHasBusinesses = UserHasBusiness::where('user_id', $id)->get();
