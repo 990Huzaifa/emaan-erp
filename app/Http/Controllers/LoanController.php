@@ -51,6 +51,7 @@ class LoanController extends Controller
 
             $data = Loan::create([
                 'employee_id' => $request->employee_id,
+                'business_id' => $businessId,
                 'loan_amount' => $request->loan_amount,
                 'loan_date' => $request->loan_date,
                 'installments' => 0,    
