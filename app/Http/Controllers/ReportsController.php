@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliveryNoteItem;
+use App\Models\GoodsReceiveNoteItem;
 use App\Models\Product;
 use App\Models\PurchaseOrderItem;
 use App\Models\SaleOrderItem;
@@ -18,16 +20,16 @@ class ReportsController extends Controller
         $endDate = $request->end_date ?? now()->format('Y-m-d');
     
         // Sum quantities of products from purchase orders (IN)
-        $purchasedItems = PurchaseOrderItem::select('product_id', DB::raw('SUM(quantity) as total_in'))
+        $purchaseItems = GoodsReceiveNoteItem::select('product_id', DB::raw('SUM(receive) as total_in'))
             ->groupBy('product_id');
     
         // Sum quantities of products from sales orders (OUT)
-        $soldItems = SaleOrderItem::select('product_id', DB::raw('SUM(quantity) as total_out'))
+        $soldItems = DeliveryNoteItem::select('product_id', DB::raw('SUM(delivered) as total_out'))
             ->groupBy('product_id');
     
         // Join the data with the Product table
         $inventoryReport = Product::
-            leftJoinSub($purchasedItems, 'purchased', 'products.id', '=', 'purchased.product_id')
+            leftJoinSub($purchaseItems, 'purchased', 'products.id', '=', 'purchased.product_id')
             ->leftJoinSub($soldItems, 'sold', 'products.id', '=', 'sold.product_id')
             ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]) // Ensure date comparison
             ->select(
