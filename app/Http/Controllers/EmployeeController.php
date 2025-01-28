@@ -188,10 +188,6 @@ class EmployeeController extends Controller
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
-            Balance::create([
-                'acc_id' => $COA->id,
-                'amount' => $request->opening_balance ?? 0,
-            ]);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User create employee',

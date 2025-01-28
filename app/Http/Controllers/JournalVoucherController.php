@@ -273,7 +273,7 @@ class JournalVoucherController extends Controller
             if ($data->type === 'WITHDRAW') {
                 // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
                 $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
-                $p_cb = calculateBalancePartners($partner_acc_id, $total_amount, true); // Partner equity account
+                $p_cb = calculateBalance($partner_acc_id, $total_amount, true); // Partner equity account
     
                 // Credit the asset account (money is leaving the business)
                 Transaction::create([
@@ -300,7 +300,7 @@ class JournalVoucherController extends Controller
             } elseif ($data->type === 'DEPOSIT') {
                 // Contribution: Debit Business Account, Credit Partner Account (money enters business, increases equity)
                 $a_cb = calculateBalance($acc_id, $total_amount, true); // Business asset account
-                $p_cb = calculateBalancePartners($partner_acc_id, $total_amount, false); // Partner equity account
+                $p_cb = calculateBalance($partner_acc_id, $total_amount, false); // Partner equity account
     
                 // Debit the asset account (money is added to the business)
                 Transaction::create([

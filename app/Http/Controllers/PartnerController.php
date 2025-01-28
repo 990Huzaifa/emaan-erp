@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
 use DB; 
 use Exception;
 use Carbon\Carbon;
@@ -176,7 +177,7 @@ class PartnerController extends Controller
             ->first();
             if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
 
-            $userCOA = createCOA($request->name,$businessCOA->code);
+            $PartnerCOA = createCOA($request->name,$businessCOA->code);
 
             // end
 
@@ -191,8 +192,13 @@ class PartnerController extends Controller
             ]);
 
             
-            $userCOA->update([
+            $PartnerCOA->update([
                 'ref_id' => $user->id
+            ]);
+
+            OpeningBalance::create([
+                'acc_id' => $PartnerCOA->id,
+                'amount' => $request->opening_balance ?? 0,
             ]);
 
             
