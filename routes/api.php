@@ -6,6 +6,7 @@ use App\Http\Controllers\JournalVoucherController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PayPolicyController;
 use App\Http\Controllers\PaySlipController;
+use App\Http\Controllers\ReportsController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -267,5 +268,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     // Route::get('ledger',[LedgerController::class,'index']);
     Route::get('ledger/{acc_id}',[LedgerController::class,'list']);
     Route::get('fetch-accounts',[LedgerController::class,'listAccounts']);
+
+
+    // Reports
+
+    Route::get('inventory-report',[ReportsController::class,'inventoryReport']);
+    Route::get('inventory-report/detail',[ReportsController::class,'inventoryReportDetail']);
+
+
+
 });
 
