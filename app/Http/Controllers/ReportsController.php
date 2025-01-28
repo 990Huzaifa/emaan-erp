@@ -13,18 +13,24 @@ class ReportsController extends Controller
 {
     public function inventoryReport(Request $request): JsonResponse
     {
-
-
-
         $perpage = $request->input('perpage', 10);
+        $startDate = $request->start_date;
+        $endDate = $request->end_date;
+
         // Sum quantities of products from purchase orders (IN)
         $purchasedItems = PurchaseOrderItem::select('product_id', DB::raw('SUM(quantity) as total_in'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                return $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
             ->groupBy('product_id');
-    
+
         // Sum quantities of products from sales orders (OUT)
         $soldItems = SaleOrderItem::select('product_id', DB::raw('SUM(quantity) as total_out'))
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                return $query->whereBetween('created_at', [$startDate, $endDate]);
+            })
             ->groupBy('product_id');
-    
+
         // Join the data with the Product table
         $inventoryReport = Product::
             leftJoinSub($purchasedItems, 'purchased', 'products.id', '=', 'purchased.product_id')
@@ -37,9 +43,10 @@ class ReportsController extends Controller
                 DB::raw('COALESCE(sold.total_out, 0) as total_out')
             )
             ->paginate($perpage);
-    
+
         return response()->json($inventoryReport);
     }
+
 
     public function inventoryReportDetail(Request $request): JsonResponse
     {
