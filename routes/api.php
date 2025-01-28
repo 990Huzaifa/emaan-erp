@@ -3,6 +3,7 @@
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\JournalVoucherController;
+use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PayPolicyController;
 use App\Http\Controllers\PaySlipController;
 use Illuminate\Http\Request;
@@ -134,8 +135,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     // partners 
     
-    Route::get('partner',[UserController::class,'waitPartnerList']);
-    Route::post('partner',[UserController::class,'createPartner']);
+    Route::apiResource('partner',PartnerController::class)->only(['index', 'store', 'show', 'update']);
+    Route::get('list/partner',[PartnerController::class,'listPartner']);
 
     Route::apiResource('journal-voucher',JournalVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/journal-voucher',[JournalVoucherController::class,'updateStatus']);
