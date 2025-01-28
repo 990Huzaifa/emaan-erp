@@ -16,21 +16,20 @@ class ReportsController extends Controller
         $perpage = $request->input('perpage', 10);
         $startDate = $request->start_date ?? '1970-01-01';
         $endDate = $request->end_date ?? now()->format('Y-m-d');
-
+    
         // Sum quantities of products from purchase orders (IN)
         $purchasedItems = PurchaseOrderItem::select('product_id', DB::raw('SUM(quantity) as total_in'))
-        ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('product_id');
-
+    
         // Sum quantities of products from sales orders (OUT)
         $soldItems = SaleOrderItem::select('product_id', DB::raw('SUM(quantity) as total_out'))
-        ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('product_id');
-
+    
         // Join the data with the Product table
         $inventoryReport = Product::
             leftJoinSub($purchasedItems, 'purchased', 'products.id', '=', 'purchased.product_id')
             ->leftJoinSub($soldItems, 'sold', 'products.id', '=', 'sold.product_id')
+            ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]) // Ensure date comparison
             ->select(
                 'products.id as product_id',
                 'products.title',
@@ -39,7 +38,7 @@ class ReportsController extends Controller
                 DB::raw('COALESCE(sold.total_out, 0) as total_out')
             )
             ->paginate($perpage);
-
+    
         return response()->json($inventoryReport);
     }
 
