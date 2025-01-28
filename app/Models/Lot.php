@@ -10,6 +10,7 @@ class Lot extends Model
     use HasFactory;
 
     protected $fillable = [
+        'purchase_order_id',
         'product_id',
         'grn_id',
         'vendor_id',
