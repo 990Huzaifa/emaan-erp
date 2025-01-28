@@ -46,7 +46,7 @@ class PartnerController extends Controller
             
             $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
 
-            $userIdsQuery = User::whereIn('users.role', ['user', 'partner']);
+            $userIdsQuery = User::where('users.role', 'partner');
             if($request->has('is_verify')) {
                 $userIdsQuery = $userIdsQuery->where('users.is_verify', $request->input('is_verify'));
 
