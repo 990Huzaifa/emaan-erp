@@ -538,7 +538,7 @@ class UserController extends Controller
             $searchQuery = $request->query('search');
 
             $query = User::orderBy('id', 'desc')
-            ->where('role', 'user')
+            ->whereIn('role', ['user', 'partner'])
             ->where('is_verify', 0)
             ->join('cities', 'users.city_id', '=', 'cities.id')
             ->select('users.*', 'cities.name as city');
