@@ -445,7 +445,7 @@ class PartnerController extends Controller
             ->whereNot('user_id', $user->id)
             ->pluck('user_id')->toArray();
 
-            $data = User::select('id','name')->whereIn('id', [$userBusinesses]);
+            $data = User::select('id','name')->whereIn('id', $userBusinesses);
 
             
 
