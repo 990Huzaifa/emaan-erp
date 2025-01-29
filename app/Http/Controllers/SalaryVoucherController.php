@@ -157,8 +157,10 @@ class SalaryVoucherController extends Controller
             $data = SalaryVoucher::select(
                 'salary_vouchers.*',
                 'employees.name as employee_name',
+                'pay_slips.slip_no as pay_slip_code',
                 'chart_of_accounts.name as acc_name'
                 )
+                ->join('pay_slips','salary_vouchers.pay_slip_id','=','pay_slips.id')
                 ->join('employees','salary_vouchers.employee_id','=','employees.id')
                 ->join('chart_of_accounts','salary_vouchers.acc_id','=','chart_of_accounts.id')
                 ->find($id);
