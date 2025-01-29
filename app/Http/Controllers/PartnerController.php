@@ -441,14 +441,16 @@ class PartnerController extends Controller
                 }
             }
             
-            $userBusinesses = UserHasBusiness::where('business_id', $user->login_business)
-            ->whereNot('user_id', $user->id)
-            ->pluck('user_id')->toArray();
+            $userIds = UserHasBusiness::where('business_id', $businessId)
+            ->where('user_id', '!=', $user->id)
+            ->pluck('user_id')
+            ->toArray();
 
-            $data = User::select('id','name')->whereIn('id', $userBusinesses);
-
-            
-
+            // Fetch users based on the retrieved user IDs
+            $data = User::select('id', 'name')
+                ->whereIn('id', $userIds)
+                ->where('role','partner')
+                ->get();
         
             Log::create([
                 'user_id' => $user->id,
