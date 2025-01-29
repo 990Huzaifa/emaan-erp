@@ -339,14 +339,12 @@ class BusinessController extends Controller
             if($name == 'EMPLOYEE_SALARY'){
                 $acc_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->value('code');
             }
-
-            $cc_code = ChartOfAccount::where('name', 'EXPENSE')->value('code');
             // Define the query with specific columns to fetch
             $query = ChartOfAccount::where('chart_of_accounts.parent_code', $acc_code)
                 ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
                 ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
                 ->select([
-                    'chart_of_account.id as acc_id', // Account ID from business has accounts
+                    'chart_of_accounts.id as acc_id', // Account ID from business has accounts
                     'opening_balances.amount as balance', // Amount from opening balances
                     'chart_of_accounts.name as account_name', // Account name from chart of accounts
                     'chart_of_accounts.code as account_code'
