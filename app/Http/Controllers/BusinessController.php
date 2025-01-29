@@ -344,8 +344,7 @@ class BusinessController extends Controller
             }
             // Define the query with specific columns to fetch
             $query = ChartOfAccount::where('chart_of_accounts.parent_code', $acc_code)
-                ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
-                ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
+                ->join('opening_balances', 'chart_of_accounts.id', '=', 'opening_balances.acc_id')
                 ->select([
                     'chart_of_accounts.id as acc_id', // Account ID from business has accounts
                     'opening_balances.amount as balance', // Amount from opening balances
