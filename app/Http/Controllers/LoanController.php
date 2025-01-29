@@ -64,11 +64,9 @@ class LoanController extends Controller
                 'loan_date.required' => 'Loan date is required',
             ]);
             // check employee loan 
-            $checkLoan = Loan::where('employee_id', $request->employee_id)->first();
-            if ($checkLoan->remaing_amount > 0 && $checkLoan->status == 0) {
-                $validator->errors()->add('employee_id', 'Employee already has a loan remaining');
-            }
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
+            $checkLoan = Loan::where('employee_id', $request->employee_id)->first();
+            if ($checkLoan->remaining_amount > 0 && $checkLoan->status == 0) throw new Exception('Employee has a pending loan',400);
 
             $data = Loan::create([
                 'employee_id' => $request->employee_id,
