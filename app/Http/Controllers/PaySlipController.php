@@ -292,4 +292,29 @@ class PaySlipController extends Controller
             return response()->json(["error" => $e->getMessage()], 400);
         }
     }
+
+
+    /**
+     * get the specified data based on employee id.
+     */
+    public function filterList($id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view pay slip')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = PaySlip::select('id','slip_no')->where('employee_id', $id)->where('status', '0')->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }

@@ -282,6 +282,9 @@ class BusinessController extends Controller
             }
             else if($name == 'BUSINESS_EXPENSE'){
                 $acc_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->value('code');
+            }else if($name == 'PARTNER'){
+                $equity_acc = ChartOfAccount::select('code')->where('name','EQUITY')->value('code');
+                $acc_code = ChartOfAccount::select('code')->where('parent_code',$equity_acc)->where('ref_id',$businessId)->value('code');
             }
             else{
                  throw new Exception('Invalid Account', 400);

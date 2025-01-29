@@ -136,7 +136,7 @@ class LoanController extends Controller
         //
     }
 
-    public function filterLoan(Request $request, string $id): JsonResponse
+    public function filterList(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();

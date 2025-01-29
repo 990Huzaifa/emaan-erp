@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('employee_id');
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+            $table->unsignedBigInteger('pay_slip_id');
+            $table->foreign('pay_slip_id')->references('id')->on('pay_slips')->onDelete('cascade');
             $table->unsignedBigInteger('acc_id'); // Link to COA for tracking payments
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->unsignedBigInteger('business_id'); // Link to COA for tracking payments
