@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\Log;
+use App\Models\PaySlip;
 use App\Models\SalaryVoucher;
 use Exception;
 use App\Models\Transaction;
@@ -74,6 +75,7 @@ class SalaryVoucherController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'employee_id' => 'required|exists:employees,id',
+                    'pay_slip_id' => 'required|exists:pay_slips,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
@@ -83,6 +85,9 @@ class SalaryVoucherController extends Controller
                 ], [
                     'employee_id.required' => 'The Employee field is required.',
                     'employee_id.exists' => 'The selected Employee is invalid.',
+
+                    'pay_slip_id.required' => 'The Pay Slip field is required.',
+                    'pay_slip_id.exists' => 'The selected Pay Slip is invalid.',
                     
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -110,6 +115,7 @@ class SalaryVoucherController extends Controller
             } while (SalaryVoucher::where('voucher_code', $voucher_code)->exists());
             $data = SalaryVoucher::create([
                 'employee_id' => $request->employee_id,
+                'pay_slip_id' => $request->pay_slip_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
                 'payment_method' => $request->payment_method,
@@ -236,7 +242,9 @@ class SalaryVoucherController extends Controller
                 'status'=>1,
                 'approved_by'=>$user->id
                 ]);
-
+            PaySlip::where('id', $data->pay_slip_id)->update([
+                'status'=>2
+            ]);
             
             Log::create([
                 'user_id' => $user->id,

@@ -274,6 +274,8 @@ class PaySlipController extends Controller
 
             $data = PaySlip::find($id);
             if(empty($data)) throw new Exception('No data found', 404);
+            if($data->status != 0) throw new Exception('Status cannot be updated', 400);
+            if($data->status == $request->status) throw new Exception('Status already updated', 400);
             $data->update([
                 'status' => $request->status,
             ]);
@@ -309,7 +311,7 @@ class PaySlipController extends Controller
                     ], 403);
                 }
             }
-            $data = PaySlip::select('id','slip_no')->where('employee_id', $id)->where('status', '0')->get();
+            $data = PaySlip::select('id','slip_no','net_pay')->where('employee_id', $id)->where('status', '1')->get();
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

@@ -11,6 +11,7 @@ class SalaryVoucher extends Model
 
     protected $fillable = [
         'employee_id',
+        'pay_slip_id',
         'acc_id',
         'business_id',
         'voucher_code',
