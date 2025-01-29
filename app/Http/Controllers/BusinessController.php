@@ -269,28 +269,24 @@ class BusinessController extends Controller
             //         ], 403);
             //     }
             // }
-            $name = $request->type;
+            $name = $request->query('type');
             if(!$name) throw new Exception('Type not define',400);
             // Retrieve account codes for BANK and CASH
             $acc_code = null;
             
-            if ($name === 'BANK') {
-                $acc_code = ChartOfAccount::select('code')->where('name',$name)->get();
+            if ($name == 'BANK') {
+                $acc_code = ChartOfAccount::select('code')->where('name',$name)->value('code');
             }
             else if($name == 'CASH'){
-                $acc_code = ChartOfAccount::select('code')->where('name',$name)->get();
-            }
-            else if($name == 'EMPLOYEE_SALARY'){
-                $acc_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->get();
+                $acc_code = ChartOfAccount::select('code')->where('name',$name)->value('code');
             }
             else if($name == 'BUSINESS_EXPENSE'){
-                $acc_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->get();
+                $acc_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->value('code');
             }
             else{
                  throw new Exception('Invalid Account', 400);
             }
-
-
+            
 
             // Define the query with specific columns to fetch
             $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
@@ -303,10 +299,8 @@ class BusinessController extends Controller
                     'chart_of_accounts.name as account_name', // Account name from chart of accounts
                     'chart_of_accounts.code as account_code'
                 ]);
-    
             // Fetch the data
             $data = $query->get();
-    
             
     
             // Log the action
@@ -325,7 +319,7 @@ class BusinessController extends Controller
         }
     }
     
-    public function expenseAccounts(): JsonResponse
+    public function globalAccounts(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -337,15 +331,22 @@ class BusinessController extends Controller
             //         ], 403);
             //     }
             // }
-            // Retrieve account codes for BANK and CASH
-            $Expense_acc_code = ChartOfAccount::where('name', 'EXPENSE')->value('code');
+            // Retrieve account codes for Employee Salary
+
+            $name = $request->query('type');
+            if(!$name) throw new Exception('Type not define',400);
+            $acc_code = null;
+            if($name == 'EMPLOYEE_SALARY'){
+                $acc_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->value('code');
+            }
+
+            $cc_code = ChartOfAccount::where('name', 'EXPENSE')->value('code');
             // Define the query with specific columns to fetch
-            $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
+            $query = ChartOfAccount::where('chart_of_accounts.parent_code', $acc_code)
                 ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
                 ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
-                ->where('chart_of_accounts.parent_code', $Expense_acc_code)
                 ->select([
-                    'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
+                    'chart_of_account.id as acc_id', // Account ID from business has accounts
                     'opening_balances.amount as balance', // Amount from opening balances
                     'chart_of_accounts.name as account_name', // Account name from chart of accounts
                     'chart_of_accounts.code as account_code'
