@@ -441,45 +441,20 @@ class PartnerController extends Controller
                 }
             }
             
-            $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
+            $userBusinesses = UserHasBusiness::where('business_id', $user->login_business)
+            ->whereNot('user_id', $user->id)
+            ->pluck('user_id')->toArray();
 
-            $userIdsQuery = User::where('users.role', 'partner');
+            $data = User::select('id','name')->whereIn('id', [$userBusinesses]);
 
-            $userIdsQuery = $userIdsQuery->where('users.id', '<>', $user->id)
-            ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
-            ->whereIn('user_has_businesses.business_id', $userBusinesses)
-            ->distinct()
-            ->pluck('users.id'); // Get distinct user IDs only
-
-        // Step 2: Use the list of IDs to fetch the actual user data, including additional columns
-        $query = User::whereIn('users.id', $userIdsQuery)
-            ->orderBy('users.id', 'desc')
-            ->join('cities', 'users.city_id', '=', 'cities.id')
-            ->select('users.*', 'cities.name as city');
-            // Execute the query with pagination
-            $query->getCollection()->transform(function ($user) {
-                // Fetch business ids and names from businesses table via user_has_businesses
-                $businesses = DB::table('user_has_businesses')
-                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
-                    ->where('user_has_businesses.user_id', $user->id)
-                    ->select('businesses.id', 'businesses.name')
-                    ->get();
             
-                // Append the business array (with id and name) to the user object
-                $user->business_names = $businesses->map(function($business) {
-                    return [
-                        'id' => $business->id,
-                        'name' => $business->name
-                    ];
-                })->toArray();
-            
-                return $user;
-            });
+
+        
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User fetch invite list of users',
             ]);
-            return response()->json($query,200);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
