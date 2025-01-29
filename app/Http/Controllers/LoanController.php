@@ -68,9 +68,14 @@ class LoanController extends Controller
             $checkLoan = Loan::where('employee_id', $request->employee_id)->first();
             if (!empty($checkLoan)&& ($checkLoan->remaining_amount > 0 && $checkLoan->status == 0)) throw new Exception('Employee has a pending loan',400);
 
+            do {
+                $loan_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (Loan::where('loan_code', $loan_code)->exists());
+
             $data = Loan::create([
                 'employee_id' => $request->employee_id,
                 'business_id' => $businessId,
+                'loan_code' => $loan_code,
                 'loan_amount' => $request->loan_amount,
                 'loan_date' => $request->loan_date,
                 'installments' => 0,    
@@ -96,7 +101,7 @@ class LoanController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role == 'user') {
-                if (!$user->hasBusinessPermission($businessId, 'show loan')) {
+                if (!$user->hasBusinessPermission($businessId, 'view loan')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

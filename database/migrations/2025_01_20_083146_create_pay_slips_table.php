@@ -22,6 +22,7 @@ return new class extends Migration
             $table->date('pay_period_end'); // End date of the pay period
             $table->date('issue_date'); // Date the payslip is issued
             $table->decimal('basic_pay', 18, 2); 
+            $table->unsignedBigInteger('loan_id')->nullable();
             $table->decimal('loan_deduction', 18, 2)->default(0.00); // Loan deductions for this period
             $table->decimal('tax_deduction', 18, 2)->default(0.00); // Tax deductions for this period
             $table->decimal('allowance', 18, 2)->default(0.00); // Allowances added for this period

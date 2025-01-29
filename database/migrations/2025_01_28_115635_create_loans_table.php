@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
             $table->unsignedBigInteger('business_id');
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
+            $table->bigInteger('loan_code');
             $table->decimal('loan_amount', 10, 2);
             $table->date('loan_date');
             $table->decimal('remaining_amount', 10, 2)->default(0.00);

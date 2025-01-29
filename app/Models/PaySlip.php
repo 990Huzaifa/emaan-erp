@@ -18,6 +18,7 @@ class PaySlip extends Model
         'pay_period_start',
         'pay_period_end',
         'basic_pay',
+        'loan_id',
         'loan_deduction',
         'tax_deduction',
         'allowance',
