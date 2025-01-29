@@ -193,6 +193,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('loan',LoanController::class)->only('index','store','show','update');
     Route::put('status/{id}/loan',[LoanController::class,'updateStatus']);
+    Route::put('filter/loan/{id}',[LoanController::class,'filterLoan']);
 
     
     

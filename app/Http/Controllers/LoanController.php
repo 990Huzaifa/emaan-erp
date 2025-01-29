@@ -46,7 +46,11 @@ class LoanController extends Controller
                 'loan_amount.required' => 'Loan amount is required',
                 'loan_date.required' => 'Loan date is required',
             ]);
-
+            // check employee loan 
+            $checkLoan = Loan::where('employee_id', $request->employee_id)->first();
+            if ($checkLoan->remaing_amount > 0 && $checkLoan->status == 0) {
+                $validator->errors()->add('employee_id', 'Employee already has a loan remaining');
+            }
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
 
             $data = Loan::create([
@@ -115,5 +119,27 @@ class LoanController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function filterLoan(Request $request, string $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'list loan')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $data = Loan::where('business_id', $businessId)->where('employee_id', $id)->get();
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
