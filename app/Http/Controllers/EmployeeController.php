@@ -41,7 +41,7 @@ class EmployeeController extends Controller
             ->join('departments', 'employees.department_id', '=', 'departments.id')
             ->join('designations', 'employees.designation_id', '=', 'designations.id')
             ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation');
-            $query = $query->where('business_id',$user->login_business);
+            // $query = $query->where('business_id',$user->login_business);
             
 
             if (!empty($searchQuery)) {

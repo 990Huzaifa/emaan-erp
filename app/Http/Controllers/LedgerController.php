@@ -114,23 +114,34 @@ class LedgerController extends Controller
             $name = $request->query('name');
             if(empty($name)) throw new Exception('Account name Required', 400);
             $parent_code = null;
-            
+            $results = null;
+
             if ($name === 'CUSTOMERS') {
-                $parent_code = ChartOfAccount::select('code')->where('name',$name)->get();
+                $parent_code = ChartOfAccount::select('code')->where('name',$name)->value('code');
+                $results = ChartOfAccount::select('chart_of_accounts.id','chart_of_accounts.name','chart_of_accounts.code')
+                ->join('customers', 'chart_of_accounts.ref_id', '=', 'customers.id')
+                ->where('customers.business_id', $businessId)
+                ->where('parent_code', $parent_code)->get();
             }
             else if($name == 'VENDORS'){
-                $parent_code = ChartOfAccount::select('code')->where('name',$name)->get();
+                $parent_code = ChartOfAccount::select('code')->where('name',$name)->value('code');
+                $results = ChartOfAccount::select('id','name','code')->where('parent_code', $parent_code)->get();
             }
             else if($name == 'EMPLOYEE_SALARY'){
-                $parent_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->get();
+                $parent_code = ChartOfAccount::select('code')->where('name','EMPLOYEES SALARY')->value('code');
+                $results = ChartOfAccount::select('id','name','code')->where('parent_code', $parent_code)->get();
             }
             else if($name == 'BUSINESS_EXPENSE'){
-                $parent_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->get();
+                $parent_code = ChartOfAccount::select('code')->where('name','BUSINESS EXPENSE')->value('code');
+                $results = ChartOfAccount::select('chart_of_accounts.id','chart_of_accounts.name','chart_of_accounts.code')
+                ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                ->where('business_has_accounts.business_id', $businessId)
+                ->where('parent_code', $parent_code)->get();
             }
             else{
                  throw new Exception('Invalid Account', 400);
             }
-            $results = ChartOfAccount::select('id','name','code')->where('parent_code', $parent_code[0]->code)->get();
+
             return response()->json($results,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
