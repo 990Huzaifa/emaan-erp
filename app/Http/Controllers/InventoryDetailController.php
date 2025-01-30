@@ -92,12 +92,7 @@ class InventoryDetailController extends Controller
                     ], 403);
                 }
             }
-            $data = InventoryDetail::with(['product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])->join('lots', 'inventory_details.lot_id', '=', 'lots.id') // Join with vendors
-            ->select('inventory_details.*', 'lots.lot_code','lots.purchase_unit_price','lots.sale_unit_price')
-            ->where('inventory_details.id', $id) // Filter by the specific Inventory Detail ID
-            ->firstOrFail();
+            $data = Lot::where('product_id', $id)->get();
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
