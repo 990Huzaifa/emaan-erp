@@ -92,7 +92,14 @@ class InventoryDetailController extends Controller
                     ], 403);
                 }
             }
-            $data = Lot::where('product_id', $id)->get();
+            $data = Lot::select('lots.*','products.title','products.image','vendors.name as vendor_name','purchase_orders.order_code as purchase_order_code','goods_receive_notes.grn_code as grn_code')
+            ->where('product_id', $id)
+            ->join('products', 'lots.product_id', '=', 'products.id')
+            ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
+            ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')
+            ->join('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id')
+
+            ->get();
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
