@@ -38,8 +38,10 @@ class SaleReturnController extends Controller
             $query = SaleReturn::with(['items.product' => function ($query) {
                 $query->select('id', 'title'); // Select product name and id
             }])
-            ->join('customers', 'sale_returns.customer_id', '=', 'customers.id') // Join with vendors
-            ->select('sale_returns.*', 'customers.name as customer_name') // Select fields including vendor name
+            ->join('customers', 'sale_returns.customer_id', '=', 'customers.id') // Join with customer
+            ->join('delivery_notes', 'sale_returns.dn_id', '=', 'delivery_notes.id')
+            ->join('sale_orders', 'sale_returns.sale_order_id', '=', 'sale_orders.id')
+            ->select('sale_returns.*', 'customers.name as customer_name', 'delivery_notes.dn_code as dn_code', 'sale_orders.order_code as sale_order_code') // Select fields including vendor name
             ->where('sale_returns.business_id',$businessId)
             ->orderBy('sale_returns.id', 'desc');
             if (!empty($searchQuery)) {
@@ -162,7 +164,9 @@ class SaleReturnController extends Controller
             ->select(
             'sale_returns.*', 
                     'customers.name as customer_name',
-                    'users.name as received_by'
+                    'users.name as received_by',
+                    'delivery_notes.dn_code as dn_code',
+                    'sale_orders.order_code as sale_order_code'
                 )
             ->where('sale_returns.id', $id)
             ->first();
