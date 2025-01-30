@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\DeliveryNote;
@@ -177,7 +178,7 @@ class SaleReceiptController extends Controller
         //
     }
 
-    public function updateStatus(Request $request, string $id)
+    public function updateStatus(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -207,6 +208,54 @@ class SaleReceiptController extends Controller
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function print(string $id)
+    {
+        try {
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view sale receipt')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+    
+            $data = SaleReceipt::with(['items.product' => function ($query) {
+                $query->select('id', 'title');
+            }])
+            ->join('businesses', 'sale_receipts.business_id', '=', 'businesses.id')
+            ->join('customers', 'sale_receipts.customer_id', '=', 'customers.id')
+            ->join('cities', 'customers.city_id', '=', 'cities.id')
+            ->select(
+                'sale_receipts.*',
+                'customers.name as customer_name',
+                'customers.address as customer_address',
+                'customers.phone as customer_phone',
+                'businesses.name as business_name',
+                'businesses.logo as business_logo',
+                'cities.name as customer_city'
+            )
+            ->where('sale_receipts.id', $id)->first();
+    
+            if (!$data) {
+                return redirect()->back()->with('error', 'Receipt not found.');
+            }
+    
+            // Use the Blade file to generate the PDF
+            $pdf = PDF::loadView('receipt.sale-receipt', compact('data'));
+    
+            // Return the generated PDF for download
+            return $pdf->download('sale-receipt-' . $id . '.pdf');
+        } catch (QueryException $e) {
+            return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
+        } catch (Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
         }
     }
 
