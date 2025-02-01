@@ -117,7 +117,7 @@ class PaySlipController extends Controller
                     "issue_date" => $request->issue_date,
                     "basic_pay" => $request->basic_pay,
                     'loan_id' => $request->loan_id ?? null,
-                    "loan_deduction" => $request->loan_deductio,
+                    "loan_deduction" => $request->loan_deduction ?? 0.00,
                     "tax_deduction" => $request->tax_deduction,
                     "allowance" => $request->allowance,
                     "bonus" => $request->bonus,
