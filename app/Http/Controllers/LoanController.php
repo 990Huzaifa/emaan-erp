@@ -29,7 +29,7 @@ class LoanController extends Controller
             }
             $perPage = $request->input('per_page', 10);
             $data = Loan::select('loans.*','employees.e_code as emp_code')
-            ->where('business_id', $businessId)
+            ->where('loans.business_id', $businessId)
             ->join('employees','employees.id','=','loans.employee_id')
             ->paginate($perPage);
             return response()->json($data,200);
