@@ -144,7 +144,7 @@ class LoanController extends Controller
         //
     }
 
-    public function filterList(Request $request, string $id): JsonResponse
+    public function filterList(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -156,8 +156,8 @@ class LoanController extends Controller
                     ], 403);
                 }
             }
-
-            $data = Loan::where('business_id', $businessId)->where('employee_id', $id)->get();
+            $emp_id = $request->input('employee_id');
+            $data = Loan::where('business_id', $businessId)->where('employee_id', $emp_id)->get();
             return response()->json($data, 200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
