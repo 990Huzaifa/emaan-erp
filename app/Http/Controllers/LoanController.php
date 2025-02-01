@@ -28,7 +28,10 @@ class LoanController extends Controller
                 }
             }
             $perPage = $request->input('per_page', 10);
-            $data = Loan::where('business_id', $businessId)->paginate($perPage);
+            $data = Loan::select('loans.*','employees.e_code as emp_code')
+            ->where('business_id', $businessId)
+            ->join('employees','employees.id','=','loans.employee_id')
+            ->paginate($perPage);
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
