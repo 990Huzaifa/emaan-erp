@@ -120,7 +120,7 @@ class JournalVoucherController extends Controller
                 'type'=>$request->type,
                 'cheque_no'=>$request->cheque_no,
                 'cheque_date'=>$request->cheque_date,
-                'Voucher_date'=>$request->Voucher_date,
+                'voucher_date'=>$request->voucher_date,
             ]);
             DB::commit();
             return response()->json($journalVoucher,200);
