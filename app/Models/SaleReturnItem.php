@@ -15,7 +15,7 @@ class SaleReturnItem extends Model
         'lot_id',
         'quantity',
         'unit_price',
-        'total'
+        'total_price'
     ];
 
 
