@@ -115,7 +115,7 @@ class SaleReturnController extends Controller
                 'business_id' => $businessId,
                 'sale_order_id' => $so_id,
                 'customer_id' => $customer_id,
-                'recevied_date' => $request->return_date,
+                'received_date' => $request->return_date,
                 'reason' => $request->reason,
                 'received_by' => $user->id
             ]);
