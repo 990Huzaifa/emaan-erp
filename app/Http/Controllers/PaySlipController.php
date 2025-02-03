@@ -158,7 +158,12 @@ class PaySlipController extends Controller
                     ], 403);
                 }
             }
-            $data = PaySlip::find($id);
+            $data = PaySlip::select(
+                'pay_slips.*',
+                'employees.name as employee_name'
+            )
+            ->join('employees', 'pay_slips.employee_id', '=', 'employees.id')
+            ->find($id);
             return response()->json($data, 200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
