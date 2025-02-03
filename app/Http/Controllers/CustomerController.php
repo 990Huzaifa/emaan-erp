@@ -360,7 +360,7 @@ class CustomerController extends Controller
                 }
             }
 
-            $customer = Customer::select('id','name')->get();
+            $customer = Customer::select('id','name')->where('business_id',$businessId)->get();
 
             return response()->json($customer,200);
             
