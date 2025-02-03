@@ -186,8 +186,8 @@ class DeliveryNoteController extends Controller
                     ], 403);
                 }
             }
-            $deliveryNote = DeliveryNote::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
+            $deliveryNote = DeliveryNote::with(['items' => function ($query) {
+                $query->with(['product:id,title', 'lot:id,code']); // Include product and lot details
             }])
             ->where('id', $id) // Filter by the specific purchase order ID
             ->firstOrFail();

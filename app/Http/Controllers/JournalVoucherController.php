@@ -148,7 +148,7 @@ class JournalVoucherController extends Controller
                     ], 403);
                 }
             }
-            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as acc_name','users.name as partner_name')
+            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as account_name','users.name as partner_name')
             ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->join('users', 'journal_vouchers.partner_id', '=', 'users.id')
             ->find($id);
