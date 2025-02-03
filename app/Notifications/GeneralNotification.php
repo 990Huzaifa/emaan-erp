@@ -12,15 +12,17 @@ class GeneralNotification extends Notification
     use Queueable;
 
     public $message;
+    public $url;
 
     /**
      * Create a new notification instance.
      *
      * @param string $message The message for the notification.
      */
-    public function __construct($message)
+    public function __construct($message, $url = null)
     {
         $this->message = $message;
+        $this->url = $url;
     }
 
     /**
@@ -44,6 +46,7 @@ class GeneralNotification extends Notification
     {
         return [
             'message' => $this->message,
+            'url' => $this->url,
             'sent_at' => now(),
         ];
     }

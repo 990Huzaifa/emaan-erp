@@ -45,7 +45,7 @@ class PurchaseVoucherController extends Controller
             $query = PurchaseVoucher::select('purchase_vouchers.*','vendors.name as vendor_name','chart_of_accounts.name as acc_name')
             ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
             ->join('chart_of_accounts','purchase_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            // ->where('purchase_vouchers.business_id',$businessId)
+            ->where('purchase_vouchers.business_id',$businessId)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query->where('purchase_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');

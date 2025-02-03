@@ -2,6 +2,9 @@
 
 use App\Models\OpeningBalance;
 use App\Models\Transaction;
+use App\Models\User;
+use App\Models\UserHasBusiness;
+use App\Notifications\GeneralNotification;
 use Carbon\Carbon;
 use App\Models\ChartOfAccount;
 
@@ -301,4 +304,24 @@ function notUsedfunc($acc_id, $change, $isDebit = true): float
         default:
             throw new Exception("Unsupported account type: {$accountType}");
     }
+}
+
+
+function notifyPartners($user_id, $business_id, $message,$url = null){
+
+    $userIds = UserHasBusiness::where('business_id', $business_id)
+            ->where('user_id', '!=', $user_id)
+            ->pluck('user_id')
+            ->toArray();
+
+            // Fetch users based on the retrieved user IDs
+            $users = User::select('id', 'name')
+                ->whereIn('id', $userIds)
+                ->where('role','partner')
+                ->get();
+
+            foreach ($users as $user) {
+                $user->notify(new GeneralNotification($message, $url));
+            }
+
 }
