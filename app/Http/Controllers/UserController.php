@@ -694,19 +694,11 @@ class UserController extends Controller
 
                 'avatar.image' => 'Avatar must be type image.',
 
-                'password.required' => 'Password is required.',
-                'password.string' => 'Password must be a string.',
-                'password.min' => 'Password must be at least 8 characters.',
-                
-                'confirm_password.required' => 'Password is required.',
-                'confirm_password.string' => 'Password must be a string.',
-                'confirm_password.min' => 'Password must be at least 8 characters.',
-
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $avatar = null;
-            $cnic_front = null;
-            $cnic_back = null;
+            $avatar = $user->avatar;
+            $cnic_front = $user->cnic_images[0] ?? null;
+            $cnic_back = $user->cnic_images[1] ?? null;
             if ($request->hasFile('avatar')) {
                 $image = $request->file('avatar');
                 $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
@@ -727,12 +719,12 @@ class UserController extends Controller
             }
             $cnic_images = [$cnic_front, $cnic_back];
             $user->update([
-                'name'=>$request->name,
-                'phone'=>$request->phone,
-                'address'=>$request->address,
-                'city_id'=>$request->city,
-                'email'=>$request->email,
-                'cnic'=>$request->cnic,
+                'name'=>$request->name ?? $user->name,
+                'phone'=>$request->phone ?? $user->phone,
+                'address'=>$request->address ?? $user->address,
+                'city_id'=>$request->city ?? $user->city_id,
+                'email'=>$request->email ?? $user->email,
+                'cnic'=>$request->cnic ?? $user->cnic,
                 'avatar'=>$avatar,
                 'cnic_images'=>$cnic_images,
             ]);

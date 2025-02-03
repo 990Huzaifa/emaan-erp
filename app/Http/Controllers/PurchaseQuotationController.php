@@ -97,7 +97,7 @@ class PurchaseQuotationController extends Controller
                 ]);
             }
             $quotation->refresh();
-            $n_url = config('app.frontend_url').'/purchase-quotations/'.$quotation->id;
+            $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$quotation->id;
             notifyPartners($user->id, $businessId, 'New purchase quotation created',$n_url);
             Log::create([
                 'user_id' => $user->id,
