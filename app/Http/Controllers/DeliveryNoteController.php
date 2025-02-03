@@ -187,11 +187,20 @@ class DeliveryNoteController extends Controller
                 }
             }
             $deliveryNote = DeliveryNote::with(['items' => function ($query) {
-                $query->with(['product:id,title', 'lot:id,code']); // Include product and lot details
+                $query->with(['product:id,title', 'lot:id,lot_code']); // Include product and lot details
             }])
             ->where('id', $id) // Filter by the specific purchase order ID
-            ->firstOrFail();
-            return response()->json($deliveryNote,200);
+            ->first();
+            $response = $deliveryNote->toArray();
+            foreach ($response['items'] as &$item) {
+                if (isset($item['product'])) {
+                    $item['product']['lot_id'] = $item['lot']['id'] ?? null;
+                    $item['product']['lot_code'] = $item['lot']['lot_code'] ?? null;
+                    unset($item['lot']);
+                }
+            }
+    
+            return response()->json($response, 200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
