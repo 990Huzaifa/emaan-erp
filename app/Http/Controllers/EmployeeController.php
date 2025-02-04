@@ -77,6 +77,7 @@ class EmployeeController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required',
                 'phone' => 'required|digits:11|regex:/^([0-9\s\-\+\(\)]*)$/',
+                'cnic' => 'nullable|digits:14',
                 'email' => 'required',
                 'city_id' => 'required|exists:cities,id',
                 'address' => 'required|max:255',
@@ -86,6 +87,7 @@ class EmployeeController extends Controller
                 'department_id' => 'required|exists:departments,id',
                 'designation_id' => 'required|exists:designations,id',
                 'pay_policy_id' => 'required|exists:pay_policies,id',
+                'gender' => 'required|in:MALE,FEMALE',
             ], [
                 'name.required' => 'Name is required',
 
@@ -97,6 +99,8 @@ class EmployeeController extends Controller
 
                 'city_id.required' => 'City is required',
                 'city_id.exists' => 'City does not exist',
+
+                'cnic.digits' => 'CNIC must be 14 digits',
 
                 'address.required' => 'Address is required',
                 'address.max' => 'Address must be less than 255 characters',
@@ -121,6 +125,9 @@ class EmployeeController extends Controller
 
                 'pay_policy_id.required' => 'Pay Policy is required',
                 'pay_policy_id.exists' => 'Pay Policy does not exist',
+
+                'gender.required' => 'Gender is required',
+                'gender.in' => 'Gender must be MALE or FEMALE',
             ]);
             if ($validator->fails())
                 throw new Exception($validator->errors()->first(), 400);
@@ -174,6 +181,7 @@ class EmployeeController extends Controller
                 'department_id' => $request->department_id,
                 'designation_id' => $request->designation_id,
                 'phone' => $request->phone,
+                'gender' => $request->gender,
                 'email' => $request->email,
                 'city_id' => $request->city_id,
                 'address' => $request->address,
@@ -276,6 +284,8 @@ class EmployeeController extends Controller
                 'department_id' => 'required|exists:departments,id',
                 'pay_policy_id' => 'required|exists:pay_policies,id',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                'gender' => 'required|in:MALE,FEMALE',
+                'cnic' => 'nullable|digits:14',
             ], [
                 'name.required' => 'Name is required',
 
@@ -300,6 +310,11 @@ class EmployeeController extends Controller
                 'image.image' => 'Image must be an image',
                 'image.mimes' => 'Image must be a JPEG, PNG, JPG, GIF or SVG file',
                 'image.max' => 'Image size must not exceed 2MB',
+
+                'gender.required' => 'Gender is required',
+                'gender.in' => 'Gender must be MALE or FEMALE',
+
+                'cnic.digits' => 'CNIC must be 14 digits',
             ]);
             if ($validator->fails())
                 throw new Exception($validator->errors()->first(), 400);
@@ -326,6 +341,8 @@ class EmployeeController extends Controller
                 'email' => $request->email,
                 'city_id' => $request->city_id,
                 'address' => $request->address,
+                'cnic' => $request->cnic,
+                'gender' => $request->gender,
                 'department_id' => $request->department_id,
                 'designation_id' => $request->designation_id,
                 'pay_policy_id' => $request->pay_policy_id,

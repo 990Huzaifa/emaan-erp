@@ -25,6 +25,7 @@ return new class extends Migration
             $table->unsignedBigInteger('department_id');
             $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
             $table->string('e_code');
+            $table->enum('gender', ['MALE', 'FEMALE'])->default('MALE');
             $table->string('email');
             $table->string('phone');
             $table->string('cnic');

@@ -20,6 +20,7 @@ class Employee extends Model
         'department_id',
         'acc_id',
         'cnic',
+        'gender',
         'cnic_images',
         'address',
         'joining_date',
