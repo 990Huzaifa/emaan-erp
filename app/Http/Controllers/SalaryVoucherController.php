@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
+use App\Models\Loan;
 use App\Models\Log;
 use App\Models\PaySlip;
 use App\Models\SalaryVoucher;
@@ -244,9 +245,22 @@ class SalaryVoucherController extends Controller
                 'status'=>1,
                 'approved_by'=>$user->id
                 ]);
-            PaySlip::where('id', $data->pay_slip_id)->update([
-                'status'=>2
+            $paySlip = PaySlip::find( $data->pay_slip_id);
+
+            $paySlip->update([
+                'status' => 3,
             ]);
+
+            if($paySlip->loan_id != null){
+                $loan = Loan::find($paySlip->loan_id);
+                $RM = $loan->remaining_amount - $paySlip->loan_deduction;
+                $loan->update([
+                    'installments' => $loan->installments + 1,
+                    'remaining_amount' => $RM,
+                    'installment_amount' => $loan->installment_amount + $paySlip->loan_deduction,
+                    'status' => $RM <= 0 ? 1 : 0
+                ]);
+            }
             
             Log::create([
                 'user_id' => $user->id,

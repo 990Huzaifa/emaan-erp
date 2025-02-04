@@ -273,9 +273,10 @@ class PaySlipController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'status' => 'required',
+                'status' => 'required|in:1,2',
             ],[
                 'Status.required' => 'Status is required',
+                'Status.in' => 'Status must be 1 or 2 (Approved and Reject)',
             ]);
             if ($validator->fails())throw new Exception($validator->errors()->first(), 400);
 
