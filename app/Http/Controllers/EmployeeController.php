@@ -22,9 +22,9 @@ class EmployeeController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -37,12 +37,12 @@ class EmployeeController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
             $query = Employee::orderBy('id', 'desc')
-            ->join('cities', 'employees.city_id', '=', 'cities.id')
-            ->join('departments', 'employees.department_id', '=', 'departments.id')
-            ->join('designations', 'employees.designation_id', '=', 'designations.id')
-            ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation');
+                ->join('cities', 'employees.city_id', '=', 'cities.id')
+                ->join('departments', 'employees.department_id', '=', 'departments.id')
+                ->join('designations', 'employees.designation_id', '=', 'designations.id')
+                ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation');
             // $query = $query->where('business_id',$user->login_business);
-            
+
 
             if (!empty($searchQuery)) {
                 $query = $query->where('employees.e_code', 'like', '%' . $searchQuery . '%');
@@ -50,11 +50,11 @@ class EmployeeController extends Controller
             // Execute the query with pagination
             $data = $query->paginate($perPage);
 
-            return response()->json($data,200);
+            return response()->json($data, 200);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -62,9 +62,9 @@ class EmployeeController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request):JsonResponse
+    public function store(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -86,7 +86,7 @@ class EmployeeController extends Controller
                 'department_id' => 'required|exists:departments,id',
                 'designation_id' => 'required|exists:designations,id',
                 'pay_policy_id' => 'required|exists:pay_policies,id',
-            ],[
+            ], [
                 'name.required' => 'Name is required',
 
                 'phone.required' => 'Phone is required',
@@ -122,8 +122,9 @@ class EmployeeController extends Controller
                 'pay_policy_id.required' => 'Pay Policy is required',
                 'pay_policy_id.exists' => 'Pay Policy does not exist',
             ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
+
             do {
                 $e_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (Employee::where('e_code', $e_code)->exists());
@@ -131,14 +132,15 @@ class EmployeeController extends Controller
             // validate coa
 
             DB::beginTransaction();
-            $acc = ChartOfAccount::Where('name','EMPLOYEES SALARY')->first();
-            if(empty($acc)) throw new Exception('EMPLOYEES SALARY COA not found', 404);
+            $acc = ChartOfAccount::Where('name', 'EMPLOYEES SALARY')->first();
+            if (empty($acc))
+                throw new Exception('EMPLOYEES SALARY COA not found', 404);
 
             $name = strtoupper($request->name);
-            $COA = createCOA($name,$acc->code);
-            
+            $COA = createCOA($name, $acc->code);
+
             // images upload creation
-            
+
             $profilePic = null;
             $cnic_front = null;
             $cnic_back = null;
@@ -161,8 +163,8 @@ class EmployeeController extends Controller
                 $cnic_back = 'employee-cnic/' . $back_image_name;
             }
             $cnic_images = [$cnic_front, $cnic_back];
-            
-            
+
+
             $employee = Employee::create([
                 'name' => $name,
                 'e_code' => $e_code,
@@ -175,12 +177,12 @@ class EmployeeController extends Controller
                 'email' => $request->email,
                 'city_id' => $request->city_id,
                 'address' => $request->address,
-                'cnic'=>$request->cnic ?? null,
+                'cnic' => $request->cnic ?? null,
                 'image' => $profilePic,
-                'cnic_images'=> json_encode($cnic_images),
+                'cnic_images' => json_encode($cnic_images),
                 'joining_date' => $request->joining_date,
                 'added_by' => $user->id
-                ]);
+            ]);
             $COA->update([
                 'ref_id' => $employee->id,
             ]);
@@ -195,10 +197,10 @@ class EmployeeController extends Controller
             DB::commit();
             return response()->json($employee);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -209,7 +211,7 @@ class EmployeeController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -220,19 +222,31 @@ class EmployeeController extends Controller
                 }
             }
             $employee = Employee::orderBy('employees.id', 'desc')
-            ->leftjoin('pay_policies', 'employees.pay_policy_id', '=', 'pay_policies.id')
-            ->join('cities', 'employees.city_id', '=', 'cities.id')
-            ->join('departments', 'employees.department_id', '=', 'departments.id')
-            ->join('designations', 'employees.designation_id', '=', 'designations.id')
-            ->select('employees.*', 'cities.name as city', 'departments.name as department', 'designations.name as designation', 'pay_policies.*')
-            ->where('employees.id', $id)
-            ->first();
-            if (empty($employee)) throw new Exception('No Employee found', 404);
-            return response()->json($employee,200);
-        }catch(QueryException $e){
+                ->leftjoin('pay_policies', 'employees.pay_policy_id', '=', 'pay_policies.id')
+                ->join('cities', 'employees.city_id', '=', 'cities.id')
+                ->join('departments', 'employees.department_id', '=', 'departments.id')
+                ->join('designations', 'employees.designation_id', '=', 'designations.id')
+                ->select(
+                    'employees.*',
+                    'cities.name as city',
+                    'departments.name as department',
+                    'designations.name as designation',
+                    'pay_policies.name as pay_policy_name',
+                    'pay_policies.bonus_percentage as bonus_percentage',
+                    'pay_policies.loan_limit as loan_limit',
+                    'pay_policies.basic_pay as basic_pay',
+                    'pay_policies.allowance as allowance',
+                    'pay_policies.deductions as deductions',
+                    'pay_policies.tax_rate as tax_rate'
+                )
+                ->where('employees.id', $id)
+                ->first();
+            if (empty($employee))
+                throw new Exception('No Employee found', 404);
+            return response()->json($employee, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -242,7 +256,7 @@ class EmployeeController extends Controller
      */
     public function update(Request $request, string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -262,7 +276,7 @@ class EmployeeController extends Controller
                 'department_id' => 'required|exists:departments,id',
                 'pay_policy_id' => 'required|exists:pay_policies,id',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            ],[
+            ], [
                 'name.required' => 'Name is required',
 
                 'phone.required' => 'Phone is required',
@@ -287,9 +301,11 @@ class EmployeeController extends Controller
                 'image.mimes' => 'Image must be a JPEG, PNG, JPG, GIF or SVG file',
                 'image.max' => 'Image size must not exceed 2MB',
             ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
             $employee = Employee::find($id);
-            if (empty($employee)) throw new Exception('No Employee found', 404);
+            if (empty($employee))
+                throw new Exception('No Employee found', 404);
             $oldImage = $employee->image;
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
@@ -321,11 +337,11 @@ class EmployeeController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User update employee',
             ]);
-            return response()->json($employee,200);
+            return response()->json($employee, 200);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -338,11 +354,11 @@ class EmployeeController extends Controller
         //
     }
 
-    public function list():JsonResponse
+    public function list(): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -353,14 +369,14 @@ class EmployeeController extends Controller
                 }
             }
 
-            $employee = Employee::select('id','name')->get();
+            $employee = Employee::select('id', 'name')->get();
 
-            return response()->json($employee,200);
-            
-        }catch(QueryException $e){
+            return response()->json($employee, 200);
+
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
 
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }

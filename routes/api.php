@@ -191,7 +191,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::apiResource('pay-slip',PaySlipController::class)->only('index','store','show','update');
     Route::put('status/{id}/pay-slip',[PaySlipController::class,'updateStatus']);
-    Route::put('filter/pay-slip/{id}',[PaySlipController::class,'filterList']);
+    Route::get('filter/pay-slip/{id}',[PaySlipController::class,'filterList']);
     
     Route::apiResource('loan',LoanController::class)->only('index','store','show','update');
     Route::put('status/{id}/loan',[LoanController::class,'updateStatus']);
