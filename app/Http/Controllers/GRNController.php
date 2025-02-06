@@ -286,14 +286,17 @@ class GRNController extends Controller
             ]);
 
             // lot entry
+            $vendor = Vendor::find($data->purchase_order->vendor_id);
+            $total_amount_grn = 0;
             if($request->status == 1){
                 foreach ($data->items as $item) {
                     $product = Product::find($item->product_id);
-                    $vendor = Vendor::find($data->purchase_order->vendor_id);
+                    
                     // hit transaction
+                    $total_amount_grn += $item->billed;
                     $total_billed = $item->billed;
                     $p_cb = calculateBalance($product->acc_id,$total_billed,false);
-                    $v_cb = calculateBalance($vendor->acc_id,$total_billed,false);
+                    
 
                     // Debit amount from Product's account
                     Transaction::create([
@@ -306,16 +309,7 @@ class GRNController extends Controller
                         'current_balance' => $p_cb
                     ]);
 
-                    // Credit amount to Vendor's account
-                    Transaction::create([
-                        'business_id' => $businessId,
-                        'acc_id' => $vendor->acc_id,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'credit amount to vendor account by GRN',
-                        'debit' => 0.00, // No money debited from business account
-                        'credit' => $total_billed, // Money credited to business account
-                        'current_balance' => $v_cb
-                    ]);
+                    
 
 
 
@@ -344,6 +338,21 @@ class GRNController extends Controller
                     ]);
                 }
             }
+            
+
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+            // Credit amount to Vendor's account
+            Transaction::create([
+                'business_id' => $businessId,
+                'acc_id' => $vendor->acc_id,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'credit amount to vendor account by GRN',
+                'debit' => 0.00, // No money debited from business account
+                'credit' => $total_billed, // Money credited to business account
+                'current_balance' => $v_cb
+            ]);
+
+
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'update GRN Status',   
