@@ -101,6 +101,7 @@ class PartnerController extends Controller
                     'avatar'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                     'address'=>'required|string',
                     'opening_balance'=>'nullable|numeric',
+                    'gender'=>'required|in:MALE,FEMALE',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -126,6 +127,9 @@ class PartnerController extends Controller
                 'opening_balance.numeric'=>'Opening Balance must be a number',
 
                 'avatar.image'=>'Avatar must be an image',
+
+                'gender.required'=>'Gender is required',
+                'gender.in'=>'Gender must be either MALE or FEMALE',
                 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -180,7 +184,7 @@ class PartnerController extends Controller
                 'cnic_images'=> json_encode($cnic_images),
                 'avatar'=>$avatar,
                 'address'=>$request->address,
-
+                'gender'=>$request->gender,
             ]);
             $COA->update([
                 'ref_id' => $partner->id
