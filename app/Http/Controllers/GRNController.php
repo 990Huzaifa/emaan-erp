@@ -348,7 +348,7 @@ class GRNController extends Controller
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'credit amount to vendor account by GRN',
                 'debit' => 0.00, // No money debited from business account
-                'credit' => $total_billed, // Money credited to business account
+                'credit' => $total_amount_grn, // Money credited to business account
                 'current_balance' => $v_cb
             ]);
 
