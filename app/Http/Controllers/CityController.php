@@ -17,7 +17,7 @@ class CityController extends Controller
     public function index(): JsonResponse
     {
         try{
-            $data = City::orderBy('name','asc')->all();
+            $data = City::orderBy('name','asc')->get();
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data);
