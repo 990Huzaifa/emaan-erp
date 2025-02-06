@@ -38,7 +38,7 @@ class JournalVoucherController extends Controller
             ->join('partners', 'journal_vouchers.partner_id', '=', 'partners.id')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+                $query = $query->where('voucher_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
@@ -143,7 +143,7 @@ class JournalVoucherController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit journal voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'view journal voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -171,7 +171,7 @@ class JournalVoucherController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create journal voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit journal voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
