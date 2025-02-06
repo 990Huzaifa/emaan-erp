@@ -77,7 +77,7 @@ class EmployeeController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required',
                 'phone' => 'required|digits:11|regex:/^([0-9\s\-\+\(\)]*)$/',
-                'cnic' => 'nullable|digits:14',
+                'cnic' => 'nullable',
                 'email' => 'required',
                 'city_id' => 'required|exists:cities,id',
                 'address' => 'required|max:255',
@@ -99,8 +99,6 @@ class EmployeeController extends Controller
 
                 'city_id.required' => 'City is required',
                 'city_id.exists' => 'City does not exist',
-
-                'cnic.digits' => 'CNIC must be 14 digits',
 
                 'address.required' => 'Address is required',
                 'address.max' => 'Address must be less than 255 characters',
@@ -285,7 +283,7 @@ class EmployeeController extends Controller
                 'pay_policy_id' => 'required|exists:pay_policies,id',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
                 'gender' => 'required|in:MALE,FEMALE',
-                'cnic' => 'nullable|digits:14',
+                'cnic' => 'nullable',
             ], [
                 'name.required' => 'Name is required',
 
@@ -314,7 +312,6 @@ class EmployeeController extends Controller
                 'gender.required' => 'Gender is required',
                 'gender.in' => 'Gender must be MALE or FEMALE',
 
-                'cnic.digits' => 'CNIC must be 14 digits',
             ]);
             if ($validator->fails())
                 throw new Exception($validator->errors()->first(), 400);
