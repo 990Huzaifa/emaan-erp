@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BusinessHasAccount;
 use App\Models\ChartOfAccount;
 use App\Models\City;
 use App\Models\OpeningBalance;
@@ -188,6 +189,10 @@ class PartnerController extends Controller
             OpeningBalance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
+            ]);
+            BusinessHasAccount::create([
+                'business_id' => $request->business_id,
+                'chart_of_account_id' => $COA->id,
             ]);
 
             Log::create([
