@@ -14,38 +14,42 @@ class CitySeeder extends Seeder
     public function run(): void
     {
         $cities = [
-            ['name' => 'Bahawalpur'],
-            ['name' => 'Chakwal'],
-            ['name' => 'Faisalabad'],
-            ['name' => 'Gujranwala'],
-            ['name' => 'Gujrat'],
-            ['name' => 'Hyderabad'],
-            ['name' => 'Islamabad'],
-            ['name' => 'Jhang'],
-            ['name' => 'Jhelum'],
-            ['name' => 'Karachi'],
-            ['name' => 'Kasur'],
-            ['name' => 'Larkana'],
-            ['name' => 'Lahore'],
-            ['name' => 'Mianwali'],
-            ['name' => 'Mardan'],
-            ['name' => 'Multan'],
-            ['name' => 'Nawabshah'],
-            ['name' => 'Okara'],
-            ['name' => 'Peshawar'],
-            ['name' => 'Quetta'],
-            ['name' => 'Rawalpindi'],
-            ['name' => 'Sialkot'],
-            ['name' => 'Sargodha'],
-            ['name' => 'Sukkur'],
-            ['name' => 'Sahiwal'],
-            ['name' => 'Thatta'],
-            ['name' => 'Umarkot'],
-            ['name' => 'Wah Cantonment'],
-            ['name' => 'Wazirabad'],
-            // Add more cities as needed
+            "Islamabad", "Ahmed Nager", "Ahmadpur East", "Ali Khan", "Alipur", "Arifwala", "Attock", "Bhera",
+            "Bhalwal", "Bahawalnagar", "Bahawalpur", "Bhakkar", "Burewala", "Chillianwala", "Chakwal",
+            "Chichawatni", "Chiniot", "Chishtian", "Daska", "Darya Khan", "Dera Ghazi", "Dhaular", "Dina",
+            "Dinga", "Dipalpur", "Faisalabad", "Fateh Jhang", "Ghakhar Mandi", "Gojra", "Gujranwala", "Gujrat",
+            "Gujar Khan", "Hafizabad", "Haroonabad", "Hasilpur", "Haveli", "Lakha", "Jalalpur", "Jattan", "Jampur",
+            "Jaranwala", "Jhang", "Jhelum", "Kalabagh", "Karor Lal", "Kasur", "Kamalia", "Kamoke", "Khanewal",
+            "Khanpur", "Kharian", "Khushab", "Kot Adu", "Jauharabad", "Lahore", "Lalamusa", "Layyah",
+            "Liaquat Pur", "Lodhran", "Malakwal", "Mamoori", "Mailsi", "Mandi Bahauddin", "mian Channu",
+            "Mianwali", "Multan", "Murree", "Muridke", "Mianwali Bangla", "Muzaffargarh", "Narowal", "Okara",
+            "Renala Khurd", "Pakpattan", "Pattoki", "Pir Mahal", "Qaimpur", "Qila Didar", "Rabwah", "Raiwind",
+            "Rajanpur", "Rahim Yar", "Rawalpindi", "Sadiqabad", "Safdarabad", "Sahiwal", "Sangla Hill",
+            "Sarai Alamgir", "Sargodha", "Shakargarh", "Sheikhupura", "Sialkot", "Sohawa", "Soianwala",
+            "Siranwali", "Talagang", "Taxila", "Toba Tek", "Vehari", "Wah Cantonment", "Wazirabad", "Badin",
+            "Bhirkan", "Rajo Khanani", "Chak", "Dadu", "Digri", "Diplo", "Dokri", "Ghotki", "Haala", "Hyderabad",
+            "Islamkot", "Jacobabad", "Jamshoro", "Jungshahi", "Kandhkot", "Kandiaro", "Karachi", "Kashmore",
+            "Keti Bandar", "Khairpur", "Kotri", "Larkana", "Matiari", "Mehar", "Mirpur Khas", "Mithani", "Mithi",
+            "Mehrabpur", "Moro", "Nagarparkar", "Naudero", "Naushahro Feroze", "Naushara", "Nawabshah", "Nazimabad",
+            "Qambar", "Qasimabad", "Ranipur", "Ratodero", "Rohri", "Sakrand", "Sanghar", "Shahbandar",
+            "Shahdadkot", "Shahdadpur", "Shahpur Chakar", "Shikarpaur", "Sukkur", "Tangwani", "Tando Adam",
+            "Tando Allahyar", "Tando Muhammad", "Thatta", "Umerkot", "Warah", "Abbottabad", "Adezai", "Alpuri",
+            "Akora Khattak", "Ayubia", "Banda Daud", "Bannu", "Batkhela", "Battagram", "Birote", "Chakdara",
+            "Charsadda", "Chitral", "Daggar", "Dargai", "Darya Khan", "dera Ismail", "Doaba", "Dir", "Drosh",
+            "Hangu", "Haripur", "Karak", "Kohat", "Kulachi", "Lakki Marwat", "Latamber", "Madyan", "Mansehra",
+            "Mardan", "Mastuj", "Mingora", "Nowshera", "Paharpur", "Pabbi", "Peshawar", "Saidu Sharif", "Shorkot",
+            "Shewa Adda", "Swabi", "Swat", "Tangi", "Tank", "Thall", "Timergara", "Tordher", "Awaran", "Barkhan",
+            "Chagai", "Dera Bugti", "Gwadar", "Harnai", "Jafarabad", "Jhal Magsi", "Kacchi", "Kalat", "Kech",
+            "Kharan", "Khuzdar", "Killa Abdullah", "Killa Saifullah", "Kohlu", "Lasbela", "Lehri", "Loralai",
+            "Mastung", "Musakhel", "Nasirabad", "Nushki", "Panjgur", "Pishin valley", "Quetta", "Sherani",
+            "Sibi", "Sohbatpur", "Washuk", "Zhob", "Ziarat"
         ];
 
-        DB::table('cities')->insert($cities);
+        // Convert each city name into an associative array with the 'name' key.
+        $cityData = array_map(function($city) {
+            return ['name' => $city];
+        }, $cities);
+
+        DB::table('cities')->insert($cityData);
     }
 }
