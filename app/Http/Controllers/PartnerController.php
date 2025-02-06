@@ -231,7 +231,10 @@ class PartnerController extends Controller
                     ], 403);
                 }
             }
-            $data = Partner::find($id);
+            $data = Partner::select('partners.*', 'cities.name as city', 'businesses.name as business')
+            ->join('cities', 'cities.id', '=', 'partners.city_id')
+            ->join('businesses', 'businesses.id', '=', 'partners.business_id')
+            ->find($id);
 
             Log::create([
                 'user_id' => $user->id,
@@ -265,8 +268,8 @@ class PartnerController extends Controller
                 }
             }
 
-            $user = Partner::findOrFail($id);
-            if (empty($user)) throw new Exception('No User found', 404);
+            $partner = Partner::findOrFail($id);
+            if (empty($partner)) throw new Exception('No User found', 404);
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'nullable|string',
@@ -289,10 +292,11 @@ class PartnerController extends Controller
                 
                 
             ]);
+            DB::beginTransaction();
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $avatar = null;
-            $cnic_front = null;
-            $cnic_back = null;
+            $avatar = $partner->avatar;
+            $cnic_front = $partner->cnic_front;
+            $cnic_back = $partner->cnic_back;
             if ($request->hasFile('avatar')) {
                 $image = $request->file('avatar');
                 $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
@@ -312,71 +316,35 @@ class PartnerController extends Controller
                 $cnic_back = 'user-cnic/' . $back_image_name;
             }
             $cnic_images = [$cnic_front, $cnic_back];
-            $user->update([
+            $partner->update([
                     'email' =>$request->email,
                     'name'=> $request->name,
-                    'city_id'=>$request->city_id ?? $user->city_id,
-                    'phone'=>$request->phone ?? null,
-                    'address' => $request->address ?? null,
-                    'cnic'=>$request->cnic ?? null,
+                    'city_id'=>$request->city_id,
+                    'phone'=>$request->phone,
+                    'address' => $request->address,
+                    'cnic'=>$request->cnic,
                     'cnic_images'=> $cnic_images,
                     'avatar' => $avatar,
             ]);
-            if($request->email != $user->email){
-                // sending mail to user
-                Mail::to($request->email)->send(new UserMail([
-                    'message'=> 'your Email has beed updated your new email is '.$request->email,
-                    'url' => config('frontend.url'),
-                    'is_url'=>true,
-                ]));
+            
+            // update coa name if name change
+            if($request->name != $partner->name){
+                $COA = ChartOfAccount::find($partner->acc_id);
+                $COA->update([
+                    'name' => $request->name
+                ]);
             }
-            
-            $str_permissions = $request->input('permissions');
-
-            // Check if permissions is a JSON string and decode it
-            if (is_string($str_permissions)) {
-                $str_permissions = json_decode($str_permissions, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    throw new Exception('Permissions format is invalid', 400);
-                }
-            }
-            $uhb_ids = UserHasBusiness::where('user_id', $id)->pluck('id')->toArray();
-
-            // Delete the permissions associated with these UserHasBusiness records
-            DB::table('model_has_permissions')->whereIn('model_id', $uhb_ids)
-                ->where('model_type', (new UserHasBusiness())->getMorphClass())
-                ->delete();
-            
-            // Now delete the UserHasBusiness records
-            UserHasBusiness::where('user_id', $id)->delete();
-            
-            foreach ($str_permissions as $business_id => $permissions) {
-                
-                    $uhb = UserHasBusiness::create([
-                        'user_id' => $id,
-                        'business_id' => $business_id,
-                    ]);
-                
-            
-                // Add "edit profile" permission if not already in the list
-                if (!in_array('edit profile', $permissions)) {
-                    $permissions[] = 'edit profile';
-                }
-            
-                // Sync the permissions
-                $uhb->syncPermissions($permissions);
-            }
-
-            
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User update user details with permissions',
             ]);
+            DB::commit();
             return response()->json(['success'=>'user updated successfully.'],200);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
-
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
