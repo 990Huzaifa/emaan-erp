@@ -274,11 +274,29 @@ class PurchaseInvoiceController extends Controller
                 return redirect()->back()->with('error', 'Invoice not found.');
             }
     
-            // Use the Blade file to generate the PDF
+            // // Use the Blade file to generate the PDF
             $pdf = PDF::loadView('invoice.purchase-invoice', compact('data'));
     
-            // Return the generated PDF for download
-            return $pdf->download('purchase-invoice-' . $id . '.pdf');
+            // // Return the generated PDF for download
+            // return $pdf->download('purchase-invoice-' . $id . '.pdf');
+
+            // new code
+
+            $fileName = 'purchase-invoice-' . $id . '.pdf';
+            $directory = public_path('storage/invoices');
+            $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+
+            // Create the directory if it doesn't exist
+            if (!file_exists($directory)) {
+                mkdir($directory, 0777, true);
+            }
+
+            // Save the PDF file
+            $pdf->save($filePath);
+
+            // Return the PDF file so it opens in the browser for printing.
+            // The browser can then handle printing via its built-in PDF viewer.
+            return response()->file($filePath);
         } catch (QueryException $e) {
             return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
         } catch (Exception $e) {
