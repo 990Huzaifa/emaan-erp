@@ -134,11 +134,7 @@ class BusinessController extends Controller
 
             // creating COA
             $COA = createCOA('CASH IN HAND',$acc->code);
-            $BusinessCOA = createCOA($request->name,$equity_acc->code);
 
-            $BusinessCOA->update([
-                'ref_id' => $business->id,
-            ]);
             BusinessHasAccount::create([
                 'business_id' => $business->id,
                 'chart_of_account_id' => $COA->id,
