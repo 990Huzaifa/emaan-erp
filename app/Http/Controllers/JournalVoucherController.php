@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
 use App\Models\JournalVoucher;
+use App\Models\Partner;
 use Exception;
 use App\Models\Transaction;
 use Illuminate\Database\QueryException;
@@ -32,9 +33,9 @@ class JournalVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name','users.name as partner_name')
+            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name','partners.name as partner_name')
             ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->join('users', 'journal_vouchers.partner_id', '=', 'users.id')
+            ->join('partners', 'journal_vouchers.partner_id', '=', 'partners.id')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
@@ -70,7 +71,7 @@ class JournalVoucherController extends Controller
                 $request->all(),[
                     'voucher_date'=>'required|date',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
-                    'partner_id'=>'required|exists:users,id',
+                    'partner_id'=>'required|exists:partners,id',
                     'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
                     'type'=>'required|string|in:WITHDRAW,DEPOSIT',
@@ -148,9 +149,9 @@ class JournalVoucherController extends Controller
                     ], 403);
                 }
             }
-            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as account_name','users.name as partner_name')
+            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as account_name','partners.name as partner_name')
             ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->join('users', 'journal_vouchers.partner_id', '=', 'users.id')
+            ->join('partners', 'journal_vouchers.partner_id', '=', 'partners.id')
             ->find($id);
             return response()->json($data,200);
 
@@ -181,7 +182,7 @@ class JournalVoucherController extends Controller
                 $request->all(),[
                     'voucher_date'=>'required|date',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
-                    'partner_id'=>'required|exists:users,id',
+                    'partner_id'=>'required|exists:partners,id',
                     'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
                     'type'=>'required|string|in:WITHDRAW,DEPOSIT',
@@ -264,14 +265,7 @@ class JournalVoucherController extends Controller
 
             $acc_id = $data->acc_id;
             $partner_id = $data->partner_id;
-
-            $EquityCOA = ChartOfAccount::where('name','EQUITY')->where('level2',0)->value('code');
-
-            $BusinessCOA = ChartOfAccount::where('parent_code',$EquityCOA)->where('ref_id',$businessId)->value('code');
-
-            $partner_acc_id = ChartOfAccount::where('parent_code',$BusinessCOA)->where('ref_id',$partner_id)->value('id');
-
-
+            $partner_acc_id = Partner::where('id', $partner_id)->first()->value('acc_id');
             $total_amount = $data->voucher_amount;
             if ($data->type === 'WITHDRAW') {
                 // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)

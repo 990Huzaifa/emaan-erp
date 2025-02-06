@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('journal_vouchers', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('partner_id');
-            $table->foreign('partner_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('partner_id')->references('id')->on('partners')->onDelete('cascade');
             $table->unsignedBigInteger('acc_id'); // Link to COA for tracking payments
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->unsignedBigInteger('business_id'); // Link to COA for tracking payments

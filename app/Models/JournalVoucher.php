@@ -14,7 +14,6 @@ class JournalVoucher extends Model
         'partner_id',
         'acc_id',
         'voucher_amount',
-        'status',
         'cheque_no',
         'cheque_date',
         'payment_method',
