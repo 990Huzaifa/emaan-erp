@@ -175,7 +175,7 @@ class PartnerController extends Controller
                 'phone' => $request->phone,
                 'p_code'=>$p_code,
                 'cnic'=>$request->cnic,
-                'cnic_images'=>$cnic_images,
+                'cnic_images'=> json_encode($cnic_images),
                 'avatar'=>$avatar,
                 'address'=>$request->address,
 
