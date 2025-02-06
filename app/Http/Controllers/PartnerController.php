@@ -159,7 +159,7 @@ class PartnerController extends Controller
             } while (Partner::where('p_code', $p_code)->exists());
 
             // validate coa
-            $acc = ChartOfAccount::Where('name','CUSTOMERS')->first();
+            $acc = ChartOfAccount::Where('name','EQUITY')->first();
             if(empty($acc)) throw new Exception('Customer COA not found', 404);
 
             // validate city
@@ -170,6 +170,7 @@ class PartnerController extends Controller
             $partner = Partner::create([
                 'name'=>$request->name,
                 'business_id'=>$request->business_id,
+                'acc_id'=>$COA->id,
                 'city_id'=>$request->city_id,
                 'email'=>$request->email,
                 'phone' => $request->phone,
