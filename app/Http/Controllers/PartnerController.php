@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
+use App\Models\City;
 use App\Models\OpeningBalance;
 use DB; 
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Partner;
 use App\Models\Log;
 use Illuminate\Validation\Rule;
 use App\Mail\UserMail;
@@ -36,73 +38,35 @@ class PartnerController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                if (!$user->hasBusinessPermission($businessId, 'list partner')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
             $perPage = $request->query('per_page', 10);
+            $isActive = $request->query('is_active');
             $searchQuery = $request->query('search');
             
-            $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id')->toArray();
-
-            $userIdsQuery = User::where('users.role', 'partner');
-            if($request->has('is_verify')) {
-                $userIdsQuery = $userIdsQuery->where('users.is_verify', $request->input('is_verify'));
-
+            $query = Partner::orderBy('id', 'desc')
+            ->join('cities', 'partners.city_id', '=', 'cities.id')
+            ->select('partners.*', 'cities.name as city'); 
+            if ($isActive === 'active') {
+                $query = $query->where('is_active', 1);
+            } elseif ($isActive === 'inactive') {
+                $query = $query->where('is_active', 0);
             }
-
-            $userIdsQuery = $userIdsQuery->where('users.id', '<>', $user->id)
-            ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
-            ->whereIn('user_has_businesses.business_id', $userBusinesses)
-            ->distinct()
-            ->pluck('users.id'); // Get distinct user IDs only
-
-        // Step 2: Use the list of IDs to fetch the actual user data, including additional columns
-        $query = User::whereIn('users.id', $userIdsQuery)
-            ->orderBy('users.id', 'desc')
-            ->join('cities', 'users.city_id', '=', 'cities.id')
-            ->select('users.*', 'cities.name as city');
-            
             if (!empty($searchQuery)) {
-                // Check if the search query is numeric to search by order ID
-                if (is_numeric($searchQuery)) {
-                    $query = $query->where('id', $searchQuery);
-                } else {
-                    // Otherwise, search by user name or email
-                    $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
-                        ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
+                $partnerIds = Partner::where('name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('p_code', 'like', '%' . $searchQuery . '%')
                         ->pluck('id')
                         ->toArray();
-                        $query = $query->whereIn('users.id', $userIds);
-                }
+    
+                // Filter orders by the found user IDs
+                $query = $query->whereIn('partners.id', $partnerIds);
             }
-            // Execute the query with pagination
             $data = $query->paginate($perPage);
-            $data->getCollection()->transform(function ($user) {
-                // Fetch business ids and names from businesses table via user_has_businesses
-                $businesses = DB::table('user_has_businesses')
-                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
-                    ->where('user_has_businesses.user_id', $user->id)
-                    ->select('businesses.id', 'businesses.name')
-                    ->get();
-            
-                // Append the business array (with id and name) to the user object
-                $user->business_names = $businesses->map(function($business) {
-                    return [
-                        'id' => $business->id,
-                        'name' => $business->name
-                    ];
-                })->toArray();
-            
-                return $user;
-            });
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'User fetch invite list of users',
-            ]);
+
             return response()->json($data,200);
 
         }catch(QueryException $e){
@@ -119,23 +83,23 @@ class PartnerController extends Controller
     public function store(Request $request): JsonResponse
     {
         try{
-            $Auser = Auth::user();
+            $user = Auth::user();
             
-            // Check if the user has the required permission
-            if ($Auser->role == 'user') {
-                $businessId = $Auser->login_business;
-                if (!$Auser->hasBusinessPermission($businessId, 'create users')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
+            // Check only for admin
+            if ($user->role != 'admin') throw new Exception('User does not have the required permission.');
+
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'nullable|string',
-                    'city'=>'nullable|exists:cities,id',
-                    'email'=>'required|email|string|unique:users,email',
-                    'permissions'=>'required'
+                    'city_id'=>'nullable|exists:cities,id',
+                    'email'=>'required|email|string|unique:partners,email',
+                    'cnic' => 'nullable|string',
+                    'cnic_front' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                    'cnic_back' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                    'phone' => 'nullable|string',
+                    'avatar'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+                    'address'=>'required|string',
+                    'opening_balance'=>'nullable|numeric',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -146,92 +110,91 @@ class PartnerController extends Controller
                 'email.max' => 'Email cannot exceed 255 characters.',
                 'email.unique' => 'This email address is already in use.',
 
-                'permissions.required' => 'permissions is required.',
+                'cnic.string'=>'CNIC must be a string',
+
+                'cnic_front.image'=>'CNIC Front must be an image',
+                'cnic_back.image'=>'CNIC Back must be an image',
+
+                'phone.required'=>'Phone is required',
+                'phone.string'=>'Phone must be a string',
                 
-                'city.exists'=>'City is not valid',
+                'city_id.required'=>'City is required',
+                'city_id.exists'=>'City is not valid',
+
+                'address.required'=>'Address is required',
+                'opening_balance.numeric'=>'Opening Balance must be a number',
+
+                'avatar.image'=>'Avatar must be an image',
+                
             ]);
-            $str_permissions = $request->input('permissions');
-            
-            // Check if permissions is a JSON string and decode it
-            if (is_string($str_permissions)) {
-                $str_permissions = json_decode($str_permissions, true);
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    throw new Exception('Permissions format is invalid', 400);
-                }
-            }
-            
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            // images upload
+            $avatar=null;
+            $cnic_front=null;
+            $cnic_back=null;
+            if ($request->hasFile('avatar')) {
+                $image = $request->file('avatar');
+                $image_name = 'avatar' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('partner-avatar'), $image_name);
+                $avatar = 'partner-avatar/' . $image_name;
+            }
+            if ($request->hasFile('cnic_front')) {
+                $front_image = $request->file('cnic_front');
+                $front_image_name = 'cnic_' . '_front.' . $front_image->getClientOriginalExtension();
+                $front_image->move(public_path('partner-cnic'), $front_image_name);
+                $cnic_front = 'partner-cnic/' . $front_image_name;
+            }
+            if ($request->hasFile('cnic_back')) {
+                $back_image = $request->file('cnic_back');
+                $back_image_name = 'cnic_' . '_back.' . $back_image->getClientOriginalExtension();
+                $back_image->move(public_path('partner-cnic'), $back_image_name);
+                $cnic_back = 'partner-cnic/' . $back_image_name;
+            }
+            $cnic_images = [$cnic_front, $cnic_back];
+
+            // unique code
             do {
-                $u_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (User::where('u_code', $u_code)->exists());
-            DB::beginTransaction();
+                $p_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (Partner::where('p_code', $p_code)->exists());
 
-            // code to create partner coa
+            // validate coa
+            $acc = ChartOfAccount::Where('name','CUSTOMERS')->first();
+            if(empty($acc)) throw new Exception('Customer COA not found', 404);
 
+            // validate city
+            $city = City::find($request->city_id);
+            if(empty($city)) throw new Exception('City not found', 404);
+            $COA = createCOA($request->name,$acc->code);
 
-            $equityCOA = ChartOfAccount::where('name', 'Equity')->first();
-            if (empty($equityCOA)) throw new Exception('Equity COA not found', 404);
-
-            $businessCOA = ChartOfAccount::where('parent_code', $equityCOA->code)
-            ->where('ref_id', $Auser->login_business)
-            ->first();
-            if (empty($businessCOA)) throw new Exception('Business COA not found', 404);
-
-            $PartnerCOA = createCOA($request->name,$businessCOA->code);
-
-            // end
-
-            $setupCode = generateSetupCode(); 
-            $user = User::create([
+            $partner = Partner::create([
                 'name'=>$request->name,
-                'city_id'=>1,
-                'u_code'=>$u_code,
-                'email' => $request->email,
-                'setup_code' => $setupCode,
-                'role' => 'partner',
-            ]);
+                'business_id'=>$request->business_id,
+                'city_id'=>$request->city_id,
+                'email'=>$request->email,
+                'phone' => $request->phone,
+                'p_code'=>$p_code,
+                'cnic'=>$request->cnic,
+                'cnic_images'=>$cnic_images,
+                'avatar'=>$avatar,
+                'address'=>$request->address,
 
-            
-            $PartnerCOA->update([
-                'ref_id' => $user->id
+            ]);
+            $COA->update([
+                'ref_id' => $partner->id
             ]);
 
             OpeningBalance::create([
-                'acc_id' => $PartnerCOA->id,
+                'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
 
-            
-
-
-            $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
-            $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
-            // sync permissions to user according to business
-            foreach ($str_permissions as $businessId => $permissions) {
-                $uhb = UserHasBusiness::create([
-                    'business_id' => $businessId,
-                    'user_id' => $user->id,
-                ]);
-                // Add "edit profile" permission
-                if (!in_array('edit profile', $permissions)) {
-                    $permissions[] = 'edit profile';
-                }
-    
-                $uhb->syncPermissions($permissions);
-            }
-            // sending mail to user
-            Mail::to($request->email)->send(new UserMail([
-                'message'=> 'Please setup your account by clicking on the below link',
-                'url' => $setupUrl,
-                'is_url'=>true,
-            ])); 
-        
             Log::create([
-                'user_id' => $Auser->id,
+                'user_id' => $user->id,
                 'description' => 'User create user',
             ]);    
             DB::commit();
-            return response()->json($user);
+            return response()->json($partner);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -252,30 +215,14 @@ class PartnerController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view users')) {
+                if (!$user->hasBusinessPermission($businessId, 'view partner')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-             $userData = User::find($id);
+            $data = Partner::find($id);
 
-            // Fetch the user's associated businesses and permissions
-            $userHasBusinesses = UserHasBusiness::where('user_id', $id)->get();
-            $businessPermissions = [];
-    
-            // Loop through each business and fetch permissions
-            foreach ($userHasBusinesses as $userHasBusiness) {
-                $businessPermissions[] = [
-                    $userHasBusiness->business_id => $userHasBusiness->getAllPermissions()->pluck('name'),  // Assuming getPermissions() returns the permissions
-                ];
-            }
-    
-            // Prepare response data
-            $data = [
-                'user' => $userData,
-                'business_permissions' => $businessPermissions,
-            ];
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User fetch user details',
@@ -301,14 +248,14 @@ class PartnerController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit users')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit partners')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
 
-            $user = User::findOrFail($id);
+            $user = Partner::findOrFail($id);
             if (empty($user)) throw new Exception('No User found', 404);
             $validator = Validator::make(
                 $request->all(),[
@@ -318,9 +265,8 @@ class PartnerController extends Controller
                     'required',
                     'email',
                     'string',
-                    Rule::unique('users')->ignore($user->id), // Exclude current user
+                    Rule::unique('partners')->ignore($user->id), // Exclude current user
                 ],
-                    'permissions'=>'required'
 
             ],[
                 'name.required'=>'Name is Required',
@@ -331,7 +277,6 @@ class PartnerController extends Controller
                 'email.max' => 'Email cannot exceed 255 characters.',
                 'email.unique' => 'The email has already been taken.',
                 
-                'permissions.required' => 'permissions is required.',
                 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -434,22 +379,15 @@ class PartnerController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list users')) {
+                if (!$user->hasBusinessPermission($businessId, 'list partner')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            
-            $userIds = UserHasBusiness::where('business_id', $businessId)
-            ->where('user_id', '!=', $user->id)
-            ->pluck('user_id')
-            ->toArray();
 
             // Fetch users based on the retrieved user IDs
-            $data = User::select('id', 'name')
-                ->whereIn('id', $userIds)
-                ->where('role','partner')
+            $data = Partner::select('id', 'name', 'acc_id')
                 ->get();
         
             Log::create([
