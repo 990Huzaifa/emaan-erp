@@ -142,9 +142,9 @@ class LoanVoucherController extends Controller
                     ], 403);
                 }
             }
-            $data = LoanVoucher::select('journal_vouchers.*','chart_of_accounts.name as account_name','employees.name as employee_name')
-            ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->join('employees', 'journal_vouchers.employee_id', '=', 'employees.id')
+            $data = LoanVoucher::select('loan_vouchers.*','chart_of_accounts.name as account_name','employees.name as employee_name')
+            ->join('chart_of_accounts', 'loan_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            ->join('employees', 'loan_vouchers.employee_id', '=', 'employees.id')
             ->find($id);
             return response()->json($data,200);
 
@@ -255,31 +255,30 @@ class LoanVoucherController extends Controller
             $employee_id = $data->employee_id;
             $employee_acc_id = Employee::where('id', $employee_id)->first()->value('acc_id');
             $total_amount = $data->voucher_amount;
-                // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
+                
             $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
-            $p_cb = calculateBalance($employee_acc_id, $total_amount, true); // Partner equity account
+            $e_cb = calculateBalance($employee_acc_id, $total_amount, true); // employee expense account
 
-            // Credit the asset account (money is leaving the business)
+           // Credit the asset account (money is leaving the business)
             Transaction::create([
                 'business_id' => $data->business_id,
                 'acc_id' => $acc_id,
-                'transaction_type' => 2, // Withdrawal
-                'description' => 'Partner withdrawal.',
-                'debit' => $total_amount,
-                'credit' => 0.00,
-                
+                'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'loan sent to employee',
+                'debit' => 0.00,
+                'credit' => $total_amount,
                 'current_balance' => $a_cb
             ]);
 
-            // Debit the partner's equity account
+            // Debit the employee's account (expense increase)
             Transaction::create([
                 'business_id' => $data->business_id,
                 'acc_id' => $employee_acc_id,
-                'transaction_type' => 2, // Withdrawal
-                'description' => 'Reduction in partner equity due to withdrawal.',
-                'debit' => 0.00,
-                'credit' => $total_amount,
-                'current_balance' => $p_cb
+                'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'loan received by employee',
+                'debit' => $total_amount,
+                'credit' => 0.00,
+                'current_balance' => $e_cb
             ]);
 
 
