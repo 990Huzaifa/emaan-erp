@@ -591,11 +591,10 @@ class ProductController extends Controller
                     DB::rollBack();
                     throw new Exception('No products were imported successfully');
                 }
-
+                if(!empty($errors)) return response()->json($errors,400);
                 return response()->json([
                     'success' => count($products) . ' products imported successfully',
-                    'products' => $products,
-                    'errors' => $errors,
+                    'products' => $products,                    
                 ]);
 
             } catch (Exception $e) {
