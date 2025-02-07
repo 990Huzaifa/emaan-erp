@@ -354,14 +354,48 @@ class DeliveryNoteController extends Controller
             ]);
 
             // lot Updation
+            $customer = Customer::find($data->sale_order->customer_id);
+            $total_amount_dn = 0;
             if($request->status == 1){
                 foreach ($data->items as $item) {
+                    // hitting inventory minus in quantity
                     $inventory_details = InventoryDetail::where('lot_id', $item->lot_id)->first();
                     $inventory_details->update([
                         'stock' => $inventory_details->stock - $item->quantity,
                     ]);
+
+
+                    $product = Product::find($item->product_id);
+                    $total_amount_dn += $item->charged;
+                    $total_charged = $item->charged;
+                    $p_cb = calculateBalance($product->acc_id,$total_charged,false);
+                    
+
+                    // Debit amount from Product's account
+                    Transaction::create([
+                        'business_id' => $businessId,
+                        'acc_id' => $product->acc_id,
+                        'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                        'description' => 'debit amount from product account by DN',
+                        'debit' => $total_amount_dn, // FIXED
+                        'credit' => 0.00,
+                        'current_balance' => $p_cb
+                    ]);
                 }
             }
+
+            $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
+            // Credit amount to Vendor's account
+            Transaction::create([
+                'business_id' => $businessId,
+                'acc_id' => $customer->acc_id,
+                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'credit amount to vendor account by GRN',
+                'debit' => 0.00, // No money debited from business account
+                'credit' => $total_amount_dn, // Money credited to business account
+                'current_balance' => $c_cb
+            ]);
+
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'update Delivery Note Status',   
