@@ -258,7 +258,7 @@ class JournalVoucherController extends Controller
                 }
             }
             
-            if($request->status == 0) throw new Exception('Status is already updated', 400);
+            if($request->status == 0) throw new Exception('Status is invalid', 400);
             $data = JournalVoucher::findOrFail($id);
             if (empty($data)) throw new Exception('No Journal Voucher found', 404);
             if($request->status == $data->status) throw new Exception('Status is already updated', 400);
