@@ -92,8 +92,9 @@ class InventoryDetailController extends Controller
                     ], 403);
                 }
             }
-            $data = Lot::select('lots.*','products.title','products.image','vendors.name as vendor_name','purchase_orders.order_code as purchase_order_code','goods_receive_notes.grn_code as grn_code')
-            ->where('product_id', $id)
+            $data = Lot::select('lots.*','products.title','products.image','vendors.name as vendor_name','purchase_orders.order_code as purchase_order_code','goods_receive_notes.grn_code as grn_code','inventory_details.stock as quantity')
+            ->where('lots.product_id', $id)
+            ->join('inventory_details','inventory_details.lot_id','=','lots.id')
             ->join('products', 'lots.product_id', '=', 'products.id')
             ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
             ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')

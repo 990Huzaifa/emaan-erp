@@ -20,7 +20,7 @@ return new class extends Migration
             $table->foreign('asset_acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->foreign('expense_acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->string('voucher_code')->unique();
-            $table->enum('payment_method', ['CASH', 'CHEQUE'])->default('CASH');
+            $table->enum('payment_method', ['CASH', 'BANK'])->default('CASH');
             $table->string('cheque_no')->nullable();
             $table->date('cheque_date')->nullable();
             $table->decimal('voucher_amount',25,2)->default(0.00);

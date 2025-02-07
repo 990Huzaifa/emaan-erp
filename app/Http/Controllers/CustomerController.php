@@ -31,7 +31,7 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
-            $searchQuery = $request->query('search');
+            
             $query = Customer::orderBy('id', 'desc')->join('cities', 'customers.city_id', '=', 'cities.id')
             ->select('customers.*', 'cities.name as city');
             if ($user->role != 'admin') {
@@ -44,7 +44,8 @@ class CustomerController extends Controller
                 $query = $query->where('business_id',$businessId);
             }
             $perPage = $request->query('per_page', 10);
-            
+            $searchQuery = $request->query('search');
+            $city = $request->query('city');
             if (!empty($searchQuery)) {
                 $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('c_code', 'like', '%' . $searchQuery . '%')
@@ -52,7 +53,10 @@ class CustomerController extends Controller
                         ->toArray();
     
                     // Filter orders by the found Customers IDs
-                    $query = $query->whereIn('id', $customerIds);
+                    $query = $query->whereIn('customers.id', $customerIds);
+            }
+            if(!empty($city)){
+                $query = $query->where('customers.city_id', $city);
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
