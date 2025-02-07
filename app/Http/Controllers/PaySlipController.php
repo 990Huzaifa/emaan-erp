@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Employee;
 use App\Models\Log;
+use App\Models\PayPolicy;
 use App\Models\PaySlip;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -19,7 +22,7 @@ class PaySlipController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             // Check if the user has the required permission
             if ($user->role != 'admin') {
@@ -37,22 +40,22 @@ class PaySlipController extends Controller
                 'pay_slips.*',
                 'employees.name as employee_name'
             )
-            ->join('employees', 'pay_slips.employee_id', '=', 'employees.id')
-            ->where('pay_slips.business_id', $user->login_business)
-            ->where(function ($query) use ($searchQuery) {
-                if ($searchQuery) {
-                    $query->where('employees.name', 'like', '%' . $searchQuery . '%')
-                    ->orWhere('pay_slips.slip_no', 'like', '%' . $searchQuery . '%');
-                }
-            })
-            ->orderBy('id', 'desc');
+                ->join('employees', 'pay_slips.employee_id', '=', 'employees.id')
+                ->where('pay_slips.business_id', $user->login_business)
+                ->where(function ($query) use ($searchQuery) {
+                    if ($searchQuery) {
+                        $query->where('employees.name', 'like', '%' . $searchQuery . '%')
+                            ->orWhere('pay_slips.slip_no', 'like', '%' . $searchQuery . '%');
+                    }
+                })
+                ->orderBy('id', 'desc');
 
             // Execute the query with pagination
             $data = $paySlips->paginate($perPage);
             return response()->json(['data' => $data], 200);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -62,7 +65,7 @@ class PaySlipController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             // Check if the user has the required permission
             if ($user->role != 'admin') {
@@ -75,9 +78,10 @@ class PaySlipController extends Controller
             }
 
             $validator = Validator::make(
-                $request->all(),[
+                $request->all(),
+                [
                     'employee_id' => 'required|exists:employees,id',
-                    'pay_period_start' =>'required',
+                    'pay_period_start' => 'required',
                     'pay_period_end' => 'required',
                     'issue_date' => 'required',
                     'basic_pay' => 'required',
@@ -86,7 +90,8 @@ class PaySlipController extends Controller
                     'allowance' => 'required',
                     'bonus' => 'required',
                     'net_pay' => 'required',
-                ],[
+                ],
+                [
                     'employee_id.required' => 'Employee is required',
                     'employee_id.exists' => 'Employee does not exist',
                     'pay_period_start.required' => 'Pay period start is required',
@@ -98,45 +103,46 @@ class PaySlipController extends Controller
                     'allowance.required' => 'Allowance is required',
                     'bonus.required' => 'Bonus is required',
                     'net_pay.required' => 'Net pay is required',
-                    
-                ]);
 
-                if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
-                DB::beginTransaction();
-                do {
-                    $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-                } while (PaySlip::where('slip_no', $slip_no)->exists());
+                ]
+            );
 
-                $data = PaySlip::create([
-                    "slip_date" => $request->slip_date,
-                    "slip_no" => $slip_no,
-                    "business_id" => $user->login_business,
-                    "employee_id" => $request->employee_id,
-                    "pay_period_start" => $request->pay_period_start,
-                    "pay_period_end" => $request->pay_period_end,
-                    "issue_date" => $request->issue_date,
-                    "basic_pay" => $request->basic_pay,
-                    'loan_id' => $request->loan_id ?? null,
-                    "loan_deduction" => $request->loan_deduction ?? 0.00,
-                    "tax_deduction" => $request->tax_deduction,
-                    "allowance" => $request->allowance,
-                    "bonus" => $request->bonus,
-                    "net_pay" => $request->net_pay,
-                    "status" => 0 // 0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
+            DB::beginTransaction();
+            do {
+                $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (PaySlip::where('slip_no', $slip_no)->exists());
 
-                ]);
-                DB::commit();
+            $data = PaySlip::create([
+                "slip_no" => $slip_no,
+                "business_id" => $user->login_business,
+                "employee_id" => $request->employee_id,
+                "pay_period_start" => $request->pay_period_start,
+                "pay_period_end" => $request->pay_period_end,
+                "issue_date" => $request->issue_date,
+                "basic_pay" => $request->basic_pay,
+                'loan_id' => $request->loan_id ?? null,
+                "loan_deduction" => $request->loan_deduction ?? 0.00,
+                "tax_deduction" => $request->tax_deduction,
+                "allowance" => $request->allowance,
+                "bonus" => $request->bonus,
+                "net_pay" => $request->net_pay,
+                "status" => 0 // 0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid
 
-                Log::create([
-                    'user_id' => $user->id,
-                    'description' => 'Pay Slip Created  successfully',
-                ]);
-                return response()->json($data,200);
+            ]);
+            DB::commit();
 
-        }catch(QueryException $e){
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Pay Slip Created  successfully',
+            ]);
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -147,7 +153,7 @@ class PaySlipController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             // Check if the user has the required permission
             if ($user->role != 'admin') {
@@ -162,12 +168,12 @@ class PaySlipController extends Controller
                 'pay_slips.*',
                 'employees.name as employee_name'
             )
-            ->join('employees', 'pay_slips.employee_id', '=', 'employees.id')
-            ->find($id);
+                ->join('employees', 'pay_slips.employee_id', '=', 'employees.id')
+                ->find($id);
             return response()->json($data, 200);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -177,7 +183,7 @@ class PaySlipController extends Controller
      */
     public function update(Request $request, string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             // Check if the user has the required permission
             if ($user->role != 'admin') {
@@ -190,9 +196,10 @@ class PaySlipController extends Controller
             }
 
             $validator = Validator::make(
-                $request->all(),[
+                $request->all(),
+                [
                     'employee_id' => 'required|exists:employees,id',
-                    'pay_period_start' =>'required',
+                    'pay_period_start' => 'required',
                     'pay_period_end' => 'required',
                     'issue_date' => 'required',
                     'basic_pay' => 'required',
@@ -201,7 +208,8 @@ class PaySlipController extends Controller
                     'allowance' => 'required',
                     'bonus' => 'required',
                     'net_pay' => 'required',
-                ],[
+                ],
+                [
                     'employee_id.required' => 'Employee is required',
                     'employee_id.exists' => 'Employee does not exist',
                     'pay_period_start.required' => 'Pay period start is required',
@@ -213,44 +221,47 @@ class PaySlipController extends Controller
                     'allowance.required' => 'Allowance is required',
                     'bonus.required' => 'Bonus is required',
                     'net_pay.required' => 'Net pay is required',
-                    
-                ]);
 
-                if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
-                DB::beginTransaction();
-                do {
-                    $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-                } while (PaySlip::where('slip_no', $slip_no)->exists());
-                $data = PaySlip::find($id);
-                if(empty($data)) throw new Exception('No data found', 404);
-                $data->update([
-                    "slip_date" => $request->slip_date,
-                    "slip_no" => $slip_no,
-                    "business_id" => $user->login_business,
-                    "employee_id" => $request->employee_id,
-                    "pay_period_start" => $request->pay_period_start,
-                    "pay_period_end" => $request->pay_period_end,
-                    "issue_date" => $request->issue_date,
-                    "basic_pay" => $request->basic_pay,
-                    'loan_id' => $request->loan_id ?? null,
-                    "loan_deduction" => $request->loan_deduction,
-                    "tax_deduction" => $request->tax_deduction,
-                    "allowance" => $request->allowance,
-                    "bonus" => $request->bonus,
-                    "net_pay" => $request->net_pay,
+                ]
+            );
 
-                ]);
-                DB::commit();
-                Log::create([
-                    'user_id' => $user->id,
-                    'description' => 'Pay Slip Updated successfully',
-                ]);
-                return response()->json($data,200);
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
+            DB::beginTransaction();
+            do {
+                $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (PaySlip::where('slip_no', $slip_no)->exists());
+            $data = PaySlip::find($id);
+            if (empty($data))
+                throw new Exception('No data found', 404);
+            $data->update([
+                "slip_date" => $request->slip_date,
+                "slip_no" => $slip_no,
+                "business_id" => $user->login_business,
+                "employee_id" => $request->employee_id,
+                "pay_period_start" => $request->pay_period_start,
+                "pay_period_end" => $request->pay_period_end,
+                "issue_date" => $request->issue_date,
+                "basic_pay" => $request->basic_pay,
+                'loan_id' => $request->loan_id ?? null,
+                "loan_deduction" => $request->loan_deduction,
+                "tax_deduction" => $request->tax_deduction,
+                "allowance" => $request->allowance,
+                "bonus" => $request->bonus,
+                "net_pay" => $request->net_pay,
 
-        }catch(QueryException $e){
+            ]);
+            DB::commit();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Pay Slip Updated successfully',
+            ]);
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
@@ -261,7 +272,7 @@ class PaySlipController extends Controller
      */
     public function updateStatus(Request $request, string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -274,16 +285,20 @@ class PaySlipController extends Controller
 
             $validator = Validator::make($request->all(), [
                 'status' => 'required|in:1,2',
-            ],[
+            ], [
                 'Status.required' => 'Status is required',
                 'Status.in' => 'Status must be 1 or 2 (Approved and Reject)',
             ]);
-            if ($validator->fails())throw new Exception($validator->errors()->first(), 400);
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
 
             $data = PaySlip::find($id);
-            if(empty($data)) throw new Exception('No data found', 404);
-            if($data->status != 0) throw new Exception('Status cannot be updated', 400);
-            if($data->status == $request->status) throw new Exception('Status already updated', 400);
+            if (empty($data))
+                throw new Exception('No data found', 404);
+            if ($data->status != 0)
+                throw new Exception('Status cannot be updated', 400);
+            if ($data->status == $request->status)
+                throw new Exception('Status already updated', 400);
             $data->update([
                 'status' => $request->status,
             ]);
@@ -292,12 +307,12 @@ class PaySlipController extends Controller
                 'description' => 'Pay Slip Status Updated successfully',
             ]);
             DB::commit();
-            return response()->json($data,200);
+            return response()->json($data, 200);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             DB::rollBack();
             return response()->json(["DB error" => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json(["error" => $e->getMessage()], 400);
         }
@@ -309,7 +324,7 @@ class PaySlipController extends Controller
      */
     public function filterList($id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -319,12 +334,51 @@ class PaySlipController extends Controller
                     ], 403);
                 }
             }
-            $data = PaySlip::select('id','slip_no','net_pay')->where('employee_id', $id)->where('status', '1')->get();
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            $data = PaySlip::select('id', 'slip_no', 'net_pay')->where('employee_id', $id)->where('status', '1')->get();
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+
+    public function createSlipJob($employee_id)
+    {
+        try {
+            $employee = Employee::find($employee_id);
+            $pay_period_start = $today = Carbon::today();
+            $pay_period_end = $today->addMonths(1);
+            $paypolicy = PayPolicy::find($employee->pay_policy_id);
+            $net_pay = $paypolicy->basic_pay + $paypolicy->allowance + $paypolicy->bonus - $paypolicy->tax_deduction - $paypolicy->loan_deduction;
+            DB::beginTransaction();
+            do {
+                $slip_no = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (PaySlip::where('slip_no', $slip_no)->exists());
+
+           PaySlip::create([
+                "slip_no" => $slip_no,
+                "business_id" => $employee->business_id,
+                "employee_id" => $employee_id,
+                "pay_period_start" => $pay_period_start,
+                "pay_period_end" => $pay_period_end,
+                "issue_date" => $pay_period_start,
+                "basic_pay" => $paypolicy->basic_pay,
+                'loan_id' => null,
+                "loan_deduction" => 0.00,
+                "tax_deduction" => $paypolicy->tax_deduction,
+                "allowance" => $paypolicy->allowance,
+                "bonus" => $paypolicy->bonus,
+                "net_pay" => $net_pay,
+                "status" => 0 // 0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid
+            ]);
+            DB::commit();
+            return true;
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return false;
         }
     }
 }
