@@ -142,9 +142,9 @@ class LoanVoucherController extends Controller
                     ], 403);
                 }
             }
-            $data = LoanVoucher::select('journal_vouchers.*','chart_of_accounts.name as account_name','employees.name as employee_name')
-            ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->join('employees', 'journal_vouchers.employee_id', '=', 'employees.id')
+            $data = LoanVoucher::select('loan_vouchers.*','chart_of_accounts.name as account_name','employees.name as employee_name')
+            ->join('chart_of_accounts', 'loan_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            ->join('employees', 'loan_vouchers.employee_id', '=', 'employees.id')
             ->find($id);
             return response()->json($data,200);
 
