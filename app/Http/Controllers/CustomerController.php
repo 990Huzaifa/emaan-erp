@@ -52,7 +52,7 @@ class CustomerController extends Controller
                         ->toArray();
     
                     // Filter orders by the found Customers IDs
-                    $query = $query->whereIn('id', $customerIds);
+                    $query = $query->whereIn('customers.id', $customerIds);
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
