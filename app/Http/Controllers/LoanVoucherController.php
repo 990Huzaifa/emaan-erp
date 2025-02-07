@@ -263,7 +263,7 @@ class LoanVoucherController extends Controller
             Transaction::create([
                 'business_id' => $data->business_id,
                 'acc_id' => $acc_id,
-                'transaction_type' => 2, 
+                'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'loan sent to employee',
                 'debit' => 0.00,
                 'credit' => $total_amount,
@@ -274,7 +274,7 @@ class LoanVoucherController extends Controller
             Transaction::create([
                 'business_id' => $data->business_id,
                 'acc_id' => $employee_acc_id,
-                'transaction_type' => 2, 
+                'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'loan received by employee',
                 'debit' => $total_amount,
                 'credit' => 0.00,
