@@ -376,23 +376,23 @@ class DeliveryNoteController extends Controller
                         'business_id' => $businessId,
                         'acc_id' => $product->acc_id,
                         'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'debit amount from product account by DN',
-                        'debit' => $total_amount_dn, // FIXED
-                        'credit' => 0.00,
+                        'description' => 'credit amount from product account by DN',
+                        'debit' => 0.00,  // FIXED
+                        'credit' => $total_charged,  // FIXED
                         'current_balance' => $p_cb
                     ]);
                 }
             }
 
             $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
-            // Credit amount to Vendor's account
+            // Debit amount to customer's account
             Transaction::create([
                 'business_id' => $businessId,
                 'acc_id' => $customer->acc_id,
                 'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'credit amount to vendor account by GRN',
-                'debit' => 0.00, // No money debited from business account
-                'credit' => $total_amount_dn, // Money credited to business account
+                'description' => 'debit amount to customer account by DN',
+                'debit' => $total_amount_dn, // FIXED
+                'credit' => 0.00, // FIXED
                 'current_balance' => $c_cb
             ]);
 
