@@ -309,10 +309,6 @@ class GRNController extends Controller
                         'current_balance' => $p_cb
                     ]);
 
-                    
-
-
-
                     // hit inventory
                     do {
                         $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
