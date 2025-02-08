@@ -56,7 +56,7 @@ class CustomerController extends Controller
                     $query = $query->whereIn('customers.id', $customerIds);
             }
             if(!empty($city)){
-                $query = $query->whereIn('customers.city_id', $city);
+                $query = $query->where('customers.city_id', $city);
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
