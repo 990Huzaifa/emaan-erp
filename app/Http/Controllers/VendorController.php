@@ -59,7 +59,7 @@ class VendorController extends Controller
                 $query = $query->whereIn('vendors.id', $userIds);
             }
             if(!empty($city)){
-                $query = $query->where('customers.city_id', $city);
+                $query = $query->where('vendors.city_id', $city);
             }
             $data = $query->paginate($perPage);
 
