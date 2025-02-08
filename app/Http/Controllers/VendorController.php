@@ -39,6 +39,7 @@ class VendorController extends Controller
             $perPage = $request->query('per_page', 10);
             $isActive = $request->query('is_active');
             $searchQuery = $request->query('search');
+            $city = $request->query('city');
 
             $query = Vendor::orderBy('id', 'desc')
             ->join('cities', 'vendors.city_id', '=', 'cities.id')
@@ -56,6 +57,9 @@ class VendorController extends Controller
     
                 // Filter orders by the found user IDs
                 $query = $query->whereIn('vendors.id', $userIds);
+            }
+            if(!empty($city)){
+                $query = $query->whereIn('customers.city_id', $city);
             }
             $data = $query->paginate($perPage);
 
