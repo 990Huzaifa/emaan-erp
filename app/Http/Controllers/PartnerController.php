@@ -51,7 +51,8 @@ class PartnerController extends Controller
             
             $query = Partner::orderBy('id', 'desc')
             ->join('cities', 'partners.city_id', '=', 'cities.id')
-            ->select('partners.*', 'cities.name as city'); 
+            ->join('businesses', 'partners.business_id', '=', 'businesses.id')
+            ->select('partners.*', 'cities.name as city', 'businesses.name as business'); 
             if ($isActive === 'active') {
                 $query = $query->where('is_active', 1);
             } elseif ($isActive === 'inactive') {
