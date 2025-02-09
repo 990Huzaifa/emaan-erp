@@ -141,6 +141,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('partner',PartnerController::class)->only(['index', 'store', 'show', 'update']);
     Route::get('list/partner',[PartnerController::class,'list']);
+    Route::post('partner-update/{id}',[PartnerController::class,'update']);
 
     Route::apiResource('journal-voucher',JournalVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/journal-voucher',[JournalVoucherController::class,'updateStatus']);
