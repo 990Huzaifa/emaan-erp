@@ -231,7 +231,9 @@ class PartnerController extends Controller
                     ], 403);
                 }
             }
-            $data = Partner::find($id);
+            $data = Partner::select('partners.*', 'cities.name as city', 'businesses.name as business')
+            ->join('cities', 'cities.id', '=', 'partners.city_id')
+            ->find($id);
             // $data = Partner::select('partners.*', 'cities.name as city', 'businesses.name as business')
             // ->join('cities', 'cities.id', '=', 'partners.city_id')
             // ->join('businesses', 'businesses.id', '=', 'partners.business_id')
