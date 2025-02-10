@@ -136,7 +136,7 @@ class InventoryDetailController extends Controller
 
             // Apply search filter if 'lot_code' parameter exists
             if (!empty($searchQuery)) {
-                $query->where('lots.lot_code', 'LIKE', '%' . $request->searchQuery . '%');
+                $query->where('lots.lot_code', 'LIKE', '%' . $searchQuery . '%');
             }
 
             // Paginate the result
