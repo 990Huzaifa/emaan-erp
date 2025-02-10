@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Product;
 use Exception;
 use App\Models\Lot;
 use Illuminate\Http\Request;
