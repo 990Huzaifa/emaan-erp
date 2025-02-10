@@ -60,29 +60,46 @@ class InventoryDetailController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
      * Display the specified resource.
      */
-    public function show(string $id): JsonResponse
-    {
-        try{
-            $user = Auth::user();
+
+    // public function show(string $id): JsonResponse
+    // {
+    //     try{
+    //         $user = Auth::user();
             
+    //         // Check if the user has the required permission
+    //         if ($user->role != 'admin') {
+    //             $businessId = $user->login_business;
+    //             if (!$user->hasBusinessPermission($businessId, 'list purchase orders')) {
+    //                 return response()->json([
+    //                     'error' => 'User does not have the required permission.'
+    //                 ], 403);
+    //             }
+    //         }
+    //         $data = Lot::select('lots.*','products.title','products.image','vendors.name as vendor_name','purchase_orders.order_code as purchase_order_code','goods_receive_notes.grn_code as grn_code','inventory_details.stock as quantity')
+    //         ->where('lots.product_id', $id)
+    //         ->join('inventory_details','inventory_details.lot_id','=','lots.id')
+    //         ->join('products', 'lots.product_id', '=', 'products.id')
+    //         ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
+    //         ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')
+    //         ->join('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id')
+
+    //         ->get();
+    //         return response()->json($data,200);
+    //     }catch(QueryException $e){
+    //         return response()->json(['DB error' => $e->getMessage()], 400);
+    //     }catch(Exception $e){
+    //         return response()->json(['error' => $e->getMessage()], 400);
+    //     }
+    // }
+
+
+    public function show(string $id, Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -92,22 +109,49 @@ class InventoryDetailController extends Controller
                     ], 403);
                 }
             }
-            $data = Lot::select('lots.*','products.title','products.image','vendors.name as vendor_name','purchase_orders.order_code as purchase_order_code','goods_receive_notes.grn_code as grn_code','inventory_details.stock as quantity')
-            ->where('lots.product_id', $id)
-            ->join('inventory_details','inventory_details.lot_id','=','lots.id')
-            ->join('products', 'lots.product_id', '=', 'products.id')
-            ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
-            ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')
-            ->join('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id')
 
-            ->get();
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            // Fetch product details (common for all lots)
+            $productDetail = Product::select('id', 'title', 'image')
+                ->where('id', $id)
+                ->first();
+
+            if (!$productDetail) {
+                return response()->json(['error' => 'Product not found'], 404);
+            }
+            $searchQuery = $request->query('search');
+            // Fetch paginated lot list with search filter on lot_code
+            $query = Lot::select(
+                    'lots.*',
+                    'vendors.name as vendor_name',
+                    'purchase_orders.order_code as purchase_order_code',
+                    'goods_receive_notes.grn_code as grn_code',
+                    'inventory_details.stock as quantity'
+                )
+                ->where('lots.product_id', $id)
+                ->join('inventory_details', 'inventory_details.lot_id', '=', 'lots.id')
+                ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
+                ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')
+                ->join('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id');
+
+            // Apply search filter if 'lot_code' parameter exists
+            if (!empty($searchQuery)) {
+                $query->where('lots.lot_code', 'LIKE', '%' . $request->lot_code . '%');
+            }
+
+            // Paginate the result
+            $lots = $query->paginate(10);
+
+            return response()->json([
+                'product_detail' => $productDetail,
+                'lots' => $lots
+            ], 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 
     /**
      * Show the form for editing the specified resource.
