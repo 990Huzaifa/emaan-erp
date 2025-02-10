@@ -128,7 +128,8 @@ class PaySlipController extends Controller
                 "allowance" => $request->allowance,
                 "bonus" => $request->bonus,
                 "net_pay" => $request->net_pay,
-                "status" => 0 // 0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid
+                "remaining_balance" => $request->net_pay,
+                "status" => 0 // 0 = Pending, 1 = Approved, 2 = Rejected, 3 = Paid
 
             ]);
             DB::commit();
@@ -249,7 +250,7 @@ class PaySlipController extends Controller
                 "allowance" => $request->allowance,
                 "bonus" => $request->bonus,
                 "net_pay" => $request->net_pay,
-
+                "remaining_balance" => $request->net_pay
             ]);
             DB::commit();
             Log::create([

@@ -28,6 +28,7 @@ return new class extends Migration
             $table->decimal('allowance', 18, 2)->default(0.00); // Allowances added for this period
             $table->decimal('bonus', 18, 2)->default(0.00); // Bonus added for this period
             $table->decimal('net_pay', 18, 2); // Final salary after deductions
+            $table->decimal('remaining_balance', 18, 2); // Final salary after deductions
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid');
             $table->timestamps();
         });

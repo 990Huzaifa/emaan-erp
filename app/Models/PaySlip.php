@@ -24,5 +24,6 @@ class PaySlip extends Model
         'allowance',
         'bonus',
         'net_pay',
+        'remaining_balance'
     ];
 }

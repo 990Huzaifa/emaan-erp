@@ -248,6 +248,7 @@ class SalaryVoucherController extends Controller
             $paySlip = PaySlip::find( $data->pay_slip_id);
 
             $paySlip->update([
+                'remaining_amount' => $paySlip->remaining_amount - $total_billed,
                 'status' => 3,
             ]);
 
