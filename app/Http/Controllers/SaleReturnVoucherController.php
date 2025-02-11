@@ -28,7 +28,7 @@ class SaleReturnVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'list sale return voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -67,7 +67,7 @@ class SaleReturnVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'create sale return voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -144,7 +144,7 @@ class SaleReturnVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'view sale return voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -179,7 +179,7 @@ class SaleReturnVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'approve sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'approve sale return voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -250,7 +250,7 @@ class SaleReturnVoucherController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create sale voucher')) {
+                if (!$user->hasBusinessPermission($businessId, 'create sale return voucher')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
