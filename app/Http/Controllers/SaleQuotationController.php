@@ -209,7 +209,8 @@ class SaleQuotationController extends Controller
             $data->update([
                 'quotation_date'=>$request->quotation_date,
                 'due_date'=>$request->due_date,
-                'vendor_id'=>$request->vendor_id,
+                'customer_id'=>$request->customer_id,
+                'status' => 0,
             ]);
             $existingItems = SaleQuotationItem::where('sale_quotation_id', $id)->get()->keyBy('id');
             $requestItemIds = [];

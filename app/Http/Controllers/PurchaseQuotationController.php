@@ -182,6 +182,7 @@ class PurchaseQuotationController extends Controller
                 'quotation_date'=>$request->quotation_date,
                 'due_date'=>$request->due_date,
                 'vendor_id'=>$request->vendor_id,
+                'status' => 0,
             ]);
             $existingItems = PurchaseQuotationItem::where('purchase_quotation_id', $id)->get()->keyBy('id');
             $requestItemIds = [];

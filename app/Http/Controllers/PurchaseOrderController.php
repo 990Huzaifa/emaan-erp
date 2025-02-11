@@ -184,6 +184,7 @@ class PurchaseOrderController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
+                    'vendor_id'=>'required|exists:vendors,id',
                     'order_date'=>'required',
                     'due_date' => 'required',
                     'total' => 'required|numeric',
@@ -193,6 +194,9 @@ class PurchaseOrderController extends Controller
                     'items' => 'required|array',
 
             ],[
+                'vendor_id.required' => 'Vendor is required.',
+                'vendor_id.exists' => 'Vendor does not exist.',
+
                 'order_date.required' => 'Order date is required.',
 
                 'due_date.required' => 'Due date is required.',
@@ -209,12 +213,14 @@ class PurchaseOrderController extends Controller
             $data = PurchaseOrder::find($id);
             if (empty($data)) throw new Exception('No PO found', 404);
             $data->update([
+                'vendor_id'=>$request->vendor_id,
                 'order_date' => $request->order_date,
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
                 'terms_of_payment' => $request->terms_conditions ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
+                'status' => 0,
             ]);
             $existingItems = PurchaseOrderItem::where('purchase_order_id', $id)->get()->keyBy('id');
             $requestItemIds = [];

@@ -186,6 +186,7 @@ class SaleOrderController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
+                    'customer_id' => 'required|exists:customers,id',
                     'order_date'=>'required',
                     'due_date' => 'required',
                     'total' => 'required|numeric',
@@ -195,6 +196,9 @@ class SaleOrderController extends Controller
                     'items' => 'required|array',
 
             ],[
+                'customer_id.required' => 'Customer is required.',
+                'customer_id.exists' => 'Customer does not exist.',
+
                 'order_date.required' => 'Order date is required.',
 
                 'due_date.required' => 'Due date is required.',
@@ -211,12 +215,14 @@ class SaleOrderController extends Controller
             $data = saleOrder::find($id);
             if (empty($data)) throw new Exception('No SO found', 404);
             $data->update([
+                'customer_id'=>$request->customer_id,
                 'order_date' => $request->order_date,
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
                 'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
+                'status' => 0,
             ]);
             $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
             $requestItemIds = [];
