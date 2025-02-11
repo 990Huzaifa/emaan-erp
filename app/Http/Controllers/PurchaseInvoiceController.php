@@ -270,9 +270,7 @@ class PurchaseInvoiceController extends Controller
             )
             ->where('purchase_invoices.id', $id)->first();
     
-            if (!$data) {
-                return redirect()->back()->with('error', 'Invoice not found.');
-            }
+            if (!$data) throw new Exception('Purchase Invoice not found', 404);
     
             // // Use the Blade file to generate the PDF
             $pdf = PDF::loadView('invoice.purchase-invoice', compact('data'));

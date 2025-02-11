@@ -225,28 +225,24 @@ class SaleReceiptController extends Controller
                     ], 403);
                 }
             }
-    
+            
             $data = SaleReceipt::with(['items.product' => function ($query) {
                 $query->select('id', 'title');
             }])
             ->join('businesses', 'sale_receipts.business_id', '=', 'businesses.id')
-            ->join('customers', 'sale_receipts.customer_id', '=', 'customers.id')
+            ->join('customers', 'sale_receipts.customer_id', '=', 'customers.id') // Join with vendors
             ->join('cities', 'customers.city_id', '=', 'cities.id')
-            ->select(
-                'sale_receipts.*',
-                'customers.name as customer_name',
-                'customers.address as customer_address',
-                'customers.phone as customer_phone',
-                'businesses.name as business_name',
-                'businesses.logo as business_logo',
-                'cities.name as customer_city'
-            )
+            ->select('sale_receipts.*',
+            'customers.name as customer_name',
+            'customers.address as customer_address',
+            'customers.telephone as customer_telephone',
+            'businesses.name as business_name',
+            'cities.name as city_name'
+            ) // Select fields including vendor name
             ->where('sale_receipts.id', $id)->first();
-    
-            if (!$data) {
-                return redirect()->back()->with('error', 'Receipt not found.');
-            }
-    
+            
+            if (!$data) throw new Exception('Sale Receipt not found', 404);
+            
             // Use the Blade file to generate the PDF
             $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
     
@@ -263,7 +259,6 @@ class SaleReceiptController extends Controller
             $pdf->save($filePath);
 
             // Return the PDF file so it opens in the browser for printing.
-            // The browser can then handle printing via its built-in PDF viewer.
             return response()->file($filePath);
         } catch (QueryException $e) {
             return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
