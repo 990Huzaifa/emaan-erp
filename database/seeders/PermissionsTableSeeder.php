@@ -103,11 +103,23 @@ class PermissionsTableSeeder extends Seeder
             'edit purchase return',
             'approve purchase return',
 
+            'create purchase return voucher',
+            'view purchase return voucher',
+            'list purchase return voucher',
+            'edit purchase return voucher',
+            'approve purchase return voucher',
+
             'create sale return',
             'view sale return',
             'list sale return',
             'edit sale return',
             'approve sale return',
+
+            'create sale return voucher',
+            'view sale return voucher',
+            'list sale return voucher',
+            'edit sale return voucher',
+            'approve sale return voucher',
 
             'list sale receipt',
             'view sale receipt',

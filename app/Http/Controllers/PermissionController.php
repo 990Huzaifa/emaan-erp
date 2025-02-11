@@ -79,6 +79,13 @@ class PermissionController extends Controller
                     'approve purchase return',
                 ],
                 "Purchase Voucher" => ['create purchase voucher', 'view purchase voucher', 'list purchase voucher', 'edit purchase voucher', 'approve purchase voucher'],
+                "Purchase Return Voucher" => [
+                    'create purchase return voucher',
+                    'view purchase return voucher',
+                    'list purchase return voucher',
+                    'edit purchase return voucher',
+                    'approve purchase return voucher',
+                ],
                 "Sale Quotation" => [
                     'list sale quotations',
                     'view sale quotations',
@@ -121,6 +128,13 @@ class PermissionController extends Controller
                     'list sale return',
                     'edit sale return',
                     'approve sale return',
+                ],
+                "Sale Return Voucher" => [
+                    'create sale return voucher',
+                    'view sale return voucher',
+                    'list sale return voucher',
+                    'edit sale return voucher',
+                    'approve sale return voucher',
                 ],
                 "Department" => [
                     'list department',
