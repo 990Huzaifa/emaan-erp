@@ -248,7 +248,7 @@ class SaleReceiptController extends Controller
             }
     
             // Use the Blade file to generate the PDF
-            $pdf = PDF::loadView('receipt.sale-receipt', compact('data'));
+            $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
     
             // Return the generated PDF for download
             return $pdf->download('sale-receipt-' . $id . '.pdf');
