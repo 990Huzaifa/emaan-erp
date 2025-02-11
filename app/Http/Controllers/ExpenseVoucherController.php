@@ -173,9 +173,71 @@ class ExpenseVoucherController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
-        //
+        {
+            try{
+                $user = Auth::user();
+                $businessId = $user->login_business;
+                if ($user->role != 'admin') {
+                    if (!$user->hasBusinessPermission($businessId, 'create expense voucher')) {
+                        return response()->json([
+                            'error' => 'User does not have the required permission.'
+                        ], 403);
+                    }
+                }
+                $validator = Validator::make(
+                    $request->all(),[
+                        'expense_acc' => 'required|exists:chart_of_accounts,id',
+                        'asset_acc' => 'required|exists:chart_of_accounts,id',
+                        "payment_method" => 'required|string|in:CASH,BANK,OTHER',
+                        'cheque_no' => 'required_if:payment_method,BANK|string',
+                        'cheque_date' => 'required_if:payment_method,BANK|date',
+                        'voucher_date' => 'required|date',                    
+                        'voucher_amount' => 'required|numeric',
+                    ],
+                    [
+                        'voucher_date.required' => 'Voucher date is required',
+                        'voucher_date.date' => 'Voucher date is not valid',
+    
+                        'expense_acc.required' => 'Expense account is required',
+                        'expense_acc.exists' => 'Expense account does not exist',
+    
+                        'asset_acc.required' => 'Asset account is required',
+                        'asset_acc.exists' => 'Asset account does not exist',
+    
+                        'cheque_no.required_if' => 'Cheque number is required',
+                        'cheque_date.required_if' => 'Cheque date is required',
+    
+                        'voucher_amount.required' => 'Voucher amount is required',
+                        'voucher_amount.numeric' => 'Voucher amount is not valid',
+                    ]
+                );
+                if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+                DB::beginTransaction();
+                $data = ExpenseVoucher::find($id);
+                if (empty($data)) throw new Exception('No data found', 404);
+                if ($data->status == 1) throw new Exception('voucher already paid', 404);
+                $data->update([
+                    'asset_acc_id' => $request->asset_acc,
+                    'expense_acc_id' => $request->expense_acc,
+                    'business_id' => $businessId,
+                    'payment_method' => $request->payment_method,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'voucher_amount' => $request->voucher_amount,
+                    'voucher_date' => $request->voucher_date,
+                ]);
+                DB::commit();
+                return response()->json($data, 200);
+            }catch(QueryException $e){
+                DB::rollBack();
+                return response()->json(['DB error'=>$e->getMessage()], 400);
+            }catch(Exception $e){
+                DB::rollBack();
+                return response()->json(['error'=>$e->getMessage()], 400);
+            }
+        }
     }
 
     public function updateStatus(Request $request, string $id): JsonResponse
