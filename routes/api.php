@@ -8,7 +8,9 @@ use App\Http\Controllers\LoanVoucherController;
 use App\Http\Controllers\PartnerController;
 use App\Http\Controllers\PayPolicyController;
 use App\Http\Controllers\PaySlipController;
+use App\Http\Controllers\PurchaseReturnVoucherController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\SaleReturnVoucherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GRNController;
@@ -234,6 +236,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('purchase-return',PurchaseReturnController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-return',[PurchaseReturnController::class,'updateStatus']);
+
+    Route::apiResource('purchase-return-voucher',PurchaseReturnVoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/purchase-return-voucher',[PurchaseReturnVoucherController::class,'updateStatus']);
+    Route::put('purchase-return-voucher/{grn_id}/previous',[PurchaseReturnVoucherController::class,'previousData']);
     
     
     Route::apiResource('voucher',VoucherController::class)->only('index','store','show','update');
@@ -262,6 +268,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('sale-return',SaleReturnController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-return',[SaleReturnController::class,'updateStatus']);
+
+    Route::apiResource('sale-return-voucher',SaleReturnVoucherController::class)->only('index','store','show','update');
+    Route::put('status/{id}/sale-return-voucher',[SaleReturnVoucherController::class,'updateStatus']);
         
     Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
     Route::get('inventory-products',[InventoryDetailController::class,'inventoryProduct']);

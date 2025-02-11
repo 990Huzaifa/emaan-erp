@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\Log;
 use App\Models\OpeningBalance;
-use App\Models\SaleVoucher;
+use App\Models\SaleReturnVoucher;
 use App\Models\Transaction;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
-class SaleVoucherController extends Controller
+class SaleReturnVoucherController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -36,13 +36,13 @@ class SaleVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = SaleVoucher::select('sale_vouchers.*','customers.name as customer_name','chart_of_accounts.name as acc_name')
-            ->join('customers','sale_vouchers.customer_id', '=', 'customers.id')
-            ->join('chart_of_accounts','sale_vouchers.acc_id', '=', 'chart_of_accounts.id')
-            ->where('sale_vouchers.business_id',$user->login_business)
+            $query = SaleReturnVoucher::select('sale_return_vouchers.*','customers.name as customer_name','chart_of_accounts.name as acc_name')
+            ->join('customers','sale_return_vouchers.customer_id', '=', 'customers.id')
+            ->join('chart_of_accounts','sale_return_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            ->where('sale_return_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query->where('sale_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
+                $query->where('sale_return_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
                 
             }
             // Execute the query with pagination
@@ -110,8 +110,8 @@ class SaleVoucherController extends Controller
             DB::beginTransaction();
             do {
                 $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = SaleVoucher::create([
+            } while (SaleReturnVoucher::where('voucher_code', $voucher_code)->exists());
+            $data = SaleReturnVoucher::create([
                 'customer_id' => $request->customer_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
@@ -151,13 +151,13 @@ class SaleVoucherController extends Controller
                 }
             }
 
-            $data = SaleVoucher::select(
-                'sale_vouchers.*',
+            $data = SaleReturnVoucher::select(
+                'sale_return_vouchers.*',
                 'customers.name as customer_name',
                 'chart_of_accounts.name as acc_name'
                 )
-                ->join('customers','sale_vouchers.customer_id','=','customers.id')
-                ->join('chart_of_accounts','sale_vouchers.acc_id','=','chart_of_accounts.id')
+                ->join('customers','sale_return_vouchers.customer_id','=','customers.id')
+                ->join('chart_of_accounts','sale_return_vouchers.acc_id','=','chart_of_accounts.id')
                 ->find($id);
             if (empty($data)) throw new Exception('No data found', 404);
 
@@ -186,7 +186,7 @@ class SaleVoucherController extends Controller
                 }
             }
 
-            $data = SaleVoucher::find($id);
+            $data = SaleReturnVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 400);
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
@@ -199,8 +199,8 @@ class SaleVoucherController extends Controller
             // for products
             $total_billed = $data->voucher_amount;
 
-            $c_cb = calculateBalance($customer_acc, $total_billed, true); // Debit customer's account
-            $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
+            $c_cb = calculateBalance($customer_acc, $total_billed, false); // Credit customer's account
+            $b_cb = calculateBalance($data->acc_id, $total_billed, true);  // Debit business's account
             
             // Debit amount to customer's account
             Transaction::create([
@@ -208,8 +208,8 @@ class SaleVoucherController extends Controller
                 'acc_id' => $customer_acc,
                 'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'Payment made by customer: ' . $customer->name,
-                'debit' => $total_billed, // No money deducted from customer's side
-                'credit' => 0.00, // Money credited to customer
+                'credit' => $total_billed, // No money deducted from customer's side
+                'debit' => 0.00, // Money credited to customer
                 'current_balance' => $c_cb // Updated balance for customer account
             ]);
 
@@ -219,8 +219,8 @@ class SaleVoucherController extends Controller
                 'acc_id' => $data->acc_id,
                 'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'Payment received from customer: ' . $customer->name,
-                'debit' => 0.00, // Money debited from business account
-                'credit' => $total_billed, // No money credited to business account
+                'credit' => 0.00, // Money debited from business account
+                'debit' => $total_billed, // No money credited to business account
                 'current_balance' => $b_cb
             ]);
             
@@ -291,7 +291,7 @@ class SaleVoucherController extends Controller
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
             DB::beginTransaction();
-            $data = SaleVoucher::find($id);
+            $data = SaleReturnVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             if ($data->status == 1) throw new Exception('voucher already paid', 404);
             $data->update([
