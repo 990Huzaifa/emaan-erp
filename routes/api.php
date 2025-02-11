@@ -255,6 +255,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('sale-receipt',SaleReceiptController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-receipt',[SaleReceiptController::class,'updateStatus']);
+    Route::get('print/sale-receipt/{id}',[SaleReceiptController::class,'print']);
     
     Route::apiResource('sale-voucher',SaleVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-voucher',[SaleVoucherController::class,'updateStatus']);
