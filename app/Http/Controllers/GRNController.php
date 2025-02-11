@@ -215,9 +215,9 @@ class GRNController extends Controller
             DB::beginTransaction();
             $GRN = GoodsReceiveNote::find($id);
             $GRN->update([
-                'purchase_order_id' => $request->purchase_order_id,
                 'grn_date' => $request->grn_date,
-                'remarks' => $request->remarks
+                'remarks' => $request->remarks,
+                'status' => 0,
             ]);
 
             foreach ($request->items as $item) {

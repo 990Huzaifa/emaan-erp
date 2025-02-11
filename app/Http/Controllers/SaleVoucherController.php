@@ -84,8 +84,8 @@ class SaleVoucherController extends Controller
                     'voucher_date' => 'required|date',
                     'voucher_amount' => 'required|numeric',
                 ], [
-                    'vendor_id.required' => 'The Vendor field is required.',
-                    'vendor_id.exists' => 'The selected Vendor is invalid.',
+                    'customer_id.required' => 'The Customer field is required.',
+                    'customer_id.exists' => 'The selected Customer is invalid.',
                     
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -245,7 +245,75 @@ class SaleVoucherController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try{
+            $user = Auth::user(); 
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create sale voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make(
+                $request->all(),[
+                    'customer_id' => 'required|exists:customers,id',
+                    "payment_method" => 'required|string|in:CASH,BANK,OTHER',
+                    'acc_id' => 'required|exists:chart_of_accounts,id',
+                    'cheque_no' => 'required_if:payment_method,BANK|string',
+                    'cheque_date' => 'required_if:payment_method,BANK|date',
+                    'voucher_date' => 'required|date',
+                    'voucher_amount' => 'required|numeric',
+                ], [
+                    'customer_id.required' => 'The Customer field is required.',
+                    'customer_id.exists' => 'The selected Customer is invalid.',
+                    
+                    'acc_id.required' => 'The Account field is required.',
+                    'acc_id.exists' => 'The selected account is invalid.',
+
+                    'payment_method.required' => 'The payment method field is required.',
+                    'payment_method.in' => 'The selected payment method is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
+
+                    'voucher_date.required' => 'The voucher date field is required.',
+                    'voucher_date.date' => 'The voucher date must be a valid date.',
+
+                    'voucher_amount.required' => 'The voucher amount field is required.',
+                    'voucher_amount.numeric' => 'The voucher amount must be a number.',
+                ]);
+
+            if ($validator->fails()) throw new Exception($validator->errors()->first());
+            DB::beginTransaction();
+            $data = SaleVoucher::find($id);
+            if (empty($data)) throw new Exception('No data found', 404);
+            if ($data->status == 1) throw new Exception('voucher already paid', 404);
+            $data->update([
+                'customer_id' => $request->customer_id,
+                'acc_id' => $request->acc_id,
+                'business_id' => $businessId,
+                'payment_method' => $request->payment_method,
+                'cheque_no' => $request->cheque_no ?? null,
+                'cheque_date' => $request->cheque_date ?? null,
+                'voucher_date' => $request->voucher_date,
+                'voucher_amount' => $request->voucher_amount,
+                'status' => 0, // 0 un paid, 1 paid
+            ]);
+            DB::commit();
+            return response()->json($data, 200);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**

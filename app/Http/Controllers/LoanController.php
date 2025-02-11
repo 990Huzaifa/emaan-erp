@@ -131,9 +131,51 @@ class LoanController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): JsonResponse
     {
-        //
+        try{    
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role == 'user') {
+                if (!$user->hasBusinessPermission($businessId, 'create loan')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make($request->all(), [
+                'employee_id' => 'required|exists:employees,id',
+                'loan_amount' => 'required',
+                'loan_date' => 'required',
+            ],[
+                'employee_id.required' => 'Employee ID is required',
+                'employee_id.exists' => 'Employee ID does not exist',
+                'loan_amount.required' => 'Loan amount is required',
+                'loan_date.required' => 'Loan date is required',
+            ]);
+            // check employee loan 
+            if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
+
+            $data = Loan::find($id);
+            if (empty($data)) throw new Exception('No data found', 404);
+            $data->update([
+                'employee_id' => $request->employee_id,
+                'business_id' => $businessId,
+                'loan_amount' => $request->loan_amount,
+                'loan_date' => $request->loan_date,
+                'installments' => $request->installments ?? 0,    
+                'installment_amount' => $request->installment_amount ?? 0,
+                'remaining_amount' => $request->loan_amount
+            ]);
+
+            return response()->json($data, 200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
     /**

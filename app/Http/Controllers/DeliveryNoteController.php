@@ -279,11 +279,11 @@ class DeliveryNoteController extends Controller
 
             $deliveryNote = DeliveryNote::find($id);
             $deliveryNote->update([
-                'sale_order_id' => $request->sale_order_id,
                 'business_id' => $businessId,
                 'dn_date' => $request->dn_date,
                 'received_by' => $user->id, //need to know
                 'remarks' => $request->remarks,
+                'status' => 0,
             ]);
 
             foreach($request->items as $item){

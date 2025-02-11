@@ -219,8 +219,10 @@ class JournalVoucherController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
 
             DB::beginTransaction();
-            $journalVoucher = JournalVoucher::findOrFail($id);
-            $journalVoucher->update([
+            $data = JournalVoucher::find($id);
+            if (empty($data)) throw new Exception('No data found', 404);
+            if ($data->status == 1) throw new Exception('voucher already paid', 404);
+            $data->update([
                 'acc_id'=>$request->acc_id,
                 'partner_id'=>$request->partner_id,
                 'voucher_amount'=>$request->voucher_amount,
@@ -231,7 +233,7 @@ class JournalVoucherController extends Controller
                 'voucher_date'=>$request->voucher_date,
             ]);
             DB::commit();
-            return response()->json($journalVoucher,200);
+            return response()->json($data,200);
 
         }catch(QueryException $e){
             DB::rollBack();

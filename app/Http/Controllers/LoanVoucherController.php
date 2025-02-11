@@ -208,7 +208,9 @@ class LoanVoucherController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
 
             DB::beginTransaction();
-            $loanVoucher = LoanVoucher::findOrFail($id);
+            $loanVoucher = LoanVoucher::find($id);
+            if (empty($data)) throw new Exception('No data found', 404);
+            if ($data->status == 1) throw new Exception('voucher already paid', 404);
             $loanVoucher->update([
                 'acc_id'=>$request->acc_id,
                 'employee_id'=>$request->employee_id,
