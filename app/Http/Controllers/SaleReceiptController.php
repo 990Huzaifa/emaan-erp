@@ -250,8 +250,21 @@ class SaleReceiptController extends Controller
             // Use the Blade file to generate the PDF
             $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
     
-            // Return the generated PDF for download
-            return $pdf->download('sale-receipt-' . $id . '.pdf');
+            $fileName = 'sale-receipt-' . $id . '.pdf';
+            $directory = public_path('storage/receipts');
+            $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+
+            // Create the directory if it doesn't exist
+            if (!file_exists($directory)) {
+                mkdir($directory, 0777, true);
+            }
+
+            // Save the PDF file
+            $pdf->save($filePath);
+
+            // Return the PDF file so it opens in the browser for printing.
+            // The browser can then handle printing via its built-in PDF viewer.
+            return response()->file($filePath);
         } catch (QueryException $e) {
             return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
         } catch (Exception $e) {
