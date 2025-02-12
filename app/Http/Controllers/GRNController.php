@@ -295,19 +295,19 @@ class GRNController extends Controller
                     // hit transaction
                     $total_amount_grn += $item->billed;
                     $total_billed = $item->billed;
-                    $p_cb = calculateBalance($product->acc_id,$total_billed,false);
+                    // $p_cb = calculateBalance($product->acc_id,$total_billed,false);
                     
 
                     // Debit amount from Product's account
-                    Transaction::create([
-                        'business_id' => $businessId,
-                        'acc_id' => $product->acc_id,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'debit amount from product account by GRN',
-                        'debit' => $total_billed, // Money debited from business account
-                        'credit' => 0.00, // No money credited to business account
-                        'current_balance' => $p_cb
-                    ]);
+                    // Transaction::create([
+                    //     'business_id' => $businessId,
+                    //     'acc_id' => $product->acc_id,
+                    //     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                    //     'description' => 'debit amount from product account by GRN',
+                    //     'debit' => $total_billed, // Money debited from business account
+                    //     'credit' => 0.00, // No money credited to business account
+                    //     'current_balance' => $p_cb
+                    // ]);
 
                     // hit inventory
                     do {

@@ -368,19 +368,19 @@ class DeliveryNoteController extends Controller
                     $product = Product::find($item->product_id);
                     $total_amount_dn += $item->charged;
                     $total_charged = $item->charged;
-                    $p_cb = calculateBalance($product->acc_id,$total_charged,false);
+                    // $p_cb = calculateBalance($product->acc_id,$total_charged,false);
                     
 
                     // Debit amount from Product's account
-                    Transaction::create([
-                        'business_id' => $businessId,
-                        'acc_id' => $product->acc_id,
-                        'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'credit amount from product account by DN',
-                        'debit' => 0.00,  // FIXED
-                        'credit' => $total_charged,  // FIXED
-                        'current_balance' => $p_cb
-                    ]);
+                    // Transaction::create([
+                    //     'business_id' => $businessId,
+                    //     'acc_id' => $product->acc_id,
+                    //     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    //     'description' => 'credit amount from product account by DN',
+                    //     'debit' => 0.00,  // FIXED
+                    //     'credit' => $total_charged,  // FIXED
+                    //     'current_balance' => $p_cb
+                    // ]);
                 }
             }
 
