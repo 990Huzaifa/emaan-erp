@@ -373,7 +373,7 @@ class VendorController extends Controller
                 }
             }
 
-            $vendors = Vendor::select('id','name')->get();
+            $vendors = Vendor::select('id','name','v_code as code')->get();
 
             return response()->json($vendors,200);
             

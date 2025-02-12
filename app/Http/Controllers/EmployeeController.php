@@ -383,7 +383,7 @@ class EmployeeController extends Controller
                 }
             }
 
-            $employee = Employee::select('id', 'name')->get();
+            $employee = Employee::select('id', 'name','e_code as code')->get();
 
             return response()->json($employee, 200);
 

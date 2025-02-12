@@ -364,7 +364,7 @@ class CustomerController extends Controller
                 }
             }
 
-            $customer = Customer::select('id','name')->where('business_id',$businessId)->get();
+            $customer = Customer::select('id','name','c_code as code')->where('business_id',$businessId)->get();
 
             return response()->json($customer,200);
             

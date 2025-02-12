@@ -613,7 +613,7 @@ class ProductController extends Controller
     public function list():JsonResponse
     {
         try{
-            $product = Product::select('id','title')->where('is_active',1)->get();
+            $product = Product::select('id','title','p_code as code')->where('is_active',1)->get();
             return response()->json($product);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
