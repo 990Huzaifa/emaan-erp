@@ -156,12 +156,12 @@ class PurchaseReturnVoucherController extends Controller
             }
 
             $data = PurchaseReturnVoucher::select(
-                'purchase_return_voucher.*',
+                'purchase_return_vouchers.*',
                 'vendors.name as vendor_name',
                 'chart_of_accounts.name as acc_name'
                 )
-                ->join('vendors','purchase_return_voucher.vendor_id','=','vendors.id')
-                ->join('chart_of_accounts','purchase_return_voucher.acc_id','=','chart_of_accounts.id')
+                ->join('vendors','purchase_return_vouchers.vendor_id','=','vendors.id')
+                ->join('chart_of_accounts','purchase_return_vouchers.acc_id','=','chart_of_accounts.id')
                 ->find($id);
             if (empty($data)) throw new Exception('No data found', 404);
 
