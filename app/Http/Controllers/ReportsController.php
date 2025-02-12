@@ -84,7 +84,7 @@ class ReportsController extends Controller
         return response()->json($response);
     }
 
-    public function purchaseSumary(): JsonResponse
+    public function purchaseSummary(): JsonResponse
     {
         $dataPV = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
         ->join('vendors','purchase_vouchers.vendor_id','=','vendors.id')
@@ -95,7 +95,7 @@ class ReportsController extends Controller
         return response()->json(["data"=>$dataPV,"total"=>$total]);
     }
 
-    public function salesSumary(): JsonResponse
+    public function salesSummary(): JsonResponse
     {
         $dataPV = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
         ->join('customers','sale_vouchers.customer_id','=','customers.id')
