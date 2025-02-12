@@ -202,6 +202,10 @@ class PermissionsTableSeeder extends Seeder
             'create loan voucher',
             'edit loan voucher',
             'approve loan voucher',
+
+            'list sales summary',
+            'list purchase summary',
+            'invenoty report',
         ];
 
         // Loop through each permission and create it

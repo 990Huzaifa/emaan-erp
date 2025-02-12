@@ -212,6 +212,11 @@ class PermissionController extends Controller
                     'edit journal voucher',
                     'approve journal voucher'
                 ],
+                "Reports" => [
+                    'list sales summary',
+                    'list purchase summary',
+                    'invenoty report',
+                ]
             ];
 
             // Prepare an empty array to store structured permissions
