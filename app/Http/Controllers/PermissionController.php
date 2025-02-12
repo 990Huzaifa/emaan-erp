@@ -216,6 +216,7 @@ class PermissionController extends Controller
                     'sales summary',
                     'purchase summary',
                     'invenoty report',
+                    'financial report',
                 ]
             ];
 

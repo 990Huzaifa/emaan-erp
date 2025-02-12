@@ -206,6 +206,7 @@ class PermissionsTableSeeder extends Seeder
             'list sales summary',
             'list purchase summary',
             'invenoty report',
+            'financial report',
         ];
 
         // Loop through each permission and create it

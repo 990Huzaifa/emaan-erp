@@ -203,33 +203,59 @@ class ReportsController extends Controller
 
     public function financialReport(): JsonResponse
     {
-        $totalPurchases = DB::table('transactions')->where('transaction_type', 0)->sum('debit');
-        $totalSales = DB::table('transactions')->where('transaction_type', 1)->sum('credit');
-        $totalExpenses = DB::table('transactions')->where('transaction_type', 2)->sum('debit');
-        $totalIncome = DB::table('transactions')->where('transaction_type', 3)->sum('credit');
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
 
-        $Purchases = DB::table('transactions')->where('transaction_type', 0)->get();
-        $Sales = DB::table('transactions')->where('transaction_type', 1)->get();
-        $Expenses = DB::table('transactions')->where('transaction_type', 2)->get();
-        $Income = DB::table('transactions')->where('transaction_type', 3)->get();
+            // Permission check for non-admin users
+            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'financial report')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
 
-        $netProfit = ($totalSales + $totalIncome) - ($totalPurchases + $totalExpenses);
+            // Apply business filter conditionally
+            $filterByBusiness = function ($query) use ($businessId, $user) {
+                if ($user->role != 'admin') {
+                    return $query->where('business_id', $businessId);
+                }
+                return $query;
+            };
 
-        return response()->json([
-            'purchases' => [
-                'data' => $Purchases, 'total' => $totalPurchases
-            ],
-            'sales' => [
-                'data' => $Sales, 'total' => $totalSales
-            ],
-            'expenses' => [
-                'data' => $Expenses, 'total' => $totalExpenses
-            ],
-            'income' => [
-                'data' => $Income, 'total' => $totalIncome
-            ],
-            'net_profit' => $netProfit,
-        ]);
+            // Summing transaction values
+            $totalPurchases = DB::table('transactions')->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
+            $totalSales = DB::table('transactions')->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
+            $totalExpenses = DB::table('transactions')->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
+            $totalIncome = DB::table('transactions')->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
+
+            // Fetching transaction data
+            $Purchases = DB::table('transactions')->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Sales = DB::table('transactions')->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Expenses = DB::table('transactions')->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Income = DB::table('transactions')->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+
+            // Net profit calculation
+            $netProfit = ($totalSales + $totalIncome) - ($totalPurchases + $totalExpenses);
+
+            return response()->json([
+                'purchases' => [
+                    'data' => $Purchases, 'total' => $totalPurchases
+                ],
+                'sales' => [
+                    'data' => $Sales, 'total' => $totalSales
+                ],
+                'expenses' => [
+                    'data' => $Expenses, 'total' => $totalExpenses
+                ],
+                'income' => [
+                    'data' => $Income, 'total' => $totalIncome
+                ],
+                'net_profit' => $netProfit,
+            ]);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
+
 
 }
