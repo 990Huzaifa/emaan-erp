@@ -213,8 +213,8 @@ class PermissionController extends Controller
                     'approve journal voucher'
                 ],
                 "Reports" => [
-                    'list sales summary',
-                    'list purchase summary',
+                    'sales summary',
+                    'purchase summary',
                     'invenoty report',
                 ]
             ];
