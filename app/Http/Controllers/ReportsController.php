@@ -6,7 +6,9 @@ use App\Models\DeliveryNoteItem;
 use App\Models\GoodsReceiveNoteItem;
 use App\Models\Product;
 use App\Models\PurchaseOrderItem;
+use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
+use App\Models\SaleVoucher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,6 +84,27 @@ class ReportsController extends Controller
         return response()->json($response);
     }
 
+    public function purchaseSumary(): JsonResponse
+    {
+        $dataPV = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
+        ->join('vendors','purchase_vouchers.vendor_id','=','vendors.id')
+        ->where('purchase_vouchers.status',1)->get();
+
+        $total = PurchaseVoucher::where('status', 1)->sum('voucher_amount');
+
+        return response()->json(["data"=>$dataPV,"total"=>$total]);
+    }
+
+    public function salesSumary(): JsonResponse
+    {
+        $dataPV = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
+        ->join('customers','sale_vouchers.customer_id','=','customers.id')
+        ->where('sale_vouchers.status',1)->get();
+
+        $total = PurchaseVoucher::where('status', 1)->sum('voucher_amount');
+
+        return response()->json(["data"=>$dataPV,"total"=>$total]);
+    }
 
     public function financialReport(): JsonResponse
     {
