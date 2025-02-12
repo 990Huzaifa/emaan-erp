@@ -37,13 +37,13 @@ class ReportsController extends Controller
         
             // Sum quantities of products from purchase orders (IN)
             $purchaseItems = GoodsReceiveNoteItem::select('product_id', DB::raw('SUM(receive) as total_in'))
-            ->join('goods_receive_notes', 'goods_receive_notes.id', '=', 'goods_receive_note_items.grn_id')
+            ->join('goods_receive_notes', 'goods_receive_notes.id', '=', 'goods_receive_note_items.goods_receive_note_id')
             ->where('goods_receive_notes.business_id', $businessId)
             ->groupBy('product_id');
         
             // Sum quantities of products from sales orders (OUT)
             $soldItems = DeliveryNoteItem::select('product_id', DB::raw('SUM(delivered) as total_out'))
-            ->join('delivery_notes', 'delivery_notes.id', '=', 'delivery_note_items.dn_id')
+            ->join('delivery_notes', 'delivery_notes.id', '=', 'delivery_note_items.delivery_note_id')
             ->where('delivery_notes.business_id', $businessId)
             ->groupBy('product_id');
         
