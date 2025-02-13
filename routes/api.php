@@ -155,6 +155,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/customer/',[CustomerController::class,'list']);
     Route::get('/csv/customer', [CustomerController::class, 'csvCustomer']);
     Route::post('/csv/customer/upload', [CustomerController::class, 'importCustomer']);
+    Route::get('customer-analytics',[CustomerController::class,'customerAnalytics']);
     
     Route::apiResource('chart-of-account',COAController::class)->only('index','store','show','update');
     
