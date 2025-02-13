@@ -121,32 +121,7 @@
             </tbody>
         </table>
 
-        <table class="table mt-4">
-            <thead>
-                <tr>
-                    <th>Liabilities and Equity</th>
-                    <th class="text-end">Amount ($)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Liabilities</td>
-                    <td class="text-end">0</td>
-                </tr>
-                <tr>
-                    <td>Equity</td>
-                    <td class="text-end">4,911,580</td>
-                </tr>
-                <tr class="total-row">
-                    <td>Total Liabilities and Equity</td>
-                    <td class="text-end">4,911,580</td>
-                </tr>
-            </tbody>
-        </table>
 
-        <div class="text-center no-print mt-4">
-            <button onclick="window.print()" class="btn btn-primary">Print</button>
-        </div>
     </div>
 
     <script src="
