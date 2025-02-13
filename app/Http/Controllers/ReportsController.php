@@ -9,6 +9,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
 use App\Models\SaleVoucher;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -212,6 +213,8 @@ class ReportsController extends Controller
     }
 
 
+
+
     public function financialReport(Request $request): JsonResponse
     {
         try {
@@ -225,55 +228,61 @@ class ReportsController extends Controller
                 ], 403);
             }
 
+            // Handle optional start_date and end_date
+            $start_date = $request->input('start_date', DB::table('transactions')->min('created_at')); // Earliest transaction date
+            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default to today
 
-            $start_date = $request->input('start_date');
-            $end_date = $request->input('end_date');
-            // Apply business filter conditionally
-            $filterByBusiness = function ($query) use ($businessId, $user) {
-                if ($user->role != 'admin') {
-                    return $query->where('business_id', $businessId);
+            // Ensure valid date format
+            $start_date = Carbon::parse($start_date)->toDateString();
+            $end_date = Carbon::parse($end_date)->toDateString();
+
+            // Common query filter for business scope
+            $businessFilter = function ($query) use ($user, $businessId) {
+                if ($user->role !== 'admin') {
+                    $query->where('business_id', $businessId);
                 }
-                return $query;
             };
 
-            // Summing transaction values
-            $totalPurchases = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
-            $totalSales = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
-            $totalExpenses = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
-            $totalIncome = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
+            // Transaction Types Mapping
+            $transactionTypes = [
+                'purchases' => ['type' => 0, 'column' => 'debit'],
+                'sales' => ['type' => 1, 'column' => 'credit'],
+                'expenses' => ['type' => 2, 'column' => 'debit'],
+                'income' => ['type' => 3, 'column' => 'credit'],
+            ];
 
-            // Fetching transaction data
-            $Purchases = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
-            $Sales = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
-            $Expenses = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
-            $Income = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $results = [];
+
+            foreach ($transactionTypes as $key => $type) {
+                $data = DB::table('transactions')
+                    ->whereBetween('created_at', [$start_date, $end_date])
+                    ->where('transaction_type', $type['type'])
+                    ->when($user->role !== 'admin', fn($q) => $q->where('business_id', $businessId))
+                    ->get();
+
+                $total = $data->sum($type['column']);
+
+                $results[$key] = [
+                    'data' => $data,
+                    'total' => $total
+                ];
+            }
 
             // Net profit calculation
-            $netProfit = ($totalSales + $totalIncome) - ($totalPurchases + $totalExpenses);
+            $netProfit = ($results['sales']['total'] + $results['income']['total']) - ($results['purchases']['total'] + $results['expenses']['total']);
 
             return response()->json([
-                'purchases' => [
-                    'data' => $Purchases,
-                    'total' => $totalPurchases
-                ],
-                'sales' => [
-                    'data' => $Sales,
-                    'total' => $totalSales
-                ],
-                'expenses' => [
-                    'data' => $Expenses,
-                    'total' => $totalExpenses
-                ],
-                'income' => [
-                    'data' => $Income,
-                    'total' => $totalIncome
-                ],
+                'purchases' => $results['purchases'],
+                'sales' => $results['sales'],
+                'expenses' => $results['expenses'],
+                'income' => $results['income'],
                 'net_profit' => $netProfit,
             ]);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 
 
 }
