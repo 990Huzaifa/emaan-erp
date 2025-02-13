@@ -311,13 +311,16 @@ class ReportsController extends Controller
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default to today
 
             $cash_code = ChartOfAccount::where('name','CASH')->value('code');
-            $cash_accs = ChartOfAccount::where('parent_code',$cash_code)->pluck('id');
+            $cash_accs = ChartOfAccount::where('parent_code',$cash_code)
+            ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+            ->where('business_has_accounts.business_id', $businessId)
+            ->pluck('chart_of_accounts.id');
 
             $bank_code = ChartOfAccount::where('name','BANK')->value('code');
             $bank_accs = ChartOfAccount::where('parent_code',$bank_code)
             ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
             ->where('business_has_accounts.business_id', $businessId)
-            ->pluck('id');
+            ->pluck('chart_of_accounts.id');
 
 
 
