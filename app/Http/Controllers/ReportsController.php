@@ -20,7 +20,7 @@ class ReportsController extends Controller
     public function inventoryReport(Request $request): JsonResponse
     {
 
-        try{
+        try {
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
@@ -30,23 +30,23 @@ class ReportsController extends Controller
                     ], 403);
                 }
             }
-            
+
             $perpage = $request->input('perpage', 10);
             $startDate = $request->start_date ?? '1970-01-01';
             $endDate = $request->end_date ?? now()->format('Y-m-d');
-        
+
             // Sum quantities of products from purchase orders (IN)
             $purchaseItems = GoodsReceiveNoteItem::select('product_id', DB::raw('SUM(receive) as total_in'))
-            ->join('goods_receive_notes', 'goods_receive_notes.id', '=', 'goods_receive_note_items.goods_receive_note_id')
-            ->where('goods_receive_notes.business_id', $businessId)
-            ->groupBy('product_id');
-        
+                ->join('goods_receive_notes', 'goods_receive_notes.id', '=', 'goods_receive_note_items.goods_receive_note_id')
+                ->where('goods_receive_notes.business_id', $businessId)
+                ->groupBy('product_id');
+
             // Sum quantities of products from sales orders (OUT)
             $soldItems = DeliveryNoteItem::select('product_id', DB::raw('SUM(delivered) as total_out'))
-            ->join('delivery_notes', 'delivery_notes.id', '=', 'delivery_note_items.delivery_note_id')
-            ->where('delivery_notes.business_id', $businessId)
-            ->groupBy('product_id');
-        
+                ->join('delivery_notes', 'delivery_notes.id', '=', 'delivery_note_items.delivery_note_id')
+                ->where('delivery_notes.business_id', $businessId)
+                ->groupBy('product_id');
+
             // Join the data with the Product table
             $inventoryReport = Product::
                 leftJoinSub($purchaseItems, 'purchased', 'products.id', '=', 'purchased.product_id')
@@ -60,7 +60,7 @@ class ReportsController extends Controller
                     DB::raw('COALESCE(sold.total_out, 0) as total_out')
                 )
                 ->paginate($perpage);
-        
+
             return response()->json($inventoryReport);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
@@ -70,7 +70,7 @@ class ReportsController extends Controller
 
     public function inventoryReportDetail(Request $request): JsonResponse
     {
-        try{
+        try {
 
             $user = Auth::user();
             $businessId = $user->login_business;
@@ -121,7 +121,7 @@ class ReportsController extends Controller
         }
     }
 
-    public function purchaseSummary(): JsonResponse
+    public function purchaseSummary(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -134,9 +134,13 @@ class ReportsController extends Controller
                 }
             }
 
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
             // Query purchase vouchers with vendor names
             $query = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
                 ->join('vendors', 'purchase_vouchers.vendor_id', '=', 'vendors.id')
+                ->whereBetween('purchase_vouchers.voucher_date', [$start_date, $end_date])
                 ->where('purchase_vouchers.status', 1);
 
             // Apply business_id filter if the user is not an admin
@@ -149,10 +153,11 @@ class ReportsController extends Controller
 
             // Calculate total voucher amount with business filter if applicable
             $total = PurchaseVoucher::where('status', 1)
-                ->when(!empty($businessId), function ($q) use ($businessId) {
-                    return $q->where('business_id', $businessId);
-                })
-                ->sum('voucher_amount');
+            ->whereBetween('voucher_date', [$start_date, $end_date])
+            ->when(!empty($businessId), function ($q) use ($businessId) {
+                return $q->where('business_id', $businessId);
+            })
+            ->sum('voucher_amount');
 
             return response()->json(["data" => $purchaseData, "total" => $total]);
         } catch (Exception $e) {
@@ -161,7 +166,7 @@ class ReportsController extends Controller
     }
 
 
-    public function salesSummary(): JsonResponse
+    public function salesSummary(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -174,9 +179,14 @@ class ReportsController extends Controller
                 }
             }
 
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
             // Query sale vouchers with customer names
             $query = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
                 ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
+                ->whereBetween('sale_vouchers.voucher_date', [$start_date, $end_date])
                 ->where('sale_vouchers.status', 1);
 
             // Filter by business_id if provided
@@ -189,10 +199,11 @@ class ReportsController extends Controller
 
             // Calculate total voucher amount for active sales
             $total = SaleVoucher::where('status', 1)
-                ->when(!empty($businessId), function ($q) use ($businessId) {
-                    return $q->where('business_id', $businessId);
-                })
-                ->sum('voucher_amount');
+            ->whereBetween('voucher_date', [$start_date, $end_date])
+            ->when(!empty($businessId), function ($q) use ($businessId) {
+                return $q->where('business_id', $businessId);
+            })
+            ->sum('voucher_amount');
 
             return response()->json(["data" => $salesData, "total" => $total]);
         } catch (Exception $e) {
@@ -201,7 +212,7 @@ class ReportsController extends Controller
     }
 
 
-    public function financialReport(): JsonResponse
+    public function financialReport(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -214,6 +225,9 @@ class ReportsController extends Controller
                 ], 403);
             }
 
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
             // Apply business filter conditionally
             $filterByBusiness = function ($query) use ($businessId, $user) {
                 if ($user->role != 'admin') {
@@ -223,32 +237,36 @@ class ReportsController extends Controller
             };
 
             // Summing transaction values
-            $totalPurchases = DB::table('transactions')->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
-            $totalSales = DB::table('transactions')->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
-            $totalExpenses = DB::table('transactions')->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
-            $totalIncome = DB::table('transactions')->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
+            $totalPurchases = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
+            $totalSales = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
+            $totalExpenses = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('debit');
+            $totalIncome = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->sum('credit');
 
             // Fetching transaction data
-            $Purchases = DB::table('transactions')->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
-            $Sales = DB::table('transactions')->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
-            $Expenses = DB::table('transactions')->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
-            $Income = DB::table('transactions')->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Purchases = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 0)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Sales = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 1)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Expenses = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 2)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
+            $Income = DB::table('transactions')->whereBetween('created_at', [$start_date, $end_date])->where('transaction_type', 3)->when($user->role != 'admin', fn($q) => $q->where('business_id', $businessId))->get();
 
             // Net profit calculation
             $netProfit = ($totalSales + $totalIncome) - ($totalPurchases + $totalExpenses);
 
             return response()->json([
                 'purchases' => [
-                    'data' => $Purchases, 'total' => $totalPurchases
+                    'data' => $Purchases,
+                    'total' => $totalPurchases
                 ],
                 'sales' => [
-                    'data' => $Sales, 'total' => $totalSales
+                    'data' => $Sales,
+                    'total' => $totalSales
                 ],
                 'expenses' => [
-                    'data' => $Expenses, 'total' => $totalExpenses
+                    'data' => $Expenses,
+                    'total' => $totalExpenses
                 ],
                 'income' => [
-                    'data' => $Income, 'total' => $totalIncome
+                    'data' => $Income,
+                    'total' => $totalIncome
                 ],
                 'net_profit' => $netProfit,
             ]);
