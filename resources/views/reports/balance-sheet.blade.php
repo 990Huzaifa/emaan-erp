@@ -121,7 +121,30 @@
             </tbody>
         </table>
 
-
+        <table class="table mt-4">
+            <thead>
+                <tr>
+                    <th>Liabilities and Equity</th>
+                    <th class="text-end">Amount ($)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Liabilities</td>
+                    <td class="text-end">0</td>
+                </tr>
+                <tr>
+                    <td>Equity</td>
+                    <td class="text-end">0</td>
+                </tr>
+                <tr class="total-row">
+                    <td>Total Liabilities and Equity</td>
+                    <td class="text-end">0</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
-    <script src="
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
