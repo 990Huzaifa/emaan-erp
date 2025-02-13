@@ -249,13 +249,9 @@ class BusinessController extends Controller
         try {
             $user = Auth::user();
             $businessId = $user->login_business;
-            // if ($user->role == 'user') {
-            //     if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
-            //         return response()->json([
-            //             'error' => 'User does not have the required permission.'
-            //         ], 403);
-            //     }
-            // }
+
+
+
             $name = $request->query('type');
             if(!$name) throw new Exception('Type not define',400);
             // Retrieve account codes for BANK and CASH
@@ -279,19 +275,23 @@ class BusinessController extends Controller
             
 
             // Define the query with specific columns to fetch
-            $query = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
-                ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
+            $accounts  = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
                 ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
                 ->where('chart_of_accounts.parent_code', $acc_code)
                 ->select([
                     'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
-                    'opening_balances.amount as balance', // Amount from opening balances
                     'chart_of_accounts.name as account_name', // Account name from chart of accounts
                     'chart_of_accounts.code as account_code'
-                ]);
-            // Fetch the data
-            $data = $query->get();
+                ])->get();
             
+                $data = $accounts->map(function ($account) {
+                    return [
+                        'acc_id' => $account->acc_id,
+                        'account_name' => $account->account_name,
+                        'account_code' => $account->account_code,
+                        'balance' => currentBalance($account->acc_id) // Use helper function
+                    ];
+                });
     
             // Log the action
             Log::create([
@@ -314,13 +314,6 @@ class BusinessController extends Controller
         try {
             $user = Auth::user();
             $businessId = $user->login_business;
-            // if ($user->role == 'user') {
-            //     if (!$user->hasBusinessPermission($businessId, 'list businesses')) {
-            //         return response()->json([
-            //             'error' => 'User does not have the required permission.'
-            //         ], 403);
-            //     }
-            // }
             // Retrieve account codes for Employee Salary
 
             $name = $request->query('type');
