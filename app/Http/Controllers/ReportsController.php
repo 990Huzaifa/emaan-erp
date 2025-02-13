@@ -310,29 +310,56 @@ class ReportsController extends Controller
             $start_date = $request->input('start_date', ) ?? '1999-01-01';
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default to today
 
+            // get cash accounts
             $cash_code = ChartOfAccount::where('name','CASH')->value('code');
             $cash_accs = ChartOfAccount::where('parent_code',$cash_code)
             ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
             ->where('business_has_accounts.business_id', $businessId)
             ->pluck('chart_of_accounts.id');
+            // end
 
+            // get bank accounts
             $bank_code = ChartOfAccount::where('name','BANK')->value('code');
             $bank_accs = ChartOfAccount::where('parent_code',$bank_code)
             ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
             ->where('business_has_accounts.business_id', $businessId)
             ->pluck('chart_of_accounts.id');
+            // end
+
+            // get customer accounts
+            $customer_accs = Customer::where('business_id',$businessId)->pluck('acc_id');
+            // end
 
 
 
+            // getting balance of accounts and total
+            $bank_total = 0;
+            foreach ($bank_accs as $key => $bank_acc) {
+                $bank = currentBalance($bank_acc);
+                $bank_total += $bank;
+            }
 
+            $cash_total = 0;
+            foreach ($cash_accs as $key => $cash_acc) {
+                $cash = currentBalance($cash_acc);
+                $cash_total += $cash;
+            }
 
-            $customer_accs = Customer::where('business_id',$businessId)->value('acc_id');
+            $customer_total = 0;
+            foreach ($customer_accs as $key => $customer_acc) {
+                $customer = currentBalance($customer_acc);
+                $customer_total += $customer;
+            }
 
-            // filter aout by business
+            $data = [
+                'bank_total' => $bank_total,
+                'cash_total' => $cash_total,
+                'customer_total' => $customer_total
+            ];
 
             
 
-            return response()->json($bank_accs, 200);
+            return response()->json($data, 200);
 
 
         }catch(Exception $e){
