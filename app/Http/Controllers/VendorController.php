@@ -373,7 +373,7 @@ class VendorController extends Controller
                 }
             }
 
-            $vendors = Vendor::select('vendors.id','vendors.name','vendors.v_code as code','vendors.acc_id')->get();
+            $vendors = Vendor::select('vendors.id','vendors.name','vendors.address','vendors.v_code as code','vendors.acc_id')->get();
 
             $vendors->transform(function ($vendor) {
                 $vendor->current_balance = currentBalance($vendor->acc_id);
