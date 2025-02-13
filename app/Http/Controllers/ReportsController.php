@@ -16,6 +16,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
 use App\Models\SaleVoucher;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Auth;
@@ -372,13 +373,25 @@ class ReportsController extends Controller
                 'cash_total' => $cash_total,
                 'customer_total' => $customer_total,
                 'inventory_total' => $inventory_total,
+                'total_assets' => $bank_total + $cash_total + $customer_total + $inventory_total,
                 'date' => $date,
                 'business_name' => $business->name,
             ];
 
-            
+            $pdf = PDF::loadView('reports.balance-sheet', compact('data'));
 
-            return response()->json($data, 200);
+            $fileName = 'balance-sheet-' . $businessId . '-' . $date . '.pdf';
+            $directory = public_path('storage/invoices');
+            $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+
+            if (!file_exists($directory)) {
+                mkdir($directory, 0777, true);
+            }
+
+            // Save the PDF file
+            $pdf->save($filePath);
+            return response()->file($filePath);
+            // return response()->json($data, 200);
 
 
         }catch(Exception $e){
