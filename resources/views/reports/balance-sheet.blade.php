@@ -88,7 +88,7 @@
 
     <div class="container balance-sheet">
         <h1>{{ $data['business_name'] }} - Balance Sheet</h1>
-        <p>As of {{ $data['date'] }}</p>
+        <p>As of {{ date('M d, Y', strtotime($data['date'])) }}</p>
 
         <table class="table">
             <thead>
