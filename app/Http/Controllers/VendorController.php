@@ -9,7 +9,6 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use App\Models\ChartOfAccount;
 use App\Models\OpeningBalance;
-use App\Models\Balance;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -174,11 +173,6 @@ class VendorController extends Controller
                 'ref_id' => $vendor->id,
             ]);
             OpeningBalance::create([
-                'acc_id' => $COA->id,
-                'amount' => $request->opening_balance ?? 0,
-            ]);
-            
-            Balance::create([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
             ]);
@@ -483,11 +477,6 @@ class VendorController extends Controller
     
                     // Create opening balance
                     OpeningBalance::create([
-                        'acc_id' => $COA->id,
-                        'amount' => 0,
-                    ]);
-                    
-                    Balance::create([
                         'acc_id' => $COA->id,
                         'amount' => 0,
                     ]);
