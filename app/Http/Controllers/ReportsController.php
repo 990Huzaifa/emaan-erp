@@ -298,7 +298,7 @@ class ReportsController extends Controller
     }
 
 
-    public function balanceSheet(Request $request): JsonResponse
+    public function balanceSheet(Request $request)
     {
         try{
             $user = Auth::user();
