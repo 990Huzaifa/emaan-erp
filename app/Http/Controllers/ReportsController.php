@@ -365,7 +365,7 @@ class ReportsController extends Controller
                 $inventory_total += $item->stock * $item->unit_price;
             }
 
-            $business_name = Business::find($businessId)->value('name');
+            $business = Business::find($businessId);
 
             $data = [
                 'bank_total' => $bank_total,
@@ -373,8 +373,7 @@ class ReportsController extends Controller
                 'customer_total' => $customer_total,
                 'inventory_total' => $inventory_total,
                 'date' => $date,
-                'business_name' => $business_name,
-                'business_id' => $businessId
+                'business_name' => $business->name,
             ];
 
             
