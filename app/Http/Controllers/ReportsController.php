@@ -373,7 +373,8 @@ class ReportsController extends Controller
                 'customer_total' => $customer_total,
                 'inventory_total' => $inventory_total,
                 'date' => $date,
-                'business_name' => $business_name
+                'business_name' => $business_name,
+                'business_id' => $businessId
             ];
 
             
