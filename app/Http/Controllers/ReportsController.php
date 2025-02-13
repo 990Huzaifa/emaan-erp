@@ -6,7 +6,10 @@ use App\Models\BusinessHasAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\DeliveryNoteItem;
+use App\Models\GoodsReceiveNote;
 use App\Models\GoodsReceiveNoteItem;
+use App\Models\InventoryDetail;
+use App\Models\Lot;
 use App\Models\Product;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
@@ -330,7 +333,10 @@ class ReportsController extends Controller
             $customer_accs = Customer::where('business_id',$businessId)->pluck('acc_id');
             // end
 
-
+            // get inventory
+            $grn_ids = GoodsReceiveNote::where('business_id', $businessId)->pluck('id');
+            $lots_ids = Lot::whereIn('grn_id', $grn_ids)->pluck('id');
+            $inventory = InventoryDetail::whereIn('lot_id', $lots_ids)->get();
 
             // getting balance of accounts and total
             $bank_total = 0;
@@ -351,10 +357,16 @@ class ReportsController extends Controller
                 $customer_total += $customer;
             }
 
+            $inventory_total = 0;
+            foreach ($inventory as $key => $item) {
+                $inventory_total += $item->stock * $item->unit_price;
+            }
+
             $data = [
                 'bank_total' => $bank_total,
                 'cash_total' => $cash_total,
-                'customer_total' => $customer_total
+                'customer_total' => $customer_total,
+                'inventory_total' => $inventory_total
             ];
 
             
