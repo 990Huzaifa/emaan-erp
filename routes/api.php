@@ -302,6 +302,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('sale-summary',[ReportsController::class,'salesSummary']);
     Route::get('purchase-summary',[ReportsController::class,'purchaseSummary']);
 
+    Route::get('balance-shheet',[ReportsController::class,'balanceSheet']);
+
 
 });
 

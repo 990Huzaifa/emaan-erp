@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BusinessHasAccount;
+use App\Models\ChartOfAccount;
+use App\Models\Customer;
 use App\Models\DeliveryNoteItem;
 use App\Models\GoodsReceiveNoteItem;
 use App\Models\Product;
@@ -221,8 +224,6 @@ class ReportsController extends Controller
     }
 
 
-
-
     public function financialReport(Request $request): JsonResponse
     {
         try {
@@ -292,5 +293,48 @@ class ReportsController extends Controller
     }
 
 
+    public function balanceSheet(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Permission check for non-admin users
+            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+
+            // Handle optional start_date and end_date
+            $start_date = $request->input('start_date', ) ?? '1999-01-01';
+            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default to today
+
+            $cash_code = ChartOfAccount::where('name','CASH')->value('code');
+            $cash_accs = ChartOfAccount::where('parent_code',$cash_code)->pluck('id');
+
+            $bank_code = ChartOfAccount::where('name','BANK')->value('code');
+            $bank_accs = ChartOfAccount::where('parent_code',$bank_code)
+            ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+            ->where('business_has_accounts.business_id', $businessId)
+            ->pluck('id');
+
+
+
+
+
+            $customer_accs = Customer::where('business_id',$businessId)->value('acc_id');
+
+            // filter aout by business
+
+            
+
+            return response()->json($bank_accs, 200);
+
+
+        }catch(Exception $e){
+            return response()->json(['error'=> $e->getMessage()], 400);
+        }
+    }
 
 }
