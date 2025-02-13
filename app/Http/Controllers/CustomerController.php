@@ -364,9 +364,19 @@ class CustomerController extends Controller
                 }
             }
 
-            $customer = Customer::select('id','name','c_code as code')->where('business_id',$businessId)->get();
+            $customers = Customer::select('customers.id', 'customers.name', 'customers.c_code as code', 'customers.acc_id')
+            ->when($businessId, function ($query) use ($businessId) {
+                return $query->where('customers.business_id', $businessId);
+            })
+            ->get();
 
-            return response()->json($customer,200);
+            // Append current balance for each customer
+            $customers->transform(function ($customer) {
+                $customer->current_balance = currentBalance($customer->acc_id);
+                return $customer;
+            });
+
+            return response()->json($customers,200);
             
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

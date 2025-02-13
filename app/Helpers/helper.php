@@ -264,6 +264,18 @@ function calculateBalance($acc_id, $change, $isDebit = true): float
     return $isDebit ? $openingBalance - $change : $openingBalance + $change;
 }
 
+
+function currentBalance($acc_id)
+{
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    if (!empty($lastTransaction)) {
+        return $lastTransaction->current_balance;
+    }else{
+        $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
+        return $openingBalance;
+    }
+}
+
 function calculateBalancePartners($acc_id, $change, $isDebit = true): float
 {
     $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
