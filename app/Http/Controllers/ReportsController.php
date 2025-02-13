@@ -135,8 +135,12 @@ class ReportsController extends Controller
                 }
             }
 
-            $start_date = $request->input('start_date');
-            $end_date = $request->input('end_date');
+            $start_date = $request->input('start_date', PurchaseVoucher::min('voucher_date')); // Default: earliest transaction date
+            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
+
+            // Ensure valid date format
+            $start_date = Carbon::parse($start_date)->toDateString();
+            $end_date = Carbon::parse($end_date)->toDateString();
 
             // Query purchase vouchers with vendor names
             $query = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
@@ -181,8 +185,12 @@ class ReportsController extends Controller
             }
 
 
-            $start_date = $request->input('start_date');
-            $end_date = $request->input('end_date');
+            $start_date = $request->input('start_date', SaleVoucher::min('voucher_date')); // Default: earliest transaction date
+            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
+
+            // Ensure valid date format
+            $start_date = Carbon::parse($start_date)->toDateString();
+            $end_date = Carbon::parse($end_date)->toDateString();
 
             // Query sale vouchers with customer names
             $query = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
