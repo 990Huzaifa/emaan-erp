@@ -313,6 +313,8 @@ class ReportsController extends Controller
                 if (empty($businessId)) throw new Exception('business id required', 404);
             }
 
+            $date = $request->input('date', Carbon::now()->toDateString()); // Default to today
+
             // get cash accounts
             $cash_code = ChartOfAccount::where('name','CASH')->value('code');
             $cash_accs = ChartOfAccount::where('parent_code',$cash_code)
@@ -341,19 +343,19 @@ class ReportsController extends Controller
             // getting balance of accounts and total
             $bank_total = 0;
             foreach ($bank_accs as $key => $bank_acc) {
-                $bank = currentBalance($bank_acc);
+                $bank = currentBalance($bank_acc, $date);
                 $bank_total += $bank;
             }
 
             $cash_total = 0;
             foreach ($cash_accs as $key => $cash_acc) {
-                $cash = currentBalance($cash_acc);
+                $cash = currentBalance($cash_acc, $date);
                 $cash_total += $cash;
             }
 
             $customer_total = 0;
             foreach ($customer_accs as $key => $customer_acc) {
-                $customer = currentBalance($customer_acc);
+                $customer = currentBalance($customer_acc, $date);
                 $customer_total += $customer;
             }
 

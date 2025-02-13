@@ -265,9 +265,16 @@ function calculateBalance($acc_id, $change, $isDebit = true): float
 }
 
 
-function currentBalance($acc_id)
+function currentBalance($acc_id, $date = null)
 {
-    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    if($date){
+        $lastTransaction = Transaction::where('acc_id', $acc_id)
+            ->whereDate('created_at', '<=', $date)
+            ->orderBy('id', 'desc')
+            ->first();
+    }else{
+        $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    }
     if (!empty($lastTransaction)) {
         return $lastTransaction->current_balance;
     }else{
