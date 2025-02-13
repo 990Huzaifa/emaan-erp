@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Business;
 use App\Models\BusinessHasAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
@@ -364,11 +365,15 @@ class ReportsController extends Controller
                 $inventory_total += $item->stock * $item->unit_price;
             }
 
+            $business_name = Business::find($businessId)->value('name');
+
             $data = [
                 'bank_total' => $bank_total,
                 'cash_total' => $cash_total,
                 'customer_total' => $customer_total,
-                'inventory_total' => $inventory_total
+                'inventory_total' => $inventory_total,
+                'date' => $date,
+                'business_name' => $business_name
             ];
 
             
