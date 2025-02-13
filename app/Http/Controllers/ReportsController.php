@@ -300,18 +300,18 @@ class ReportsController extends Controller
     {
         try{
             $user = Auth::user();
-            $businessId = $user->login_business;
-
-            // Permission check for non-admin users
-            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'financial report')) {
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+            $businessId = null;
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'sales summary')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }else{
+                $businessId = $request->input('business_id');
+                if (empty($businessId)) throw new Exception('business id required', 404);
             }
-
-            // Handle optional start_date and end_date
-            $start_date = $request->input('start_date', ) ?? '1999-01-01';
-            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default to today
 
             // get cash accounts
             $cash_code = ChartOfAccount::where('name','CASH')->value('code');
