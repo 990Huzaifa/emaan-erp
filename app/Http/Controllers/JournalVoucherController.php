@@ -80,7 +80,7 @@ class JournalVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'voucher_date'=>'required|date',
+                    'voucher_date'=>'required|datetime',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
                     'partner_id'=>'required|exists:partners,id',
                     'voucher_amount'=>'required|numeric',
@@ -109,7 +109,7 @@ class JournalVoucherController extends Controller
                     'cheque_date.date'=>'Cheque Date must be a date',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
-                    'voucher_date.date'=>'Voucher Date must be a date',
+                    'voucher_date.datetime'=>'Voucher Date must be a date & time',
 
                     'type.required'=>'Type is Required',
                     'type.in'=>'Type is Invalid',
@@ -133,6 +133,8 @@ class JournalVoucherController extends Controller
                 'cheque_no'=>$request->cheque_no,
                 'cheque_date'=>$request->cheque_date,
                 'voucher_date'=>$request->voucher_date,
+                'status'=>0,
+                'created_by'=>$user->id
             ]);
             DB::commit();
             return response()->json($journalVoucher,200);
@@ -340,6 +342,8 @@ class JournalVoucherController extends Controller
 
 
             $data->update([
+                'approved_by' => $user->id,
+                'approved_date' => now(),
                 'status'=>$request->status,
             ]);
 

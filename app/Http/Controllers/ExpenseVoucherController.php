@@ -99,7 +99,7 @@ class ExpenseVoucherController extends Controller
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
-                    'voucher_date' => 'required|date',                    
+                    'voucher_date' => 'required|datetime',                    
                     'voucher_amount' => 'required|numeric',
                 ],
                 [
@@ -134,6 +134,8 @@ class ExpenseVoucherController extends Controller
                 'cheque_date' => $request->cheque_date ?? null,
                 'voucher_amount' => $request->voucher_amount,
                 'voucher_date' => $request->voucher_date,
+                'status' => 0,
+                'created_by' => $user->id
             ]);
             DB::commit();
             return response()->json($data, 200);
@@ -201,12 +203,12 @@ class ExpenseVoucherController extends Controller
                         "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                         'cheque_no' => 'required_if:payment_method,BANK|string',
                         'cheque_date' => 'required_if:payment_method,BANK|date',
-                        'voucher_date' => 'required|date',                    
+                        'voucher_date' => 'required|datetime',                    
                         'voucher_amount' => 'required|numeric',
                     ],
                     [
                         'voucher_date.required' => 'Voucher date is required',
-                        'voucher_date.date' => 'Voucher date is not valid',
+                        'voucher_date.datetime' => 'Voucher date time is not valid',
     
                         'expense_acc.required' => 'Expense account is required',
                         'expense_acc.exists' => 'Expense account does not exist',
@@ -297,7 +299,8 @@ class ExpenseVoucherController extends Controller
             ]);
             $data->update([
                 'status'=>1,
-                'approved_by'=>$user->id
+                'approved_by' => $user->id,
+                'approved_date' => now(),
                 ]);
             Log::create([
                 'user_id' => $user->id,
