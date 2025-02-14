@@ -13,7 +13,7 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SaleReturnVoucherController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\GRNController;
+use App\Http\Controllers\Purchase\GRNController;
 use App\Http\Controllers\COAController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
