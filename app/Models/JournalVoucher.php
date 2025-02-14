@@ -20,6 +20,9 @@ class JournalVoucher extends Model
         'type',
         'business_id',
         'voucher_date',
+        'approve_date',
+        'created_by',
+        'approved_by',
         'status'
     ];
 }

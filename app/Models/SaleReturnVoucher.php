@@ -16,9 +16,12 @@ class SaleReturnVoucher extends Model
         'voucher_code',
         'voucher_amount',
         'status',
-        'voucher_date',
         'payment_method',
         'cheque_no',
-        'cheque_date'
+        'cheque_date',
+        'voucher_date',
+        'approve_date',
+        'created_by',
+        'approved_by',
     ];
 }

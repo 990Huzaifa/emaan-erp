@@ -19,6 +19,9 @@ class LoanVoucher extends Model
         'payment_method',
         'business_id',
         'voucher_date',
+        'approve_date',
+        'created_by',
+        'approved_by',
         'status'
     ];
 }

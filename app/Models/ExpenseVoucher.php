@@ -19,6 +19,8 @@ class ExpenseVoucher extends Model
         'cheque_date',
         'voucher_amount',
         'voucher_date',
+        'approve_date',
+        'created_by',
         'approved_by',
         'status',
     ];
