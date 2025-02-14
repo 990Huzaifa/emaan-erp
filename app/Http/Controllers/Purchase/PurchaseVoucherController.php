@@ -44,8 +44,8 @@ class PurchaseVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $start_date = $request->query('start_date') ?? '1970-4-19';
-            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
+            $start_date = Carbon::parse($request->query('start_date'))->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($request->query('end_date'))->endOfDay()->addDays(1)->toDateTimeString();
 
             $query = PurchaseVoucher::select('purchase_vouchers.*','vendors.name as vendor_name','chart_of_accounts.name as acc_name')
             ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
@@ -54,7 +54,7 @@ class PurchaseVoucherController extends Controller
             ->orderBy('id', 'desc');
 
 
-            if (!empty($start_date) && !empty($end_date)) {
+            if (!empty($request->query('start_date')) && !empty($request->query('end_date'))) {
                 $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
             }
 

@@ -40,8 +40,8 @@ class SalaryVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $start_date = $request->query('start_date') ?? '1970-4-19';
-            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
+            $start_date = Carbon::parse($request->query('start_date'))->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($request->query('end_date'))->endOfDay()->addDays(1)->toDateTimeString();
             
             $query = SalaryVoucher::select('salary_vouchers.*','employees.name as employee_name','chart_of_accounts.name as acc_name')
             ->join('employees','salary_vouchers.employee_id', '=', 'employees.id')
@@ -49,7 +49,7 @@ class SalaryVoucherController extends Controller
             ->where('salary_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
 
-            if (!empty($start_date) && !empty($end_date)) {
+            if (!empty($request->query('start_date')) && !empty($request->query('end_date'))) {
                 $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
             }
 
