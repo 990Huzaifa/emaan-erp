@@ -80,7 +80,7 @@ class LoanVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'voucher_date'=>'required|datetime',
+                    'voucher_date'=>'required',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
                     'employee_id'=>'required|exists:employees,id',
                     'voucher_amount'=>'required|numeric',
@@ -108,7 +108,6 @@ class LoanVoucherController extends Controller
                     'cheque_date.date'=>'Cheque Date must be a date',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
-                    'voucher_date.date'=>'Voucher Date must be a date & time',
                 ]
             );
 
