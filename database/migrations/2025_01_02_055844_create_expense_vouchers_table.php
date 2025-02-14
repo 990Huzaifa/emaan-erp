@@ -26,7 +26,9 @@ return new class extends Migration
             $table->decimal('voucher_amount',25,2)->default(0.00);
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
             $table->longText('description')->nullable();
-            $table->date('voucher_date');
+            $table->datetime('voucher_date');
+            $table->datetime('approve_date')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamps();
         });

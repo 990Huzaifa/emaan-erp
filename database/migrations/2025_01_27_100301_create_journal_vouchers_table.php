@@ -24,9 +24,12 @@ return new class extends Migration
             $table->enum('type', ['WITHDRAW', 'DEPOSIT']);
             $table->string('cheque_no')->nullable();
             $table->date('cheque_date')->nullable();
-            $table->date('voucher_date')->nullable();
             $table->decimal('voucher_amount', 15, 2);
             $table->integer('status')->default(0)->comment('0->Un Paid, 1->Paid'); // Payment status
+            $table->datetime('voucher_date');
+            $table->datetime('approve_date')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->unsignedBigInteger('approved_by')->nullable();
             $table->timestamps();
         });
     }
