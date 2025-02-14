@@ -35,8 +35,9 @@ class LoanVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $start_date = $request->query('start_date') ?? '1970-4-19 00:00:00';
-            $end_date = $request->query('end_date') ?? Carbon::now()->toDateTimeString();
+            $start_date = Carbon::parse($request->query('start_date'))->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($request->query('end_date'))->endOfDay()->toDateTimeString();
+
 
 
             $query = LoanVoucher::select('loan_vouchers.*','chart_of_accounts.name as asset_name','employees.name as employee_name')
