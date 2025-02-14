@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Hr;
 
 use App\Models\Employee;
 use App\Models\Log;
@@ -14,6 +14,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Controller;
+
 
 class PaySlipController extends Controller
 {

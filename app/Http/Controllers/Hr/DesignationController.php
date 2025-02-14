@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Hr;
 
-use App\Models\Department;
+use App\Models\Designation;
 use Exception;
 use App\Models\Log;
 use Illuminate\Support\Facades\DB;
@@ -11,8 +11,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Controller;
 
-class DepartmentController extends Controller
+
+class DesignationController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -23,7 +25,7 @@ class DepartmentController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'list department')) {
+                if (!$user->hasBusinessPermission($businessId, 'list designation')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -31,17 +33,17 @@ class DepartmentController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = Department::orderBy('id', 'desc');
+            $query = Designation::orderBy('id', 'desc');
 
             if (!empty($searchQuery)) {
-                $query = $query->where('dpt_code', 'like', '%' . $searchQuery . '%')
+                $query = $query->where('d_code', 'like', '%' . $searchQuery . '%')
                 ->orWhere('name', 'like', '%' . $searchQuery . '%');
             }
             $data = $query->paginate($perPage);
 
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'department listed successfully',
+                'description' => 'designation listed successfully',
             ]);
             return response()->json($data,200);
 
@@ -62,7 +64,7 @@ class DepartmentController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'create department')) {
+                if (!$user->hasBusinessPermission($businessId, 'create designation')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -71,6 +73,7 @@ class DepartmentController extends Controller
             $validator = Validator::make($request->all(), [
                         "name" => "required|string|unique:departments,name",
                         "description" => "nullable|string",
+                        'department_id' => 'required|exists:departments,id',
                     ],[
                         "name.required" => "Name is required",
                         "name.string" => "Name must be a string",
@@ -81,17 +84,18 @@ class DepartmentController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
             do {
-                $dpt_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (Department::where('dpt_code', $dpt_code)->exists());
-            $data = Department::create([
+                $d_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (Designation::where('d_code', $d_code)->exists());
+            $data = Designation::create([
                 "name" => strtoupper($request->name),
+                "department_id" => $request->department_id,
                 "description" => $request->description ?? null,
-                "dpt_code" => $dpt_code
+                "d_code" => $d_code
             ]);
             DB::commit();
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Department created successfully',
+                'description' => 'Designation created successfully',
             ]);
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -112,17 +116,19 @@ class DepartmentController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view department')) {
-                    return response()->json([ 
+                if (!$user->hasBusinessPermission($businessId, 'view designation')) {
+                    return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
                 }
             }
-            $data = Department::find($id);
+            $data = Designation::select('designations.*','departments.name as department_name')
+            ->leftJoin('departments', 'departments.id', '=', 'designations.department_id')
+            ->find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Department view successfully',
+                'description' => 'Designation view successfully',
             ]);
             return response()->json($data,200);
         }catch(QueryException $e){
@@ -130,6 +136,14 @@ class DepartmentController extends Controller
         }catch(Exception $e){
             return response()->json(["error" => $e->getMessage()], 400);
         }
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
     }
 
     /**
@@ -141,7 +155,7 @@ class DepartmentController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit department')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit designation')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -159,9 +173,8 @@ class DepartmentController extends Controller
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
-            $data = Department::find($id);
+            $data = Designation::find($id);
             if(empty($data)) throw new Exception('No data found', 404);
-            if (empty($data)) throw new Exception('No data found', 404);
             $data->update([
                 "name" => strtoupper($request->name),
                 "description" => $request->description ?? null,
@@ -169,16 +182,14 @@ class DepartmentController extends Controller
             DB::commit();
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Department updated successfully',
+                'description' => 'Designation updated successfully',
             ]);
             return response()->json($data, 200);
         }catch(QueryException $e){
-            DB::rollBack();
             return response()->json(["DB error" => $e->getMessage()], 400);
+
         }catch(Exception $e){
-            DB::rollBack();
-            return response()->json(['error' => $e->getMessage(),], 400);
-        
+            return response()->json(["error" => $e->getMessage()], 400);
         }
     }
 
@@ -191,7 +202,7 @@ class DepartmentController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'edit department')) {
+                if (!$user->hasBusinessPermission($businessId, 'edit designation')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -205,7 +216,7 @@ class DepartmentController extends Controller
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
-            $data = Department::find($id);
+            $data = Designation::find($id);
             if(empty($data)) throw new Exception('No data found', 404);
             if($data->status == $request->status) throw new Exception('Status already updated', 400);
             $data->update([
@@ -214,7 +225,7 @@ class DepartmentController extends Controller
             DB::commit();
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Department status updated successfully',
+                'description' => 'Designation updated successfully',
             ]);
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -230,10 +241,23 @@ class DepartmentController extends Controller
     public function list(): JsonResponse
     {
         try{
-            $data = Department::select('id','name')->get();
+            $data = Designation::select('id','name')->get();
 
             return response()->json($data,200);
 
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function filterIndex($id):JsonResponse
+    {
+        try{
+            $data = Designation::where('department_id',$id)->get();
+            return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
 

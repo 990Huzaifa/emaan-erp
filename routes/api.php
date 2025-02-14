@@ -1,13 +1,13 @@
 <?php
 
-use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\DesignationController;
+use App\Http\Controllers\Hr\DepartmentController;
+use App\Http\Controllers\Hr\DesignationController;
 use App\Http\Controllers\JournalVoucherController;
-use App\Http\Controllers\LoanController;
-use App\Http\Controllers\LoanVoucherController;
+use App\Http\Controllers\Hr\LoanController;
+use App\Http\Controllers\Hr\LoanVoucherController;
 use App\Http\Controllers\PartnerController;
-use App\Http\Controllers\PayPolicyController;
-use App\Http\Controllers\PaySlipController;
+use App\Http\Controllers\Hr\PayPolicyController;
+use App\Http\Controllers\Hr\PaySlipController;
 use App\Http\Controllers\Purchase\PurchaseReturnVoucherController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Sale\SaleReturnVoucherController;
@@ -23,7 +23,7 @@ use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\BusinessController;
-use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\Hr\EmployeeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\Sale\SaleOrderController;
 use App\Http\Controllers\PermissionController;
@@ -44,7 +44,7 @@ use App\Http\Controllers\Sale\SaleReceiptController;
 use App\Http\Controllers\Sale\SaleReturnController;
 use App\Http\Controllers\Sale\SaleVoucherController;
 use App\Http\Controllers\ExpenseVoucherController;
-use App\Http\Controllers\SalaryVoucherController;
+use App\Http\Controllers\Hr\SalaryVoucherController;
 
 /*
 |--------------------------------------------------------------------------
