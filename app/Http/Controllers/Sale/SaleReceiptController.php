@@ -269,4 +269,54 @@ class SaleReceiptController extends Controller
         }
     }
 
+
+    public function createSR($id, $businessId)
+    {
+        try{
+
+            do {
+                $receipt_no = 'SR-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (SaleReceipt::where('receipt_no', $receipt_no)->exists());
+
+            $DN = DeliveryNote::with('items')->where('status',1)->find($id);
+            if (!$DN) throw new Exception('Delivery Note is not approved yet.', 400);
+
+            $SOID = $DN->sale_order_id;
+            $SO = SaleOrder::find($SOID);
+            if (!$SO) throw new Exception('Sale Order not found.', 404);
+
+            DB::beginTransaction();
+
+            $saleReceipt = SaleReceipt::create([
+                'customer_id' => $SO->customer_id,
+                'so_no' => $SO->order_code,
+                'dn_id' => $id,
+                'business_id' => $businessId,
+                'receipt_no' => $receipt_no,
+                'receipt_date' => date('Y-m-d'),
+            ]);
+
+            // Map DN items to PI items
+            foreach ($DN->items as $item) {
+                SaleReceiptItem::create([
+                    'sale_receipt_id' => $saleReceipt->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'total' => $item->total_price,
+                    'tax' => $item->tax,
+                ]);
+            }
+
+            DB::commit();
+            return true;
+        }catch(QueryException $e){
+            DB::rollBack();
+            return false;
+        }catch(Exception $e){
+            DB::rollBack();
+            return false;
+        }
+    }
+
 }

@@ -397,6 +397,11 @@ class DeliveryNoteController extends Controller
                 'current_balance' => $c_cb
             ]);
 
+            // create sale receipt 
+            $srObj = new SaleReceiptController();
+            $sr = $srObj->createSR($id, $businessId);
+            if($sr != true) throw new Exception('Error in creating sale receipt', 400);
+
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'update Delivery Note Status',   
