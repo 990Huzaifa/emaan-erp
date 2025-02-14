@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Product;
 
 use Exception;
 use App\Models\Log;
@@ -11,9 +11,11 @@ use App\Models\ProductCategory;
 use Illuminate\Http\JsonResponse;
 use App\Models\BusinessHasAccount;
 use App\Models\ProductSubCategory;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
+
 
 class ProductSubCategoryController extends Controller
 {

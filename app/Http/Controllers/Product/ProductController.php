@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Product;
 
 use Exception;
 use App\Models\Log;
@@ -18,6 +18,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
+
 
 class ProductController extends Controller
 {

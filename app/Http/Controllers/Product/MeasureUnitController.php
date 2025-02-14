@@ -1,29 +1,29 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Product;
 
 use Exception;
 use App\Models\Log;
-use Illuminate\Support\Facades\DB;
-use App\Models\BusinessHasAccount;
 use Illuminate\Http\Request;
-use App\Models\ChartOfAccount;
-use App\Models\ProductCategory;
+use App\Models\MeasurementUnit;
 use Illuminate\Http\JsonResponse;
-use App\Models\ProductSubCategory;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 
-class ProductCategoryController extends Controller
+class MeasureUnitController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'list product category')) {
+                if (!$user->hasBusinessPermission($businessId, 'list measurement unit')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -31,12 +31,9 @@ class ProductCategoryController extends Controller
             }
             $perPage = $request->query('per_page', 10);
 
-            $data = ProductCategory::paginate($perPage);
+            $data = MeasurementUnit::paginate($perPage);
 
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Product sub Category listed successfully',
-            ]);
+            if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data,200);
 
         }catch(QueryException $e){
@@ -47,16 +44,17 @@ class ProductCategoryController extends Controller
         }
     }
 
+
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'create product category')) {
+                if (!$user->hasBusinessPermission($businessId, 'create measurement unit')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -66,109 +64,123 @@ class ProductCategoryController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'description'=>'nullable|string',
+                    'slug'=>'required|string',
 
             ],[
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
-                'description.string' => 'Description is must be a string',
+
+                'slug.required'=>'Slug is Required',
+                'slug.string'=>'Slug is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
 
-            $acc = ChartOfAccount::where('name',"INVENTORY")->first();
-            if(empty($acc)) throw new Exception('Inventory COA not found', 404);
-            DB::beginTransaction();
-            $name = strtoupper($request->name);
-            $COA = createCOA($name,$acc->code);
-
-            do {
-                $pc_code = str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (ProductCategory::where('pc_code', $pc_code)->exists());
-            
-            $category = ProductCategory::create([
-                'name' => $name,
-                'pc_code' => $pc_code,
-                'acc_id' => $COA->id,
-                'description' => $request->description ?? null,
-            ]);
-            $COA->update([
-                'ref_id' => $category->id,
+            $data = MeasurementUnit::create([
+                'name' => $request->name,
+                'slug' => $request->slug,
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Product Category created successfully',
+                'description' => 'Measurement Unit created successfully',
             ]);
-            DB::commit();
-            return response()->json($category,200);
+            return response()->json($data,200);
         }catch(QueryException $e){
-            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
 
         }catch(Exception $e){
-            DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
-
-    public function update(Request $request, $id){
-        try{
-            $user = Auth::user();
-            $businessId = $user->login_business;
-            if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'edit product category')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-            $validator = Validator::make(
-                $request->all(),[
-                    'name'=>'required|string',
-                    'description'=>'nullable|string',
-
-            ],[
-                'name.required'=>'Name is Required',
-                'name.string'=>'Name is must be a string',
-                'description.string' => 'Description is must be a string',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-
-            $category = ProductCategory::find($id);
-            if(empty($category)) throw new Exception('Product Category not found', 404);
-            $acc = ChartOfAccount::find($category->acc_id);
-            if(empty($acc)) throw new Exception('Chart of Account not found', 404);
-            DB::beginTransaction();
-            $name = strtoupper($request->name);
-            $acc->update([
-                'name' => $name,
-            ]);
-            $category->update([
-                'name' => $name,
-                'description' => $request->description ?? null,
-            ]);
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Product Category updated successfully',
-            ]);
-            DB::commit();
-            return response()->json($category,200);
-        }catch(QueryException $e){
-            DB::rollBack();
-            return response()->json(['DB error' => $e->getMessage()], 400);
-
-        }catch(Exception $e){
-            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
     /**
-     * Show the form for List a new resource.
+     * Display the specified resource.
      */
+    public function show(string $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();            
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view measurement unit')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $data = MeasurementUnit::find($id);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User show measurement unit',
+            ]);
+            return response()->json($data);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'edit measurement unit')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $validator = Validator::make(
+                $request->all(),[
+                    'name'=>'required|string',
+                    'slug'=>'required|string',
+
+            ],[
+                'name.required'=>'Name is Required',
+                'name.string'=>'Name is must be a string',
+
+                'slug.required'=>'Slug is Required',
+                'slug.string'=>'Slug is must be a string',
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            $data = MeasurementUnit::find($id);
+            $data->update([
+                'name' => $request->name,
+                'slug' => $request->slug,
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Measurement Unit updated successfully',
+            ]);
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+
     public function list(): JsonResponse
     {
         try{
-            $data = ProductCategory::select('id','name')->get();
+            $data = MeasurementUnit::all();
 
             if ($data->isEmpty()) throw new Exception('No data found', 404);
             return response()->json($data,200);

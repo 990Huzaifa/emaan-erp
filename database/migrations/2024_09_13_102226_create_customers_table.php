@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('website')->nullable();
             $table->string('email')->nullable();
             $table->string('cnic');
+            $table->enum('class', ['A', 'B', 'C'])->default('A');
             $table->string('logo')->nullable();
             $table->longText('address')->nullable();
             $table->boolean('is_active')->default(1);
