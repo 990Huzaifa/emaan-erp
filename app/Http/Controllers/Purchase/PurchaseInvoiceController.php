@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Purchase;
 
+use App\Http\Controllers\Controller;
 use DB;
 use Exception;
 use App\Models\Log;
