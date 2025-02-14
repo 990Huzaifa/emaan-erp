@@ -13,6 +13,7 @@ use App\Models\Log;
 use App\Models\InventoryDetail;
 use App\Models\Vendor;
 use App\Models\OpeningBalance;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -42,11 +43,20 @@ class PurchaseVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
+            $start_date = $request->query('start_date') ?? '1970-4-19';
+            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
+
             $query = PurchaseVoucher::select('purchase_vouchers.*','vendors.name as vendor_name','chart_of_accounts.name as acc_name')
             ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
             ->join('chart_of_accounts','purchase_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->where('purchase_vouchers.business_id',$businessId)
             ->orderBy('id', 'desc');
+
+
+            if (!empty($start_date) && !empty($end_date)) {
+                $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
+            }
+
             if (!empty($searchQuery)) {
                 $query->where('purchase_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
                 

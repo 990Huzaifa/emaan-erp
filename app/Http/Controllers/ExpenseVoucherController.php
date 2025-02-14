@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ExpenseVoucher;
 use App\Models\Log;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -34,6 +35,8 @@ class ExpenseVoucherController extends Controller
             // Set pagination and search parameters
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search', '');
+            $start_date = $request->query('start_date') ?? '1970-4-19';
+            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
     
             // Build the query
             $query = ExpenseVoucher::join('chart_of_accounts as asset_account', 'asset_account.id', '=', 'expense_vouchers.asset_acc_id')
@@ -44,6 +47,11 @@ class ExpenseVoucherController extends Controller
                     'expense_account.name as expense_account_name'
                 )
                 ->where('expense_vouchers.business_id', $businessId);
+    
+            // Apply date range filter if provided
+            if (!empty($start_date) && !empty($end_date)) {
+                $query->whereBetween('expense_vouchers.voucher_date', [$start_date, $end_date]);
+            }
     
             // Apply search filter if provided
             if (!empty($searchQuery)) {

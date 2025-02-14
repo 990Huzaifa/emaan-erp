@@ -7,6 +7,7 @@ use App\Models\Log;
 use App\Models\OpeningBalance;
 use App\Models\SaleReturnVoucher;
 use App\Models\Transaction;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -36,11 +37,19 @@ class SaleReturnVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
+            $start_date = $request->query('start_date') ?? '1970-4-19';
+            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
+
             $query = SaleReturnVoucher::select('sale_return_vouchers.*','customers.name as customer_name','chart_of_accounts.name as acc_name')
             ->join('customers','sale_return_vouchers.customer_id', '=', 'customers.id')
             ->join('chart_of_accounts','sale_return_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->where('sale_return_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
+
+            if (!empty($start_date) && !empty($end_date)) {
+                $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
+            }
+
             if (!empty($searchQuery)) {
                 $query->where('sale_return_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
                 

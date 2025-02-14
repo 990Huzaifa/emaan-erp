@@ -7,6 +7,7 @@ use App\Models\Loan;
 use App\Models\Log;
 use App\Models\PaySlip;
 use App\Models\SalaryVoucher;
+use Carbon\Carbon;
 use Exception;
 use App\Models\Transaction;
 use Illuminate\Database\QueryException;
@@ -37,11 +38,19 @@ class SalaryVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
+            $start_date = $request->query('start_date') ?? '1970-4-19';
+            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
+            
             $query = SalaryVoucher::select('salary_vouchers.*','employees.name as employee_name','chart_of_accounts.name as acc_name')
             ->join('employees','salary_vouchers.employee_id', '=', 'employees.id')
             ->join('chart_of_accounts','salary_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->where('salary_vouchers.business_id',$user->login_business)
             ->orderBy('id', 'desc');
+
+            if (!empty($start_date) && !empty($end_date)) {
+                $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
+            }
+
             if (!empty($searchQuery)) {
                 $query->where('salary_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
                 

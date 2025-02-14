@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ChartOfAccount;
 use App\Models\JournalVoucher;
 use App\Models\Partner;
+use Carbon\Carbon;
 use Exception;
 use App\Models\Transaction;
 use Illuminate\Database\QueryException;
@@ -33,10 +34,20 @@ class JournalVoucherController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
+            $start_date = $request->query('start_date') ?? '1970-4-19';
+            $end_date = $request->query('end_date') ?? Carbon::now()->toDateString();
+
+
             $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name','partners.name as partner_name')
             ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->join('partners', 'journal_vouchers.partner_id', '=', 'partners.id')
             ->orderBy('id', 'desc');
+
+
+            if (!empty($start_date) && !empty($end_date)) {
+                $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
+            }
+
             if (!empty($searchQuery)) {
                 $query = $query->where('voucher_code', 'like', '%' . $searchQuery . '%');
             }
