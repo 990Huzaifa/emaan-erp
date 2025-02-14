@@ -99,12 +99,11 @@ class ExpenseVoucherController extends Controller
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
-                    'voucher_date' => 'required|datetime',                    
+                    'voucher_date' => 'required',                    
                     'voucher_amount' => 'required|numeric',
                 ],
                 [
                     'voucher_date.required' => 'Voucher date is required',
-                    'voucher_date.date' => 'Voucher date is not valid',
 
                     'expense_acc.required' => 'Expense account is required',
                     'expense_acc.exists' => 'Expense account does not exist',
@@ -203,12 +202,11 @@ class ExpenseVoucherController extends Controller
                         "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                         'cheque_no' => 'required_if:payment_method,BANK|string',
                         'cheque_date' => 'required_if:payment_method,BANK|date',
-                        'voucher_date' => 'required|datetime',                    
+                        'voucher_date' => 'required',                    
                         'voucher_amount' => 'required|numeric',
                     ],
                     [
                         'voucher_date.required' => 'Voucher date is required',
-                        'voucher_date.datetime' => 'Voucher date time is not valid',
     
                         'expense_acc.required' => 'Expense account is required',
                         'expense_acc.exists' => 'Expense account does not exist',

@@ -91,7 +91,7 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
-                    'voucher_date' => 'required|datetime',
+                    'voucher_date' => 'required',
                     'voucher_amount' => 'required|numeric',
                 ], [
                     'customer_id.required' => 'The Customer field is required.',
@@ -110,7 +110,6 @@ class SaleReturnVoucherController extends Controller
                     'cheque_date.date' => 'The cheque date must be a valid date.',
 
                     'voucher_date.required' => 'The voucher date field is required.',
-                    'voucher_date.datetime' => 'The voucher date must be a valid date time.',
 
                     'voucher_amount.required' => 'The voucher amount field is required.',
                     'voucher_amount.numeric' => 'The voucher amount must be a number.',
@@ -277,7 +276,7 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
-                    'voucher_date' => 'required|date',
+                    'voucher_date' => 'required',
                     'voucher_amount' => 'required|numeric',
                 ], [
                     'customer_id.required' => 'The Customer field is required.',
@@ -296,7 +295,6 @@ class SaleReturnVoucherController extends Controller
                     'cheque_date.date' => 'The cheque date must be a valid date.',
 
                     'voucher_date.required' => 'The voucher date field is required.',
-                    'voucher_date.date' => 'The voucher date must be a valid date.',
 
                     'voucher_amount.required' => 'The voucher amount field is required.',
                     'voucher_amount.numeric' => 'The voucher amount must be a number.',
