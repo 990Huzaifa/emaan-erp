@@ -127,20 +127,21 @@ class SaleVoucherController extends Controller
                 do {
                     $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
-                $data[] = SaleVoucher::create([
+                $data[] = [
                     'voucher_code' => $voucher_code,
                     'customer_id' => $item['customer_id'],
                     'acc_id' => $request->acc_id,
                     'payment_method' => $request->payment_method,
                     'cheque_no' => $request->cheque_no,
                     'cheque_date' => $request->cheque_date,
-                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
+                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('h:i:s A'),
                     'voucher_amount' => $item['voucher_amount'],
                     'business_id' => $user->login_business,
                     'created_by' => $user->id,
                     'updated_by' => $user->id,
-                ]);
+                ];
             }
+            SaleVoucher::insert($data);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
