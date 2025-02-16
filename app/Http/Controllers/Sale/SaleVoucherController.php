@@ -121,12 +121,13 @@ class SaleVoucherController extends Controller
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
             DB::beginTransaction();
-            do {
-                $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
+            
             $data=[];
             foreach ($request->data as $item) {
-                $data[] = [
+                do {
+                    $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
+                $data[] = SaleVoucher::create([
                     'voucher_code' => $voucher_code,
                     'customer_id' => $item['customer_id'],
                     'acc_id' => $request->acc_id,
@@ -138,9 +139,8 @@ class SaleVoucherController extends Controller
                     'business_id' => $user->login_business,
                     'created_by' => $user->id,
                     'updated_by' => $user->id,
-                ];
+                ]);
             }
-            SaleVoucher::insert($data);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
