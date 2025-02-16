@@ -543,12 +543,12 @@ class CustomerController extends Controller
             }
 
             // Get total customers registered this month
-            $total_customer = Customer::where('business_id', $businessId)->get()->count();
-
+            $total_customer = Customer::where('business_id', $businessId)->count();
+            return response()->json($total_customer);
             // Get total customers before this month
             $total_customer_before = Customer::where('business_id', $businessId)
                 ->where('created_at', '<', Carbon::now()->startOfMonth())
-                ->get()->count();
+                ->count();
 
             // Calculate percentage increase safely
             $percentage_increase = $total_customer_before > 0 
