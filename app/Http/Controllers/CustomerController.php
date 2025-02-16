@@ -360,7 +360,7 @@ class CustomerController extends Controller
                 }
             }
 
-            $customers = Customer::select('customers.id', 'customers.name', 'customers.address', 'customers.c_code as code', 'customers.acc_id')
+            $customers = Customer::select('customers.id', 'customers.name', 'customers.address', 'customers.c_code as code', 'customers.acc_id', 'customers.class')
             ->when($businessId, function ($query) use ($businessId) {
                 return $query->where('customers.business_id', $businessId);
             })
