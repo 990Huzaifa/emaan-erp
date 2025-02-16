@@ -89,17 +89,15 @@ class SaleVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'customer_id' => 'required|exists:customers,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
                     'voucher_date' => 'required',
-                    'voucher_amount' => 'required|numeric',
-                ], [
-                    'customer_id.required' => 'The Customer field is required.',
-                    'customer_id.exists' => 'The selected Customer is invalid.',
-                    
+                    'data' => 'required|array',
+                    'data.*.customer_id' => 'required|exists:customers,id',
+                    'data.*.voucher_amount' => 'required|numeric',
+                ], [                    
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
 
@@ -114,8 +112,11 @@ class SaleVoucherController extends Controller
 
                     'voucher_date.required' => 'The voucher date field is required.',
 
-                    'voucher_amount.required' => 'The voucher amount field is required.',
-                    'voucher_amount.numeric' => 'The voucher amount must be a number.',
+                    'data.required' => 'The data field is required.',
+                    'data.*.customer_id.required' => 'The Customer field is required.',
+                    'data.*.customer_id.exists' => 'The selected Customer is invalid.',
+                    'data.*.voucher_amount.required' => 'The voucher amount field is required.',
+                    'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
                 ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
@@ -123,19 +124,22 @@ class SaleVoucherController extends Controller
             do {
                 $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = SaleVoucher::create([
-                'customer_id' => $request->customer_id,
-                'acc_id' => $request->acc_id,
-                'business_id' => $businessId,
-                'payment_method' => $request->payment_method,
-                'cheque_no' => $request->cheque_no ?? null,
-                'cheque_date' => $request->cheque_date ?? null,
-                'voucher_code' => $voucher_code, 
-                'voucher_date' => $request->voucher_date,
-                'voucher_amount' => $request->voucher_amount,
-                'status' => 0, // 0 un paid, 1 paid
-                'created_by' => $user->id,
-            ]);
+            foreach ($request->data as $item) {
+                $data[] = [
+                    'voucher_code' => $voucher_code,
+                    'customer_id' => $item['customer_id'],
+                    'acc_id' => $request->acc_id,
+                    'payment_method' => $request->payment_method,
+                    'cheque_no' => $request->cheque_no,
+                    'cheque_date' => $request->cheque_date,
+                    'voucher_date' => $request->voucher_date,
+                    'voucher_amount' => $item['voucher_amount'],
+                    'business_id' => $user->login_business,
+                    'created_by' => $user->id,
+                    'updated_by' => $user->id,
+                ];
+            }
+            SaleVoucher::insert($data);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
