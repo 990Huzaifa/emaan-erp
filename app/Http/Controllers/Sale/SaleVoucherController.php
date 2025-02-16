@@ -138,7 +138,6 @@ class SaleVoucherController extends Controller
                     'voucher_amount' => $item['voucher_amount'],
                     'business_id' => $user->login_business,
                     'created_by' => $user->id,
-                    'updated_by' => $user->id,
                 ];
             }
             SaleVoucher::insert($data);
