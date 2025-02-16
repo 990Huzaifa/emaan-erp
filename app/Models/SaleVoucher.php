@@ -19,6 +19,7 @@ class SaleVoucher extends Model
         'payment_method',
         'cheque_no',
         'cheque_date',
+        'days',
         'voucher_date',
         'approve_date',
         'created_by',

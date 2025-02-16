@@ -203,9 +203,15 @@ class SaleVoucherController extends Controller
             if (empty($data)) throw new Exception('No data found', 400);
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
+            $this->updateClass($data->customer_id);
+            $voucherDateTime = Carbon::parse($data->voucher_date_time);  // Parse the date from your model
+            $currentDateTime = Carbon::now();  // Get the current date and time
+            $daysDifference = $data->voucher_date->diffInDays($currentDateTime);
+
             $data->update([
+                'days' => $daysDifference,
                 'approved_by' => $user->id,
-                'approved_date' => now(),
+                'approved_date' => $daysDifference,
                 'status'=>1
                 ]);
             // transaction
@@ -333,8 +339,27 @@ class SaleVoucherController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function updateClass(string $customerId)
     {
-        //
+        $class = "A";
+        $last_voucher = SaleVoucher::where('customer_id',$customerId)->orderBy('id','desc')->first();
+        if(!empty($last_voucher)){
+            switch ($last_voucher->days) {
+                case $last_voucher->days <= 20:
+                    $class = "A";
+                    break;
+                case $last_voucher->days <= 45:
+                    $class = "B";
+                    break;                
+                default:
+                    $class = "C";
+                    break;
+            }
+        }
+        $customer  = Customer::find($customerId);
+        $customer->update([
+            "class" => $class,
+        ]);
+        return true;
     }
 }

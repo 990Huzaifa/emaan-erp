@@ -556,12 +556,20 @@ class CustomerController extends Controller
             // get count of customer city wies
             $total_customer_city = Customer::where('business_id', $businessId)->groupBy('city_id')->get();
             $total_customer_before_city = Customer::where('business_id', $businessId)->where('created_at', '<', Carbon::now()->startOfMonth())->groupBy('city_id')->get();
+
+            $percentage_increase_city = ($total_customer_city - $total_customer_before_city) / $total_customer_before_city * 100;
             
-            $card1 = [
-                'total_customer' => $total_customer,
-                'percentage_increase' => $percentage_increase,
+            $data = [
+                [
+                    'total_customer' => $total_customer,
+                    'percentage_increase' => $percentage_increase,
+                ],
+                [
+                    'total_customer_by_city' => $total_customer_city,
+                    'percentage_increase_by_city' => $percentage_increase_city,
+                ]
             ];
-            return response()->json();
+            return response()->json($data);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

@@ -25,6 +25,7 @@ return new class extends Migration
             $table->date('cheque_date')->nullable();
             $table->decimal('voucher_amount', 15, 2);
             $table->integer('status')->default(0)->comment('0->Un Paid, 1->Paid'); // Payment status
+            $table->integer('days')->nullable();
             $table->datetime('voucher_date');
             $table->datetime('approve_date')->nullable();
             $table->unsignedBigInteger('created_by')->nullable();
