@@ -124,6 +124,7 @@ class SaleVoucherController extends Controller
             do {
                 $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
+            $data=[];
             foreach ($request->data as $item) {
                 $data[] = [
                     'voucher_code' => $voucher_code,
