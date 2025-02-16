@@ -533,49 +533,73 @@ class CustomerController extends Controller
 
     public function customerAnalytics(): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
-            // Check if the user has the required permission
             $businessId = $user->login_business;
-            if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'list customers')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
+
+            // Check permissions
+            if ($user->role !== 'admin' && !$user->hasBusinessPermission($businessId, 'list customers')) {
+                return response()->json(['error' => 'User does not have the required permission.'], 403);
             }
-            //  Get the count of customers registered this month
+
+            // Get total customers registered this month
             $total_customer = Customer::where('business_id', $businessId)->count();
-            // Get the total count of customers before this month
-            $total_customer_before = Customer::where('business_id', $businessId)->where('created_at', '<', Carbon::now()->startOfMonth())->count();
 
-            //  Calculate the percentage increase
-            $percentage_increase = ($total_customer - $total_customer_before) / $total_customer_before * 100;
+            // Get total customers before this month
+            $total_customer_before = Customer::where('business_id', $businessId)
+                ->where('created_at', '<', Carbon::now()->startOfMonth())
+                ->count();
 
-            // get count of customer city wies
-            $total_customer_city = Customer::where('business_id', $businessId)->groupBy('city_id')->get();
-            $total_customer_before_city = Customer::where('business_id', $businessId)->where('created_at', '<', Carbon::now()->startOfMonth())->groupBy('city_id')->get();
+            // Calculate percentage increase safely
+            $percentage_increase = $total_customer_before > 0 
+                ? (($total_customer - $total_customer_before) / $total_customer_before) * 100 
+                : ($total_customer > 0 ? 100 : 0); // Handle division by zero
 
-            $percentage_increase_city = ($total_customer_city - $total_customer_before_city) / $total_customer_before_city * 100;
-            
+            // Get customer count per city
+            $total_customer_city = Customer::where('business_id', $businessId)
+                ->selectRaw('city_id, COUNT(*) as count')
+                ->groupBy('city_id')
+                ->get()
+                ->keyBy('city_id'); // Organize by city_id for easy comparison
+
+            // Get previous customer count per city
+            $total_customer_before_city = Customer::where('business_id', $businessId)
+                ->where('created_at', '<', Carbon::now()->startOfMonth())
+                ->selectRaw('city_id, COUNT(*) as count')
+                ->groupBy('city_id')
+                ->get()
+                ->keyBy('city_id');
+
+            // Calculate percentage increase per city safely
+            $percentage_increase_city = [];
+            foreach ($total_customer_city as $cityId => $currentData) {
+                $previousCount = $total_customer_before_city[$cityId]->count ?? 0;
+                $currentCount = $currentData->count;
+
+                $percentage_increase_city[$cityId] = $previousCount > 0
+                    ? (($currentCount - $previousCount) / $previousCount) * 100
+                    : ($currentCount > 0 ? 100 : 0); // Handle zero case
+            }
+
+            // Format response
             $data = [
                 [
                     'total_customer' => $total_customer,
-                    'percentage_increase' => $percentage_increase,
+                'percentage_increase' => $percentage_increase,
                 ],
                 [
                     'total_customer_by_city' => $total_customer_city,
-                    'percentage_increase_by_city' => $percentage_increase_city,
+                'percentage_increase_by_city' => $percentage_increase_city,
                 ]
             ];
+
             return response()->json($data);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 }
