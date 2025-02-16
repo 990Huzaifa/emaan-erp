@@ -535,16 +535,20 @@ class CustomerController extends Controller
     {
         try {
             $user = Auth::user();
-            $businessId = $user->login_business;
 
-            // Check permissions
-            if ($user->role !== 'admin' && !$user->hasBusinessPermission($businessId, 'list customers')) {
-                return response()->json(['error' => 'User does not have the required permission.'], 403);
+            // Check user permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create customers')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
 
             // Get total customers registered this month
+            return response()->json($user->login_business);
             $total_customer = Customer::where('business_id', $businessId)->count();
-            return response()->json($businessId);
             // Get total customers before this month
             $total_customer_before = Customer::where('business_id', $businessId)
                 ->where('created_at', '<', Carbon::now()->startOfMonth())
