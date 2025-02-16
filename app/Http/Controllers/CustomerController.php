@@ -558,31 +558,21 @@ class CustomerController extends Controller
                 ? (($total_customer - $total_customer_before) / $total_customer_before) * 100 
                 : ($total_customer > 0 ? 100 : 0); // Handle division by zero
 
-            // Get customer count per city
-            $total_customer_city = Customer::where('business_id', $businessId)
-                ->selectRaw('city_id, COUNT(*) as count')
-                ->groupBy('city_id')
-                ->get()
-                ->keyBy('city_id'); // Organize by city_id for easy comparison
-
-            // Get previous customer count per city
-            $total_customer_before_city = Customer::where('business_id', $businessId)
+            $total_city_count = Customer::where('business_id', $businessId)
+                ->distinct('city_id')
+                ->count('city_id');
+    
+            // Count cities before this month
+            $total_city_before_count = Customer::where('business_id', $businessId)
                 ->where('created_at', '<', Carbon::now()->startOfMonth())
-                ->selectRaw('city_id, COUNT(*) as count')
-                ->groupBy('city_id')
-                ->get()
-                ->keyBy('city_id');
-
-            // Calculate percentage increase per city safely
-            $percentage_increase_city = [];
-            foreach ($total_customer_city as $cityId => $currentData) {
-                $previousCount = $total_customer_before_city[$cityId]->count ?? 0;
-                $currentCount = $currentData->count;
-
-                $percentage_increase_city[$cityId] = $previousCount > 0
-                    ? (($currentCount - $previousCount) / $previousCount) * 100
-                    : ($currentCount > 0 ? 100 : 0); // Handle zero case
-            }
+                ->distinct('city_id')
+                ->count('city_id');
+    
+            // Percentage increase in city count
+            $percentage_increase_city = $total_city_before_count > 0
+                ? (($total_city_count - $total_city_before_count) / $total_city_before_count) * 100
+                : ($total_city_count > 0 ? 100 : 0);
+    
 
             // Format response
             $data = [
@@ -591,7 +581,7 @@ class CustomerController extends Controller
                     'percentage_increase' => $percentage_increase,
                 ],
                 [
-                    'total_customer_by_city' => $total_customer_city,
+                    'total_customer_by_city' => $total_city_count,
                     'percentage_increase_by_city' => $percentage_increase_city,
                 ]
             ];
