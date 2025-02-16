@@ -537,8 +537,8 @@ class CustomerController extends Controller
             $user = Auth::user();
             
             // Check if the user has the required permission
+            $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                $businessId = $user->login_business;
                 if (!$user->hasBusinessPermission($businessId, 'list customers')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
