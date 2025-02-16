@@ -547,7 +547,6 @@ class CustomerController extends Controller
             }
 
             // Get total customers registered this month
-            return response()->json($user);
             $total_customer = Customer::where('business_id', $businessId)->count();
             // Get total customers before this month
             $total_customer_before = Customer::where('business_id', $businessId)
