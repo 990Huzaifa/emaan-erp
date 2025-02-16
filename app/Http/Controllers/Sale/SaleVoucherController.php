@@ -134,7 +134,7 @@ class SaleVoucherController extends Controller
                     'payment_method' => $request->payment_method,
                     'cheque_no' => $request->cheque_no,
                     'cheque_date' => $request->cheque_date,
-                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('h:i:s A'),
+                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'voucher_amount' => $item['voucher_amount'],
                     'business_id' => $user->login_business,
                     'created_by' => $user->id,
