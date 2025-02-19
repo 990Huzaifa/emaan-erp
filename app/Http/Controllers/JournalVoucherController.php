@@ -82,22 +82,17 @@ class JournalVoucherController extends Controller
                 $request->all(),[
                     'voucher_date'=>'required',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
-                    'partner_id'=>'required|exists:partners,id',
-                    'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
                     'type'=>'required|string|in:WITHDRAW,DEPOSIT',
                     'cheque_no'=>'required_if:payment_method,BANK|string',
                     'cheque_date'=>'required_if:payment_method,BANK|date',
+                    'data'=>'required|array',
+                    'data.*.partner_id'=>'required|exists:partners,id',
+                    'data.*.amount'=>'required|numeric',
                 ],[
                     
                     'acc_id.required'=>'Account is Required',
                     'acc_id.exists'=>'Account is Invalid',
-                    
-                    'partner_id.required'=>'Partner is Required',
-                    'partner_id.exists'=>'Partner is Invalid',
-                    
-                    'voucher_amount.numeric'=>'Amount must be a number',
-                    'voucher_amount.required'=>'Amount is Required',
                     
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
@@ -112,31 +107,41 @@ class JournalVoucherController extends Controller
 
                     'type.required'=>'Type is Required',
                     'type.in'=>'Type is Invalid',
+
+                    'data.required'=>'Data is Required',
+                    'data.*.partner_id.required'=>'Partner is Required',
+                    'data.*.partner_id.exists'=>'Partner is Invalid',
+                    'data.*.amount.required'=>'Amount is Required',
+                    'data.*.amount.numeric'=>'Amount must be a number',
                 ]
             );
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
 
             DB::beginTransaction();
-            do {
-                $voucher_code = 'JV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
-            $journalVoucher = JournalVoucher::create([
-                'acc_id'=>$request->acc_id,
-                'voucher_code'=>$voucher_code,
-                'business_id'=>$user->login_business,
-                'partner_id'=>$request->partner_id,
-                'voucher_amount'=>$request->voucher_amount,
-                'payment_method'=>$request->payment_method,
-                'type'=>$request->type,
-                'cheque_no'=>$request->cheque_no,
-                'cheque_date'=>$request->cheque_date,
-                'voucher_date'=>$request->voucher_date,
-                'status'=>0,
-                'created_by'=>$user->id
-            ]);
+            $data = [];
+            foreach ($data as $item) {
+                do {
+                    $voucher_code = 'JV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
+                $data[]=[
+                    'acc_id'=>$request->acc_id,
+                    'voucher_code'=>$voucher_code,
+                    'business_id'=>$user->login_business,
+                    'partner_id'=>$item['partner_id'],
+                    'voucher_amount'=>$item['voucher_amount'],
+                    'payment_method'=>$request->payment_method,
+                    'type'=>$request->type,
+                    'cheque_no'=>$request->cheque_no,
+                    'cheque_date'=>$request->cheque_date,
+                    'voucher_date'=>$request->voucher_date,
+                    'status'=>0,
+                    'created_by'=>$user->id
+                ];
+            }
+            JournalVoucher::insert($data);
             DB::commit();
-            return response()->json($journalVoucher,200);
+            return response()->json($data,200);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);

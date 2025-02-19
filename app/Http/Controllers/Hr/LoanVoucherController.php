@@ -83,21 +83,16 @@ class LoanVoucherController extends Controller
                 $request->all(),[
                     'voucher_date'=>'required',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
-                    'employee_id'=>'required|exists:employees,id',
-                    'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
                     'cheque_no'=>'required_if:payment_method,BANK|string',
                     'cheque_date'=>'required_if:payment_method,BANK|date',
+                    'data' => 'required|array',
+                    'data.*.employee_id' => 'required|exists:employees,id',
+                    'data.*.voucher_amount' => 'required|numeric',
                 ],[
                     
                     'acc_id.required'=>'Account is Required',
                     'acc_id.exists'=>'Account is Invalid',
-                    
-                    'employee_id.required'=>'Employee is Required',
-                    'employee_id.exists'=>'Employee is Invalid',
-                    
-                    'voucher_amount.numeric'=>'Amount must be a number',
-                    'voucher_amount.required'=>'Amount is Required',
                     
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
@@ -109,28 +104,38 @@ class LoanVoucherController extends Controller
                     'cheque_date.date'=>'Cheque Date must be a date',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
+                    
+                    'data.required'=>'Data is Required',
+                    'data.*.employee_id.required'=>'Employee is Required',
+                    'data.*.employee_id.exists'=>'Employee is Invalid',
+                    'data.*.voucher_amount.required'=>'Voucher Amount is Required',
+                    'data.*.voucher_amount.numeric'=>'Voucher Amount must be a number',
                 ]
             );
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(),400);
 
             DB::beginTransaction();
-            do {
-                $voucher_code = 'LV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (LoanVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = LoanVoucher::create([
-                'acc_id'=>$request->acc_id,
-                'voucher_code'=>$voucher_code,
-                'business_id'=>$user->login_business,
-                'employee_id'=>$request->employee_id,
-                'voucher_amount'=>$request->voucher_amount,
-                'payment_method'=>$request->payment_method,
-                'cheque_no'=>$request->cheque_no,
-                'cheque_date'=>$request->cheque_date,
-                'voucher_date'=>$request->voucher_date,
-                'status'=>0,
-                'created_by'=>$user->id
-            ]);
+            $data = [];
+            foreach ($request->data as $item) {
+                do {
+                    $voucher_code = 'LV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (LoanVoucher::where('voucher_code', $voucher_code)->exists());
+                $data[] = [
+                    'acc_id'=>$request->acc_id,
+                    'voucher_code'=>$voucher_code,
+                    'business_id'=>$user->login_business,
+                    'employee_id'=>$item['employee_id'],
+                    'voucher_amount'=>$item['voucher_amount'],
+                    'payment_method'=>$request->payment_method,
+                    'cheque_no'=>$request->cheque_no,
+                    'cheque_date'=>$request->cheque_date,
+                    'voucher_date'=>$request->voucher_date,
+                    'status'=>0,
+                    'created_by'=>$user->id
+                ];
+            }
+            LoanVoucher::insert($data);
             DB::commit();
             return response()->json($data,200);
         }catch(QueryException $e){

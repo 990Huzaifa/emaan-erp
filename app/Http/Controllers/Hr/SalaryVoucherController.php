@@ -86,20 +86,16 @@ class SalaryVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'employee_id' => 'required|exists:employees,id',
-                    'pay_slip_id' => 'required|exists:pay_slips,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
                     'voucher_date' => 'required',
-                    'voucher_amount' => 'required|numeric',
+                    'data' => 'required|array',
+                    'data.*.employee_id' => 'required|exists:employees,id',
+                    'data.*.pay_slip_id' => 'required|exists:pay_slips,id',
+                    'data.*.voucher_amount' => 'required|numeric',
                 ], [
-                    'employee_id.required' => 'The Employee field is required.',
-                    'employee_id.exists' => 'The selected Employee is invalid.',
-
-                    'pay_slip_id.required' => 'The Pay Slip field is required.',
-                    'pay_slip_id.exists' => 'The selected Pay Slip is invalid.',
                     
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -115,29 +111,41 @@ class SalaryVoucherController extends Controller
 
                     'voucher_date.required' => 'The voucher date field is required.',
 
-                    'voucher_amount.required' => 'The voucher amount field is required.',
-                    'voucher_amount.numeric' => 'The voucher amount must be a number.',
+                    'data.required' => 'The data field is required.',
+                    
+                    'data.*.employee_id.required' => 'The employee field is required.',
+                    'data.*.employee_id.exists' => 'The selected employee is invalid.',
+                    
+                    'data.*.pay_slip_id.required' => 'The pay slip field is required.',
+                    'data.*.pay_slip_id.exists' => 'The selected pay slip is invalid.',
+
+                    'data.*.voucher_amount.required' => 'The voucher amount field is required.',
+                    'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
                 ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
             DB::beginTransaction();
-            do {
-                $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (SalaryVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = SalaryVoucher::create([
-                'employee_id' => $request->employee_id,
-                'pay_slip_id' => $request->pay_slip_id,
-                'acc_id' => $request->acc_id,
-                'business_id' => $businessId,
-                'payment_method' => $request->payment_method,
-                'cheque_no' => $request->cheque_no ?? null,
-                'cheque_date' => $request->cheque_date ?? null,
-                'voucher_code' => $voucher_code, 
-                'voucher_date' => $request->voucher_date,
-                'voucher_amount' => $request->voucher_amount,
-                'status' => 0, // 0 un paid, 1 paid
-                'created_by' => $user->id
-            ]);
+            $data = [];
+            foreach ($request->data as $item) {
+                do {
+                    $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (SalaryVoucher::where('voucher_code', $voucher_code)->exists());
+                $data[] = [
+                    'employee_id' => $item['employee_id'],
+                    'pay_slip_id' => $item['pay_slip_id'],
+                    'acc_id' => $request->acc_id,
+                    'business_id' => $businessId,
+                    'payment_method' => $request->payment_method,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'voucher_code' => $voucher_code, 
+                    'voucher_date' => $request->voucher_date,
+                    'voucher_amount' => $item['voucher_amount'],
+                    'status' => 0, // 0 un paid, 1 paid
+                    'created_by' => $user->id
+                ];
+            }
+            SalaryVoucher::insert($data);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
