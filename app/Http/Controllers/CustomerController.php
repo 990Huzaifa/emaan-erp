@@ -46,6 +46,7 @@ class CustomerController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
             $city = $request->query('city');
+            $class = $request->query('class');
             if (!empty($searchQuery)) {
                 $customerIds = Customer::where('name', 'like', '%' . $searchQuery . '%')
                         ->orWhere('c_code', 'like', '%' . $searchQuery . '%')
@@ -57,6 +58,9 @@ class CustomerController extends Controller
             }
             if(!empty($city)){
                 $query = $query->where('customers.city_id', $city);
+            }
+            if(!empty($class)){
+                $query = $query->where('customers.class', $class);
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
@@ -594,5 +598,7 @@ class CustomerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+
 
 }
