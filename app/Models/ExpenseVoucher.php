@@ -14,7 +14,7 @@ class ExpenseVoucher extends Model
         'expense_acc_id',
         'asset_acc_id',
         'voucher_code',
-        'payment_mode',
+        'payment_method',
         'cheque_no',
         'cheque_date',
         'voucher_amount',
