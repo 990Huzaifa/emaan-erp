@@ -94,13 +94,14 @@ class ExpenseVoucherController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
-                    'expense_acc' => 'required|exists:chart_of_accounts,id',
                     'asset_acc' => 'required|exists:chart_of_accounts,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'cheque_no' => 'required_if:payment_method,BANK|string',
                     'cheque_date' => 'required_if:payment_method,BANK|date',
-                    'voucher_date' => 'required',                    
-                    'voucher_amount' => 'required|numeric',
+                    'voucher_date' => 'required',
+                    'data' => 'required|array',
+                    'data.*.expense_acc' => 'required|exists:chart_of_accounts,id',
+                    'data.*.voucher_amount' => 'required|numeric',
                 ],
                 [
                     'voucher_date.required' => 'Voucher date is required',
@@ -111,31 +112,42 @@ class ExpenseVoucherController extends Controller
                     'asset_acc.required' => 'Asset account is required',
                     'asset_acc.exists' => 'Asset account does not exist',
 
-                    'cheque_no.required_if' => 'Cheque number is required',
-                    'cheque_date.required_if' => 'Cheque date is required',
+                    'payment_method.required' => 'Payment method is required',
+                    'payment_method.in' => 'Payment method is invalid',
 
-                    'voucher_amount.required' => 'Voucher amount is required',
-                    'voucher_amount.numeric' => 'Voucher amount is not valid',
+                    'cheque_no.required_if' => 'Cheque number is required',
+
+                    'cheque_date.required_if' => 'Cheque date is required',
+                    
+                    'data.required' => 'Data is required',
+                    'data.*.expense_acc.required' => 'Expense account is required',
+                    'data.*.expense_acc.exists' => 'Expense account does not exist',
+                    'data.*.voucher_amount.required' => 'Voucher amount is required',
+                    'data.*.voucher_amount.numeric' => 'Voucher amount must be a number',
                 ]
             );
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
-            do {
-                $voucher_code = 'EV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (ExpenseVoucher::where('voucher_code', $voucher_code)->exists());
-            $data = ExpenseVoucher::create([
-                'asset_acc_id' => $request->asset_acc,
-                'expense_acc_id' => $request->expense_acc,
-                'business_id' => $businessId,
-                'voucher_code' => $voucher_code,
-                'payment_method' => $request->payment_method,
-                'cheque_no' => $request->cheque_no ?? null,
-                'cheque_date' => $request->cheque_date ?? null,
-                'voucher_amount' => $request->voucher_amount,
-                'voucher_date' => $request->voucher_date,
-                'status' => 0,
-                'created_by' => $user->id
-            ]);
+            $data = [];
+            foreach ($request->data as $item) {
+                do {
+                    $voucher_code = 'EV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (ExpenseVoucher::where('voucher_code', $voucher_code)->exists());
+                $data[] = [
+                    'asset_acc_id' => $request->asset_acc,
+                    'expense_acc_id' => $item['expense_acc'],
+                    'business_id' => $businessId,
+                    'voucher_code' => $voucher_code,
+                    'payment_method' => $request->payment_method,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'voucher_amount' => $item['voucher_amount'],
+                    'voucher_date' => $request->voucher_date,
+                    'status' => 0,
+                    'created_by' => $user->id
+                ];
+            }
+            ExpenseVoucher::insert($data);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
