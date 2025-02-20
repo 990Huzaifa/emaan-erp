@@ -19,6 +19,7 @@ use App\Models\SaleVoucher;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
@@ -228,6 +229,61 @@ class ReportsController extends Controller
         }
     }
 
+    public function salesChart(Request $request)
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            // Permission check for non-admin users
+            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'sales summary')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+
+            $filterType = $request->input('filter_type'); // e.g., 'customer', 'month', 'item'
+
+            $query = DB::table('sale_receipt AS sr')
+            ->join('sale_receipt_items AS sri', 'sr.id', '=', 'sri.sale_receipt_id')
+            ->join('customers AS c', 'sr.customer_id', '=', 'c.id')
+            ->join('products AS p', 'sri.product_id', '=', 'p.id')
+            ->where('sr.business_id', $businessId)
+            ->where('sr.status', 'completed'); // Consider only completed sales
+        
+            // Apply filters based on request
+            if ($filterType === 'customer') {
+                $salesData = $query
+                    ->select('c.name as customer_name', DB::raw('SUM(sri.total) as total_sales'))
+                    ->groupBy('c.name')
+                    ->orderByDesc('total_sales')
+                    ->get();
+            } elseif ($filterType === 'month') {
+                $salesData = $query
+                    ->select(DB::raw("DATE_FORMAT(sr.created_at, '%Y-%m') as month"), DB::raw('SUM(sri.total) as total_sales'))
+                    ->groupBy('month')
+                    ->orderBy('month')
+                    ->get();
+            } elseif ($filterType === 'item') {
+                $salesData = $query
+                    ->select('p.name as item_name', DB::raw('SUM(sri.total) as total_sales'))
+                    ->groupBy('p.name')
+                    ->orderByDesc('total_sales')
+                    ->get();
+            } else {
+                return response()->json(['error' => 'Invalid filter type provided.'], 400);
+            }
+
+
+
+
+        }catch(QueryException $e){
+            response()->json(['DB error' => $e->getMessage()], 400);
+        }
+        catch(Exception $e){
+            response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
 
     public function financialReport(Request $request): JsonResponse
     {
@@ -398,5 +454,6 @@ class ReportsController extends Controller
             return response()->json(['error'=> $e->getMessage()], 400);
         }
     }
+    
 
 }

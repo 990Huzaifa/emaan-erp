@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\City;
+use Carbon\Carbon;
 use Exception;
 use App\Models\Log;
 use App\Models\Vendor;
@@ -528,6 +529,70 @@ class VendorController extends Controller
             return response()->json([' DB error' => $e->getMessage()], 400);
         }
         catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function vendorAnalytics(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            // Check user permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list vendor')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Get total customers registered this month
+            $total_vednor = Vendor::where('business_id', $businessId)->count();
+            // Get total customers before this month
+            $total_vednor_before = Vendor::where('business_id', $businessId)
+                ->where('created_at', '<', Carbon::now()->startOfMonth())
+                ->count();
+
+            // Calculate percentage increase safely
+            $percentage_increase = $total_vednor_before > 0 
+                ? (($total_vednor - $total_vednor_before) / $total_vednor_before) * 100 
+                : ($total_vednor > 0 ? 100 : 0); // Handle division by zero
+
+            $total_city_count = Vendor::where('business_id', $businessId)
+                ->distinct('city_id')
+                ->count('city_id');
+    
+            // Count cities before this month
+            $total_city_before_count = Vendor::where('business_id', $businessId)
+                ->where('created_at', '<', Carbon::now()->startOfMonth())
+                ->distinct('city_id')
+                ->count('city_id');
+    
+            // Percentage increase in city count
+            $percentage_increase_city = $total_city_before_count > 0
+                ? (($total_city_count - $total_city_before_count) / $total_city_before_count) * 100
+                : ($total_city_count > 0 ? 100 : 0);
+    
+
+            // Format response
+            $data = [
+                [
+                    'total_vednor' => $total_vednor,
+                    'percentage_increase' => $percentage_increase,
+                ],
+                [
+                    'total_vednor_by_city' => $total_city_count,
+                    'percentage_increase_by_city' => $percentage_increase_city,
+                ]
+            ];
+
+            return response()->json($data);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
