@@ -273,7 +273,7 @@ class ReportsController extends Controller
                 return response()->json(['error' => 'Invalid filter type provided.'], 400);
             }
 
-
+            return response()->json(['sales_data' => $salesData], 200);
 
 
         }catch(QueryException $e){
