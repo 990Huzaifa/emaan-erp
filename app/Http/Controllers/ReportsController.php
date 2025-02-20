@@ -229,7 +229,7 @@ class ReportsController extends Controller
         }
     }
 
-    public function salesChart(Request $request)
+    public function salesChart(Request $request): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -243,12 +243,12 @@ class ReportsController extends Controller
 
             $filterType = $request->input('filter_type'); // e.g., 'customer', 'month', 'item'
 
-            $query = DB::table('sale_receipt AS sr')
+            $query = DB::table('sale_receipts AS sr')
             ->join('sale_receipt_items AS sri', 'sr.id', '=', 'sri.sale_receipt_id')
             ->join('customers AS c', 'sr.customer_id', '=', 'c.id')
             ->join('products AS p', 'sri.product_id', '=', 'p.id')
             ->where('sr.business_id', $businessId)
-            ->where('sr.status', 'completed'); // Consider only completed sales
+            ->where('sr.status', 1); // Consider only completed sales
         
             // Apply filters based on request
             if ($filterType === 'customer') {
@@ -257,16 +257,17 @@ class ReportsController extends Controller
                     ->groupBy('c.name')
                     ->orderByDesc('total_sales')
                     ->get();
+                    return response()->json(['sales_data' => $salesData], 200);
             } elseif ($filterType === 'month') {
                 $salesData = $query
-                    ->select(DB::raw("DATE_FORMAT(sr.created_at, '%Y-%m') as month"), DB::raw('SUM(sri.total) as total_sales'))
+                    ->select(DB::raw("DATE_FORMAT(sr.receipt_date, '%Y-%m') as month"), DB::raw('SUM(sri.total) as total_sales'))
                     ->groupBy('month')
                     ->orderBy('month')
                     ->get();
             } elseif ($filterType === 'item') {
                 $salesData = $query
-                    ->select('p.name as item_name', DB::raw('SUM(sri.total) as total_sales'))
-                    ->groupBy('p.name')
+                    ->select('p.title as item_name', DB::raw('SUM(sri.total) as total_sales'))
+                    ->groupBy('p.title')
                     ->orderByDesc('total_sales')
                     ->get();
             } else {
@@ -275,12 +276,10 @@ class ReportsController extends Controller
 
             return response()->json(['sales_data' => $salesData], 200);
 
-
         }catch(QueryException $e){
-            response()->json(['DB error' => $e->getMessage()], 400);
-        }
-        catch(Exception $e){
-            response()->json(['error' => $e->getMessage()], 400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
