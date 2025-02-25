@@ -14,6 +14,7 @@ class Transaction extends Model
         'acc_id',
         'transaction_type',
         'description',
+        'link',
         'debit',
         'credit',
         'current_balance',
