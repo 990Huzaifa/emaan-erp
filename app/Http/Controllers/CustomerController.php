@@ -104,6 +104,7 @@ class CustomerController extends Controller
                     'telephone' => 'nullable|string|max:20',
                     'mobile' => 'required|string|max:12',
                     'opening_balance'=>'nullable|numeric',
+                    'credit_limit'=>'required|numeric'
 
             ],[
                 'name.required'=>'Name is Required',
@@ -132,6 +133,9 @@ class CustomerController extends Controller
                 'opening_balance.numeric'=>'Opening Balance is must be a numeric',
                 
                 'city_id.required'=>'City is Required',
+
+                'credit_limit.required'=>'Credit Limit is Required',
+                'credit_limit.numeric'=>'Credit Limit is must be a numeric'
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $logo = null;
@@ -166,6 +170,7 @@ class CustomerController extends Controller
                 'website' => $request->website ?? null,
                 'address' => $request->address ?? null,
                 'logo' => $logo,
+                'credit_limit' => $request->credit_limit,
             ]);
             
             OpeningBalance::create([
@@ -254,8 +259,8 @@ class CustomerController extends Controller
                     'website' => 'nullable|url',
                     'address' => 'nullable|string|max:255',
                     'telephone' => 'nullable|string|max:20',
-                    'mobile' => 'nullable|string|max:12',
-
+                    'mobile' => 'required|string|max:12',
+                    'credit_limit' => 'required|numeric',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -280,8 +285,12 @@ class CustomerController extends Controller
                 'telephone.string' => 'Telephone number must be a string.',
                 'telephone.max' => 'Telephone number cannot exceed 20 characters.',
 
+                'mobile.required' => 'Mobile number is required.',
                 'mobile.string' => 'Mobile number must be a string.',
                 'mobile.max' => 'Mobile number cannot exceed 12 characters.',
+
+                'credit_limit.required' => 'Credit limit is required.',
+                'credit_limit.numeric' => 'Credit limit must be a numeric value.',
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -314,6 +323,7 @@ class CustomerController extends Controller
                 'website' => $request->website ?? null,
                 'address' => $request->address ?? null,
                 'logo' => $logo,
+                'ccredit_limit' => $request->credit_limit
             ]);
             return response()->json($customer);
 
