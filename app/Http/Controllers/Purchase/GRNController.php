@@ -296,19 +296,6 @@ class GRNController extends Controller
                     // hit transaction
                     $total_amount_grn += $item->billed;
                     $total_billed = $item->billed;
-                    // $p_cb = calculateBalance($product->acc_id,$total_billed,false);
-                    
-
-                    // Debit amount from Product's account
-                    // Transaction::create([
-                    //     'business_id' => $businessId,
-                    //     'acc_id' => $product->acc_id,
-                    //     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    //     'description' => 'debit amount from product account by GRN',
-                    //     'debit' => $total_billed, // Money debited from business account
-                    //     'credit' => 0.00, // No money credited to business account
-                    //     'current_balance' => $p_cb
-                    // ]);
 
                     // hit inventory
                     do {
@@ -339,11 +326,13 @@ class GRNController extends Controller
 
             $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
             // Credit amount to Vendor's account
+            $link = config('app.frontend_url').'/view-purchase-orders/'.$data->purhcase_order->id;
             Transaction::create([
                 'business_id' => $businessId,
                 'acc_id' => $vendor->acc_id,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'credit amount to vendor account by GRN',
+                'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
+                'link' => $link,
                 'debit' => 0.00, // No money debited from business account
                 'credit' => $total_amount_grn, // Money credited to business account
                 'current_balance' => $v_cb

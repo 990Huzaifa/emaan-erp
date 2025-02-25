@@ -323,7 +323,7 @@ class CustomerController extends Controller
                 'website' => $request->website ?? null,
                 'address' => $request->address ?? null,
                 'logo' => $logo,
-                'ccredit_limit' => $request->credit_limit
+                'credit_limit' => $request->credit_limit
             ]);
             return response()->json($customer);
 
@@ -485,12 +485,13 @@ class CustomerController extends Controller
                         'mobile' => $data['mobile'] ?? null,
                         'website' => $data['website'] ?? null,
                         'address' => $data['address'] ?? null,
+                        'credit_limit' => $data['credit_limit'] ?? 0.00,
                     ]);
     
                     // Create opening balance
                     OpeningBalance::create([
                         'acc_id' => $COA->id,
-                        'amount' => 0,
+                        'amount' => $data['opening_balance'] ?? 0,
                     ]);
     
                     // Update COA reference
