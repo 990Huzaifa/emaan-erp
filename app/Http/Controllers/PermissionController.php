@@ -120,7 +120,8 @@ class PermissionController extends Controller
                     'view sale voucher',
                     'list sale voucher',
                     'edit sale voucher',
-                    'approve sale voucher'
+                    'approve sale voucher',
+                    'speacial approve sale voucher'
                 ],
                 "Sale Return" => [
                     'create sale return',

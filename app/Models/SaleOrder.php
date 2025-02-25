@@ -19,7 +19,8 @@ class SaleOrder extends Model
         'note',
         'user_id',
         'business_id',
-        'tax'
+        'tax',
+        'special'
     ];
 
     public function items()
