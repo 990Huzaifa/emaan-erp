@@ -90,7 +90,7 @@ class PermissionsTableSeeder extends Seeder
             'list sale voucher',
             'edit sale voucher',
             'approve sale voucher',
-            'speacial approve sale voucher',
+            'special approve sale voucher',
 
             'create purchase invoice',
             'view purchase invoice',
