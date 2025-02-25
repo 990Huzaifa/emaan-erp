@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\OpeningBalance;
+use App\Models\SaleVoucher;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserHasBusiness;
@@ -343,4 +344,26 @@ function notifyPartners($user_id, $business_id, $message,$url = null){
                 $user->notify(new GeneralNotification($message, $url));
             }
 
+}
+
+
+function timeLimit($id)
+{
+    $latestVoucher = SaleVoucher::where('customer_id', $id)
+        ->orderBy('id', 'desc')
+        ->first();
+
+        if (!$latestVoucher) {
+            return 1; // No previous record means no restriction
+        }
+    
+        // If approve_date is NULL, it means not paid, so return 0
+        if (is_null($latestVoucher->approve_date)) {
+            return 0;
+        }
+
+        $daysDifference = Carbon::parse($latestVoucher->approve_date)
+        ->diffInDays(Carbon::parse($latestVoucher->voucher_date));
+
+    return $daysDifference > 30 ? 0 : 1;
 }

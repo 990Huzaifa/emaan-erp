@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SaleVoucher;
 use Carbon\Carbon;
 use Exception;
 use App\Models\Log;
@@ -380,8 +381,10 @@ class CustomerController extends Controller
             })
             ->get();
 
+            
             // Append current balance for each customer
             $customers->transform(function ($customer) {
+                $customer->time_limit = timeLimit($customer->id);
                 $customer->current_balance = currentBalance($customer->acc_id);
                 return $customer;
             });
@@ -610,6 +613,6 @@ class CustomerController extends Controller
         }
     }
 
-
+    
 
 }
