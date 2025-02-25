@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->string('transaction_type')->comment('0->purchase, 1->sale, 2->expense, 3->income');
             $table->longText('description')->nullable();
+            $table->longText('link')->nullable();
             $table->decimal('debit', 10, 2)->default(0.00);
             $table->decimal('credit', 10, 2)->default(0.00);
             $table->decimal('current_balance', 10, 2)->default(0.00);

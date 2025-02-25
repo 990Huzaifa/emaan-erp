@@ -23,5 +23,6 @@ class Customer extends Model
         'address',
         'telephone',
         'mobile',
+        'credit_limit',
     ];
 }
