@@ -209,14 +209,14 @@ class SaleVoucherController extends Controller
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
             $this->updateClass($data->customer_id);
-            $voucherDateTime = Carbon::parse($data->voucher_date_time);  // Parse the date from your model
+            $voucherDateTime = Carbon::parse($data->voucher_date);  // Parse the date from your model
             $currentDateTime = Carbon::now();  // Get the current date and time
-            $daysDifference = $data->voucher_date->diffInDays($currentDateTime);
+            $daysDifference = Carbon::parse($data->voucher_date)->diffInDays($currentDateTime);
 
             $data->update([
                 'days' => $daysDifference,
                 'approved_by' => $user->id,
-                'approved_date' => $daysDifference,
+                'approved_date' => $currentDateTime,
                 'status'=>1
                 ]);
             // transaction
