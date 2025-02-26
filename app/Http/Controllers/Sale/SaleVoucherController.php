@@ -347,7 +347,7 @@ class SaleVoucherController extends Controller
     public function updateClass(string $customerId)
     {
         $class = "A";
-        $last_voucher = SaleVoucher::where('customer_id',$customerId)->orderBy('id','desc')->first();
+        $last_voucher = SaleVoucher::where('customer_id',$customerId)->where('status',1)->orderBy('id','desc')->first();
         if(!empty($last_voucher)){
             switch ($last_voucher->days) {
                 case $last_voucher->days <= 20:
