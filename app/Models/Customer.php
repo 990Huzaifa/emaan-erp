@@ -24,5 +24,6 @@ class Customer extends Model
         'telephone',
         'mobile',
         'credit_limit',
+        'class'
     ];
 }
