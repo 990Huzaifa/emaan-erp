@@ -360,7 +360,7 @@ class PartnerController extends Controller
             }
 
             // Fetch users based on the retrieved user IDs
-            $data = Partner::select('id', 'name', 'acc_id')
+            $data = Partner::select('id', 'name', 'acc_id', 'p_code as code')
                 ->get();
         
             Log::create([
