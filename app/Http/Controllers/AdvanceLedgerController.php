@@ -14,7 +14,7 @@ use Illuminate\Database\QueryException;
 use App\Models\Transaction;
 use App\Models\ChartOfAccount;
 
-class AdvanceLedegerController extends Controller
+class AdvanceLedgerController extends Controller
 {
     public function list(Request $request, $acc_id, $acc_type): JsonResponse
     {
