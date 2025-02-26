@@ -80,6 +80,7 @@ class PermissionsTableSeeder extends Seeder
             'list purchase voucher',
             'edit purchase voucher',
             'list ledger',
+            'list advance ledger',
             'list measurement unit',
             'view measurement unit',
             'create measurement unit',

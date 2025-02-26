@@ -22,7 +22,7 @@ class AdvanceLedgerController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             
-            if (!$user->hasBusinessPermission($businessId, 'list ledger') && $user->role != 'admin') {
+            if (!$user->hasBusinessPermission($businessId, 'list advance ledger') && $user->role != 'admin') {
                 return response()->json(['error' => 'User does not have the required permission.'], 403);
             }
             

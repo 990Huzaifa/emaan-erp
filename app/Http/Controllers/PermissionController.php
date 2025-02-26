@@ -25,7 +25,7 @@ class PermissionController extends Controller
                 "Inventory Detail" => ['list inventory detail', 'view inventory detail'],
                 "Chart of Account" => ['create chart of account', 'view chart of account', 'edit chart of account', 'list chart of account'],
                 "Transaction" => ['list transaction', 'view transaction'],
-                "Ledger" => ['list ledger'],
+                "Ledger" => ['list ledger', 'list advance ledger'],
                 "Product Category" => [
                     'list product category',
                     'create product category',
