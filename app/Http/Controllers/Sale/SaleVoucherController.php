@@ -216,7 +216,7 @@ class SaleVoucherController extends Controller
             $data->update([
                 'days' => $daysDifference,
                 'approved_by' => $user->id,
-                'approved_date' => $currentDateTime,
+                'approve_date' => $currentDateTime,
                 'status'=>1
                 ]);
             // transaction

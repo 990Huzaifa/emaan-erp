@@ -33,44 +33,48 @@ class AdvanceLedgerController extends Controller
             if (empty($acc_id)) throw new Exception('account id required', 404);
             if (empty($acc_type)) throw new Exception('account type required', 404);
 
+            $results = null;
             if ($acc_type == 'CUSTOMERS') {
                 $customer_id = Customer::where('acc_id', $acc_id)->value('id');
                 
-                // Fetch transactions related to the customer
-                $transactions = Transaction::where('acc_id', $acc_id)
-                    ->when($start_date, fn($query) => $query->where('created_at', '>=', $start_date))
-                    ->when($end_date, fn($query) => $query->where('created_at', '<=', $end_date))
-                    ->orderBy('created_at')
-                    ->get();
+                $query = Transaction::where('acc_id', $acc_id);
 
-                $remainingPayments = 0;
-                $salesProgress = [];
+                // Apply date filters if provided
+                if (!empty($start_date)) {
+                    $query->where('created_at', '>=', $start_date);
+                }
+
+                if (!empty($end_date)) {
+                    $query->where('created_at', '<=', $end_date);
+                }
+
+                // Paginate the results
+                $results = $query->get();
+                $totalCredit = $results->sum('credit');
+                $remainingCredit = $totalCredit;
                 
-                foreach ($transactions as $transaction) {
-                    if ($transaction->credit > 0) { // Payment made
-                        $remainingPayments += $transaction->credit;
-                    }
-                    
-                    if ($transaction->debit > 0) { // Sale made
-                        $saleAmount = $transaction->debit;
-                        $paidAmount = min($saleAmount, $remainingPayments);
-                        $remainingPayments -= $paidAmount;
-                        $percentageCleared = ($saleAmount > 0) ? round(($paidAmount / $saleAmount) * 100, 2) : 0;
-                        
-                        $salesProgress[] = [
-                            'date' => $transaction->created_at,
-                            'description' => $transaction->description,
-                            'debit' => $transaction->debit,
-                            'credit' => $transaction->credit,
-                            'current_balance' => $remainingPayments, // Adjusted to reflect available balance
-                            'clearance_percentage' => $percentageCleared.'%',
-                        ];
+                foreach ($results as $transaction) {
+                    if($transaction->debit > 0){
+                        if ($remainingCredit > 0 ) {
+                            // Calculate how much of this debit is covered by remaining credit
+                            $coveredAmount = min($transaction->debit, $remainingCredit);
+                            
+                            // Calculate percentage
+                            $transaction->progress_percentage = ($coveredAmount / $transaction->debit) * 100;
+                            
+                            // Reduce remaining credit
+                            $remainingCredit -= $coveredAmount;
+                        }else{
+                            $transaction->progress_percentage =0;
+                        }
+                    } else {
+                        // If no remaining credit, progress is 0%
+                        $transaction->progress_percentage = '-';
                     }
                 }
                 
-                return response()->json(['sales_progress' => $salesProgress]);
             }
-            return response()->json([], 200);
+            return response()->json($results, 200);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
