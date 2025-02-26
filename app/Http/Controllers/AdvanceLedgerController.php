@@ -43,36 +43,34 @@ class AdvanceLedgerController extends Controller
                     ->orderBy('created_at')
                     ->get();
 
-                // Fetch all sale orders for the customer
-                $saleOrders = SaleVoucher::where('customer_id', $customer_id)->orderBy('created_at')->get();
-
                 $remainingPayments = 0;
+                $salesProgress = [];
+                
                 foreach ($transactions as $transaction) {
                     if ($transaction->credit > 0) { // Payment made
                         $remainingPayments += $transaction->credit;
                     }
-                }
-
-                $salesProgress = [];
-                foreach ($saleOrders as $saleOrder) {
-                    $saleAmount = $saleOrder->total_amount;
-                    $paidAmount = min($saleAmount, $remainingPayments);
-                    $remainingPayments -= $paidAmount;
-                    $percentageCleared = ($saleAmount > 0) ? round(($paidAmount / $saleAmount) * 100, 2) : 0;
                     
-                    $salesProgress[] = [
-                        'date' => $saleOrder->created_at,
-                        'description' => 'Sale Order #'.$saleOrder->id,
-                        'debit' => $saleAmount,
-                        'credit' => 0,
-                        'current_balance' => 0, // Balance calculation needed
-                        'clearance_percentage' => $percentageCleared.'%',
-                    ];
+                    if ($transaction->debit > 0) { // Sale made
+                        $saleAmount = $transaction->debit;
+                        $paidAmount = min($saleAmount, $remainingPayments);
+                        $remainingPayments -= $paidAmount;
+                        $percentageCleared = ($saleAmount > 0) ? round(($paidAmount / $saleAmount) * 100, 2) : 0;
+                        
+                        $salesProgress[] = [
+                            'date' => $transaction->created_at,
+                            'description' => $transaction->description,
+                            'debit' => $transaction->debit,
+                            'credit' => $transaction->credit,
+                            'current_balance' => $remainingPayments, // Adjusted to reflect available balance
+                            'clearance_percentage' => $percentageCleared.'%',
+                        ];
+                    }
                 }
                 
                 return response()->json(['sales_progress' => $salesProgress]);
             }
-            return response()->json([],200);
+            return response()->json([], 200);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {

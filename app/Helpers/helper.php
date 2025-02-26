@@ -259,10 +259,10 @@ function calculateBalance($acc_id, $change, $isDebit = true): float
 {
     $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
     if ($lastTransaction) {
-        return $isDebit ? $lastTransaction->current_balance - $change : $lastTransaction->current_balance + $change;
+        return $isDebit ? $lastTransaction->current_balance + $change : $lastTransaction->current_balance - $change;
     }
     $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
-    return $isDebit ? $openingBalance - $change : $openingBalance + $change;
+    return $isDebit ? $openingBalance + $change : $openingBalance - $change;
 }
 
 
