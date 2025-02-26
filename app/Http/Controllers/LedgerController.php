@@ -18,7 +18,7 @@ class LedgerController extends Controller
         try{
             $user = Auth::user();
             $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list products')) {
+                if (!$user->hasBusinessPermission($businessId, 'list ledger')) {
             if ($user->role != 'admin') {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
