@@ -88,7 +88,7 @@ class JournalVoucherController extends Controller
                     'cheque_date'=>'required_if:payment_method,BANK|date',
                     'data'=>'required|array',
                     'data.*.partner_id'=>'required|exists:partners,id',
-                    'data.*.amount'=>'required|numeric',
+                    'data.*.voucher_amount'=>'required|numeric',
                 ],[
                     
                     'acc_id.required'=>'Account is Required',
@@ -111,8 +111,8 @@ class JournalVoucherController extends Controller
                     'data.required'=>'Data is Required',
                     'data.*.partner_id.required'=>'Partner is Required',
                     'data.*.partner_id.exists'=>'Partner is Invalid',
-                    'data.*.amount.required'=>'Amount is Required',
-                    'data.*.amount.numeric'=>'Amount must be a number',
+                    'data.*.voucher_amount.required'=>'Amount is Required',
+                    'data.*.voucher_amount.numeric'=>'Amount must be a number',
                 ]
             );
 
