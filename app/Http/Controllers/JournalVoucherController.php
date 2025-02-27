@@ -134,7 +134,7 @@ class JournalVoucherController extends Controller
                     'type'=>$request->type,
                     'cheque_no'=>$request->cheque_no,
                     'cheque_date'=>$request->cheque_date,
-                    'voucher_date'=>$request->voucher_date,
+                    'voucher_date'=>Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status'=>0,
                     'created_by'=>$user->id
                 ];
