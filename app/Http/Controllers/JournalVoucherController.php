@@ -120,7 +120,7 @@ class JournalVoucherController extends Controller
 
             DB::beginTransaction();
             $data = [];
-            foreach ($data as $item) {
+            foreach ($request->data as $item) {
                 do {
                     $voucher_code = 'JV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
