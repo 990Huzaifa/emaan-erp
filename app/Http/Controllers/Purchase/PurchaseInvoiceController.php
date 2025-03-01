@@ -102,6 +102,7 @@ class PurchaseInvoiceController extends Controller
                 'vendor_id' => $PO->vendor_id,
                 'po_no' => $PO->order_code,
                 'terms_of_payment' => $PO->terms_of_payment,
+                'status' => $request->status ?? 0
             ]);
 
             // Map GRN items to PI items

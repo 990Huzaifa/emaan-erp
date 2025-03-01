@@ -114,6 +114,7 @@ class SaleOrderController extends Controller
                 'terms_of_payment' => $request->terms_of_payment ?? null,
                 'remarks' => $request->remarks ?? null,
                 'special' => $request->special ?? 0,
+                'status' => $request->status ?? 0
             ]);
             foreach($request->items as $item){
                 SaleOrderItem::create([

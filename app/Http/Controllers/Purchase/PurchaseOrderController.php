@@ -111,6 +111,7 @@ class PurchaseOrderController extends Controller
                 'total_tax' => $request->total_tax,
                 'terms_of_payment' => $request->terms_conditions ?? null,
                 'remarks' => $request->remarks ?? null,
+                'status' => $request->status ?? 0
             ]);
             foreach($request->items as $item){
                 PurchaseOrderItem::create([
