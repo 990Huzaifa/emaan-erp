@@ -89,7 +89,7 @@ class PurchaseQuotationController extends Controller
                 'quotation_code'=>$quotation_code,
                 'vendor_id'=>$request->vendor_id,
                 'business_id'=>$businessId,
-                'status'=> $request->status
+                'status'=> $request->status ?? 0
             ]);
             foreach ($request->products as $product) {
                 PurchaseQuotationItem::create([

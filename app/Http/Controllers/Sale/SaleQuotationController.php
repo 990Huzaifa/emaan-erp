@@ -102,7 +102,7 @@ class SaleQuotationController extends Controller
                 'due_date' => $request->due_date,
                 'quotation_code' => $quotation_code,
                 'business_id' => $businessId,
-                'status' => $request->status
+                'status' => $request->status ?? 0
             ]);
 
             foreach ($request->products as $product) {
