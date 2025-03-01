@@ -303,4 +303,51 @@ class PurchaseInvoiceController extends Controller
         }
     }
 
+
+    public function createInvoice($id, $businessId)
+    {
+        try{
+            do {
+                $invoice_no = 'PI-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (PurchaseInvoice::where('invoice_no', $invoice_no)->exists());
+
+            $GRN = GoodsReceiveNote::with('items')->where('status',1)->find($id);
+            if (!$GRN) throw new Exception('Goods Receive Note is not approved yet.', 400);
+
+            $POID = $GRN->purchase_order_id;
+            $PO = PurchaseOrder::find($POID);
+            if (!$PO) throw new Exception('Purchase Order not found.', 404);
+            DB::beginTransaction();
+            $purchaseInvoice = PurchaseInvoice::create([
+                'vendor_id' => $PO->vendor_id,
+                'po_no' => $PO->order_code,
+                'invoice_no' => $invoice_no,
+                'invoice_date' => date('Y-m-d'),
+                'business_id' => $businessId,
+                'grn_id' => $id,
+                'terms_of_payment' => $PO->terms_of_payment,
+            ]);
+
+            // Map GRN items to PI items
+            foreach ($GRN->items as $item) {
+                PurchaseInvoiceItem::create([
+                    'purchase_invoice_id' => $purchaseInvoice->id,
+                    'product_id' => $item->product_id,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->purchase_unit_price,
+                    'total' => $item->total_price,
+                    'tax' => $item->tax,
+                ]);
+            }
+
+            DB::commit();
+            return true;
+        }catch(QueryException $e){
+            DB::rollBack();
+            return false;
+        }catch(Exception $e){
+            DB::rollBack();
+            return false;
+        }
+    }
 }

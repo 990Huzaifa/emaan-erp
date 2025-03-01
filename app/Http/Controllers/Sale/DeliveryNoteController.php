@@ -370,32 +370,30 @@ class DeliveryNoteController extends Controller
                     $total_amount_dn += $item->charged;
                     $total_charged = $item->charged;
                 }
+                $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
+                $link = config('app.frontend_url').'/view-sale-orders/'.$data->sale_order->id;
+                // Debit amount to customer's account
+                Transaction::create([
+                    'business_id' => $businessId,
+                    'acc_id' => $customer->acc_id,
+                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'debit amount to customer account by DN with the SO is '.$data->sale_order->order_code,
+                    'link' => $link,
+                    'debit' => $total_amount_dn, // FIXED
+                    'credit' => 0.00, // FIXED
+                    'current_balance' => $c_cb
+                ]);
+
+                // create sale receipt 
+                $srObj = new SaleReceiptController();
+                $sr = $srObj->createSR($id, $businessId);
+                if($sr != true) throw new Exception('Error in creating sale receipt', 400);
+
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'update Delivery Note Status',   
+                ]);
             }
-
-            $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
-            $link = config('app.frontend_url').'/view-sale-orders/'.$data->sale_order->id;
-            // Debit amount to customer's account
-            Transaction::create([
-                'business_id' => $businessId,
-                'acc_id' => $customer->acc_id,
-                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'debit amount to customer account by DN with the SO is '.$data->sale_order->order_code,
-                'link' => $link,
-                'debit' => $total_amount_dn, // FIXED
-                'credit' => 0.00, // FIXED
-                'current_balance' => $c_cb
-            ]);
-
-            // create sale receipt 
-            $srObj = new SaleReceiptController();
-            $sr = $srObj->createSR($id, $businessId);
-            if($sr != true) throw new Exception('Error in creating sale receipt', 400);
-
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'update Delivery Note Status',   
-            ]);
-
             DB::commit();
             return response()->json($data);
         }catch(QueryException $e){

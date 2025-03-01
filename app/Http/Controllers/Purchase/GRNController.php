@@ -321,28 +321,34 @@ class GRNController extends Controller
                         'in_stock' => 1,
                     ]);
                 }
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+                // Credit amount to Vendor's account
+                $link = config('app.frontend_url').'/view-purchase-orders/'.$data->purhcase_order->id;
+                Transaction::create([
+                    'business_id' => $businessId,
+                    'acc_id' => $vendor->acc_id,
+                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
+                    'link' => $link,
+                    'debit' => 0.00, // No money debited from business account
+                    'credit' => $total_amount_grn, // Money credited to business account
+                    'current_balance' => $v_cb
+                ]);
+
+
+                // create sale receipt 
+                $invoiceObj = new PurchaseInvoiceController();
+                $invoice = $invoiceObj->createInvoice($id, $businessId);
+                if($invoice != true) throw new Exception('Error in creating purchase invoice', 400);
+
+
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'update GRN Status',   
+                ]);
             }
             
 
-            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
-            // Credit amount to Vendor's account
-            $link = config('app.frontend_url').'/view-purchase-orders/'.$data->purhcase_order->id;
-            Transaction::create([
-                'business_id' => $businessId,
-                'acc_id' => $vendor->acc_id,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
-                'link' => $link,
-                'debit' => 0.00, // No money debited from business account
-                'credit' => $total_amount_grn, // Money credited to business account
-                'current_balance' => $v_cb
-            ]);
-
-
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'update GRN Status',   
-            ]);
             DB::commit();
             return response()->json($data);
         }catch(QueryException $e){
