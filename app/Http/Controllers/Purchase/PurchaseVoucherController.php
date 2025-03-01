@@ -285,41 +285,44 @@ class PurchaseVoucherController extends Controller
             $data->update([
                 'approved_by' => $user->id,
                 'approved_date' => now(),
-                'status'=>1
+                'status'=> $request->status
                 ]);
-            // transaction
-            $vendor = Vendor::find($data->vendor_id);
-            $vendor_acc = $vendor->acc_id;
-            // for products
-            $total_billed = $data->voucher_amount;
-
-            // Calculate Cash/Bank Account Current Balance (Post-Credit)
-            $b_cb = calculateBalance($data->acc_id, $total_billed, true); // Cash account is credited (reduced)
-
-            // Calculate Vendor Account Current Balance (Post-Debit)
-            $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
             
-            // Credit amount to vendor's account
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $vendor_acc,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment received by vendor: ' . $vendor->name,
-                'debit' => $total_billed, // Money debited from vendor's account
-                'credit' => 0.00, // No money credited to vendor's account
-                'current_balance' => $v_cb // Updated balance for vendor account
-            ]);
+                if($request->status == 1){
+                    // transaction
+                    $vendor = Vendor::find($data->vendor_id);
+                    $vendor_acc = $vendor->acc_id;
+                    // for products
+                    $total_billed = $data->voucher_amount;
 
-            // Debit amount from business's account
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $data->acc_id,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment send to vendor: ' . $vendor->name,
-                'debit' => 0.00, // No money debited to business account
-                'credit' => $total_billed, // Money credited from business account
-                'current_balance' => $b_cb
-            ]);
+                    // Calculate Cash/Bank Account Current Balance (Post-Credit)
+                    $b_cb = calculateBalance($data->acc_id, $total_billed, true); // Cash account is credited (reduced)
+
+                    // Calculate Vendor Account Current Balance (Post-Debit)
+                    $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
+                    
+                    // Credit amount to vendor's account
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $vendor_acc,
+                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                        'description' => 'Payment received by vendor: ' . $vendor->name,
+                        'debit' => $total_billed, // Money debited from vendor's account
+                        'credit' => 0.00, // No money credited to vendor's account
+                        'current_balance' => $v_cb // Updated balance for vendor account
+                    ]);
+
+                    // Debit amount from business's account
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $data->acc_id,
+                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                        'description' => 'Payment send to vendor: ' . $vendor->name,
+                        'debit' => 0.00, // No money debited to business account
+                        'credit' => $total_billed, // Money credited from business account
+                        'current_balance' => $b_cb
+                    ]);
+                }
             
             Log::create([
                 'user_id' => $user->id,

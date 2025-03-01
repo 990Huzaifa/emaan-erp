@@ -275,8 +275,7 @@ class PurchaseOrderController extends Controller
                     ], 403);
                 }
             }
-            $status = $request->status;
-            if($status == 0) throw new Exception('Invalid status',400);
+            if($request->status == 0) throw new Exception('Invalid status',400);
             $data = PurchaseOrder::find($id);
             if($data->status != 0) throw new Exception("Status can't change",400);
             $data->update([

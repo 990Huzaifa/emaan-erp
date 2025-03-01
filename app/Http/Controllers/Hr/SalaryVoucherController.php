@@ -295,56 +295,61 @@ class SalaryVoucherController extends Controller
             if (empty($data)) throw new Exception('No data found', 400);
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
-            // transaction
-            $acc = $data->acc_id;
-            $employee_acc = Employee::where('id', $data->employee_id)->first()->value('acc_id');
-            $total_billed = $data->voucher_amount;
-            $a_cb = calculateBalance($acc, $total_billed, true);
-            $e_cb = calculateBalance($employee_acc, $total_billed, false);
-            
 
-            // Credit the asset account (money is leaving)
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $acc,
-                'transaction_type' => 2, // 2 -> Expense
-                'description' => 'Payment for expense voucher.',
-                'debit' => 0.00, // No money added to the asset account
-                'credit' => $total_billed, // Money leaving the asset account
-                'current_balance' => $a_cb // Updated balance for the asset account
-            ]);
-
-            // Debit the employee account (money recorded as an employee)
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $employee_acc,
-                'transaction_type' => 2, // 2 -> Expense
-                'description' => 'Recording expense payment.',
-                'debit' => $total_billed, // Money recorded as an employee
-                'credit' => 0.00, // No money leaving the employee account
-                'current_balance' => $e_cb // Updated balance for the employee account
-            ]);
             $data->update([
-                'status'=>1,
+                'status'=>$request->status,
                 'approved_by' => $user->id,
                 'approved_date' => now(),
                 ]);
-            $paySlip = PaySlip::find( $data->pay_slip_id);
 
-            $paySlip->update([
-                'remaining_balance' => $paySlip->remaining_balance - $total_billed,
-                'status' => 3,
-            ]);
+            if($data->status == 1){
+                // transaction
+                $acc = $data->acc_id;
+                $employee_acc = Employee::where('id', $data->employee_id)->first()->value('acc_id');
+                $total_billed = $data->voucher_amount;
+                $a_cb = calculateBalance($acc, $total_billed, true);
+                $e_cb = calculateBalance($employee_acc, $total_billed, false);
+                
 
-            if($paySlip->loan_id != null){
-                $loan = Loan::find($paySlip->loan_id);
-                $RM = $loan->remaining_amount - $paySlip->loan_deduction;
-                $loan->update([
-                    'installments' => $loan->installments + 1,
-                    'remaining_amount' => $RM,
-                    'installment_amount' => $loan->installment_amount + $paySlip->loan_deduction,
-                    'status' => $RM <= 0 ? 1 : 0
+                // Credit the asset account (money is leaving)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $acc,
+                    'transaction_type' => 2, // 2 -> Expense
+                    'description' => 'Payment for expense voucher.',
+                    'debit' => 0.00, // No money added to the asset account
+                    'credit' => $total_billed, // Money leaving the asset account
+                    'current_balance' => $a_cb // Updated balance for the asset account
                 ]);
+
+                // Debit the employee account (money recorded as an employee)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $employee_acc,
+                    'transaction_type' => 2, // 2 -> Expense
+                    'description' => 'Recording expense payment.',
+                    'debit' => $total_billed, // Money recorded as an employee
+                    'credit' => 0.00, // No money leaving the employee account
+                    'current_balance' => $e_cb // Updated balance for the employee account
+                ]);
+                
+                $paySlip = PaySlip::find( $data->pay_slip_id);
+
+                $paySlip->update([
+                    'remaining_balance' => $paySlip->remaining_balance - $total_billed,
+                    'status' => 3,
+                ]);
+
+                if($paySlip->loan_id != null){
+                    $loan = Loan::find($paySlip->loan_id);
+                    $RM = $loan->remaining_amount - $paySlip->loan_deduction;
+                    $loan->update([
+                        'installments' => $loan->installments + 1,
+                        'remaining_amount' => $RM,
+                        'installment_amount' => $loan->installment_amount + $paySlip->loan_deduction,
+                        'status' => $RM <= 0 ? 1 : 0
+                    ]);
+                }
             }
             
             Log::create([

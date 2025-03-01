@@ -197,19 +197,21 @@ class PurchaseReturnController extends Controller
             $data = PurchaseReturn::find($id);
             
             DB::beginTransaction();
-            foreach ($data->items as $item) {
-                $inventory_detail = InventoryDetail::find($item->lot_id);
-                $lot = Lot::find($item->lot_id);
-                $inventory_detail->update([
-                    'stock' => $inventory_detail->stock - $item->quantity,
-                ]);
-                $lot->update([
-                    'quantity' => $lot->quantity - $item->quantity,
-                ]);
-            }
             $data->update([
                 'status' => $request->status
             ]);
+            if($data->status == 1){
+                foreach ($data->items as $item) {
+                    $inventory_detail = InventoryDetail::find($item->lot_id);
+                    $lot = Lot::find($item->lot_id);
+                    $inventory_detail->update([
+                        'stock' => $inventory_detail->stock - $item->quantity,
+                    ]);
+                    $lot->update([
+                        'quantity' => $lot->quantity - $item->quantity,
+                    ]);
+                }
+            }            
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Return Status',   

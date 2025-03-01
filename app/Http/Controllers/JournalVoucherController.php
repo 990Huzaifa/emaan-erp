@@ -281,75 +281,74 @@ class JournalVoucherController extends Controller
             if (empty($data)) throw new Exception('No Journal Voucher found', 404);
             if($request->status == $data->status) throw new Exception('Status is already updated', 400);
 
-            $acc_id = $data->acc_id;
-            $partner_id = $data->partner_id;
-            $partner_acc_id = Partner::where('id', $partner_id)->first()->value('acc_id');
-            $total_amount = $data->voucher_amount;
-            if ($data->type === 'WITHDRAW') {
-                // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
-                $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
-                $p_cb = calculateBalance($partner_acc_id, $total_amount, true); // Partner equity account
-    
-                // Credit the asset account (money is leaving the business)
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id' => $acc_id,
-                    'transaction_type' => 2, // Withdrawal
-                    'description' => 'Partner withdrawal.',
-                    'debit' => $total_amount,
-                    'credit' => 0.00,
-                    
-                    'current_balance' => $a_cb
-                ]);
-    
-                // Debit the partner's equity account
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id' => $partner_acc_id,
-                    'transaction_type' => 2, // Withdrawal
-                    'description' => 'Reduction in partner equity due to withdrawal.',
-                    'debit' => 0.00,
-                    'credit' => $total_amount,
-                    'current_balance' => $p_cb
-                ]);
-            } elseif ($data->type === 'DEPOSIT') {
-                // Contribution: Debit Business Account, Credit Partner Account (money enters business, increases equity)
-                $a_cb = calculateBalance($acc_id, $total_amount, true); // Business asset account
-                $p_cb = calculateBalance($partner_acc_id, $total_amount, false); // Partner equity account
-    
-                // Debit the asset account (money is added to the business)
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id' => $acc_id,
-                    'transaction_type' => 1, // Contribution
-                    'description' => 'Partner contribution.',
-                    'debit' => 0.00,
-                    'credit' => $total_amount,
-                    'current_balance' => $a_cb
-                ]);
-    
-                // Credit the partner's equity account
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id' => $partner_acc_id,
-                    'transaction_type' => 1, // Contribution
-                    'description' => 'Increase in partner equity due to contribution.',
-                    'debit' => $total_amount,
-                    'credit' => 0.00,
-                    'current_balance' => $p_cb
-                ]);
-            } else {
-                throw new Exception('Invalid voucher type.');
-            }
-
-
-
             $data->update([
                 'approved_by' => $user->id,
                 'approved_date' => now(),
                 'status'=>$request->status,
             ]);
 
+            if($data->status == 1){
+                $acc_id = $data->acc_id;
+                $partner_id = $data->partner_id;
+                $partner_acc_id = Partner::where('id', $partner_id)->first()->value('acc_id');
+                $total_amount = $data->voucher_amount;
+                if ($data->type === 'WITHDRAW') {
+                    // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
+                    $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
+                    $p_cb = calculateBalance($partner_acc_id, $total_amount, true); // Partner equity account
+        
+                    // Credit the asset account (money is leaving the business)
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $acc_id,
+                        'transaction_type' => 2, // Withdrawal
+                        'description' => 'Partner withdrawal.',
+                        'debit' => $total_amount,
+                        'credit' => 0.00,
+                        
+                        'current_balance' => $a_cb
+                    ]);
+        
+                    // Debit the partner's equity account
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $partner_acc_id,
+                        'transaction_type' => 2, // Withdrawal
+                        'description' => 'Reduction in partner equity due to withdrawal.',
+                        'debit' => 0.00,
+                        'credit' => $total_amount,
+                        'current_balance' => $p_cb
+                    ]);
+                } elseif ($data->type === 'DEPOSIT') {
+                    // Contribution: Debit Business Account, Credit Partner Account (money enters business, increases equity)
+                    $a_cb = calculateBalance($acc_id, $total_amount, true); // Business asset account
+                    $p_cb = calculateBalance($partner_acc_id, $total_amount, false); // Partner equity account
+        
+                    // Debit the asset account (money is added to the business)
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $acc_id,
+                        'transaction_type' => 1, // Contribution
+                        'description' => 'Partner contribution.',
+                        'debit' => 0.00,
+                        'credit' => $total_amount,
+                        'current_balance' => $a_cb
+                    ]);
+        
+                    // Credit the partner's equity account
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $partner_acc_id,
+                        'transaction_type' => 1, // Contribution
+                        'description' => 'Increase in partner equity due to contribution.',
+                        'debit' => $total_amount,
+                        'credit' => 0.00,
+                        'current_balance' => $p_cb
+                    ]);
+                } else {
+                    throw new Exception('Invalid voucher type.');
+                }
+            }
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

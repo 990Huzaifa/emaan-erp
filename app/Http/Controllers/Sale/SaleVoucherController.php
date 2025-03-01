@@ -208,7 +208,7 @@ class SaleVoucherController extends Controller
             if (empty($data)) throw new Exception('No data found', 400);
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
-            $this->updateClass($data->customer_id);
+            
             $voucherDateTime = Carbon::parse($data->voucher_date);  // Parse the date from your model
             $currentDateTime = Carbon::now();  // Get the current date and time
             $daysDifference = Carbon::parse($data->voucher_date)->diffInDays($currentDateTime);
@@ -217,38 +217,42 @@ class SaleVoucherController extends Controller
                 'days' => $daysDifference,
                 'approved_by' => $user->id,
                 'approve_date' => $currentDateTime,
-                'status'=>1
+                'status'=>$request->status
                 ]);
-            // transaction
-            $customer = Customer::find($data->customer_id);
-            $customer_acc = $customer->acc_id;
-            // for products
-            $total_billed = $data->voucher_amount;
 
-            $c_cb = calculateBalance($customer_acc, $total_billed, false); // Debit customer's account
-            $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
-            
-            // Debit amount to customer's account
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $customer_acc,
-                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment made by customer: ' . $customer->name,
-                'debit' => 0.00, // No money deducted from customer's side
-                'credit' => $total_billed, // Money credited to customer
-                'current_balance' => $c_cb // Updated balance for customer account
-            ]);
+            if ($request->status == 1) {
+                // transaction
+                $this->updateClass($data->customer_id);
+                $customer = Customer::find($data->customer_id);
+                $customer_acc = $customer->acc_id;
+                // for products
+                $total_billed = $data->voucher_amount;
 
-            // Credit amount from business's account
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $data->acc_id,
-                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Payment received from customer: ' . $customer->name,
-                'debit' => 0.00, // Money debited from business account
-                'credit' => $total_billed, // No money credited to business account
-                'current_balance' => $b_cb
-            ]);
+                $c_cb = calculateBalance($customer_acc, $total_billed, false); // Debit customer's account
+                $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
+                
+                // Debit amount to customer's account
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $customer_acc,
+                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'Payment made by customer: ' . $customer->name,
+                    'debit' => 0.00, // No money deducted from customer's side
+                    'credit' => $total_billed, // Money credited to customer
+                    'current_balance' => $c_cb // Updated balance for customer account
+                ]);
+
+                // Credit amount from business's account
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $data->acc_id,
+                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'Payment received from customer: ' . $customer->name,
+                    'debit' => 0.00, // Money debited from business account
+                    'credit' => $total_billed, // No money credited to business account
+                    'current_balance' => $b_cb
+                ]);
+            }
             
             Log::create([
                 'user_id' => $user->id,

@@ -278,40 +278,44 @@ class ExpenseVoucherController extends Controller
             if (empty($data)) throw new Exception('No data found', 400);
             if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
-            // transaction
-            $asset_acc = $data->asset_acc_id;
-            $expense_acc = $data->expense_acc_id;
-            $total_billed = $data->voucher_amount;
-            $a_cb = calculateBalance($asset_acc, $total_billed, true);
-            $e_cb = calculateBalance($expense_acc, $total_billed, false);
-            
+                $data->update([
+                    'status'=>$request->status,
+                    'approved_by' => $user->id,
+                    'approved_date' => now(),
+                    ]);
 
-            // Credit the asset account (money is leaving)
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $asset_acc,
-                'transaction_type' => 2, // 2 -> Expense
-                'description' => 'Payment for expense voucher.',
-                'debit' => 0.00, // No money added to the asset account
-                'credit' => $total_billed, // Money leaving the asset account
-                'current_balance' => $a_cb // Updated balance for the asset account
-            ]);
+            if($data->status == 1){
+                // transaction
+                $asset_acc = $data->asset_acc_id;
+                $expense_acc = $data->expense_acc_id;
+                $total_billed = $data->voucher_amount;
+                $a_cb = calculateBalance($asset_acc, $total_billed, true);
+                $e_cb = calculateBalance($expense_acc, $total_billed, false);
+                
 
-            // Debit the expense account (money recorded as an expense)
-            Transaction::create([
-                'business_id' => $data->business_id,
-                'acc_id' => $expense_acc,
-                'transaction_type' => 2, // 2 -> Expense
-                'description' => 'Recording expense payment.',
-                'debit' => $total_billed, // Money recorded as an expense
-                'credit' => 0.00, // No money leaving the expense account
-                'current_balance' => $e_cb // Updated balance for the expense account
-            ]);
-            $data->update([
-                'status'=>1,
-                'approved_by' => $user->id,
-                'approved_date' => now(),
+                // Credit the asset account (money is leaving)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $asset_acc,
+                    'transaction_type' => 2, // 2 -> Expense
+                    'description' => 'Payment for expense voucher.',
+                    'debit' => 0.00, // No money added to the asset account
+                    'credit' => $total_billed, // Money leaving the asset account
+                    'current_balance' => $a_cb // Updated balance for the asset account
                 ]);
+
+                // Debit the expense account (money recorded as an expense)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $expense_acc,
+                    'transaction_type' => 2, // 2 -> Expense
+                    'description' => 'Recording expense payment.',
+                    'debit' => $total_billed, // Money recorded as an expense
+                    'credit' => 0.00, // No money leaving the expense account
+                    'current_balance' => $e_cb // Updated balance for the expense account
+                ]);
+            }
+            
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
