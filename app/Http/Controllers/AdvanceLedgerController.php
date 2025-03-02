@@ -30,6 +30,7 @@ class AdvanceLedgerController extends Controller
             $start_date = $request->query('start_date');
             $end_date = $request->query('end_date');
             $sortOrder = $request->query('sort_order'); // No default sorting
+            // $dateSort = $request->query('sort_order'); // No default sorting
 
             if (empty($acc_id)) throw new Exception('account id required', 404);
             if (empty($acc_type)) throw new Exception('account type required', 404);
@@ -70,7 +71,7 @@ class AdvanceLedgerController extends Controller
                         }
                     } else {
                         // If no remaining credit, progress is 0%
-                        $transaction->progress_percentage = '-';
+                        $transaction->progress_percentage = null;
                     }
                 }
                 // Sorting based on query param if provided
