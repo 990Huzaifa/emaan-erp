@@ -39,7 +39,17 @@ class AdvanceLedgerController extends Controller
             if ($acc_type == 'CUSTOMERS') {
                 $customer_id = Customer::where('acc_id', $acc_id)->value('id');
                 
-                $query = Transaction::where('acc_id', $acc_id);
+                $query = Transaction::select(
+                    'transactions.id',
+                    'transactions.acc_id',
+                    'transactions.debit',
+                    'transactions.credit',
+                    'transactions.current_balance',
+                    'transactions.description',
+                    'transactions.created_at',
+                    'transactions.updated_at',
+                    'transactions.link as sale_order_id',
+                )->where('acc_id', $acc_id);
 
                 // Apply date filters if provided
                 if (!empty($start_date)) {
