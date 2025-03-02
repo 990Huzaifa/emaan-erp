@@ -206,30 +206,38 @@ class InventoryDetailController extends Controller
      * Get the resource from storage by specified Lot id.
      */
     public function lotIndex(string $product_id): JsonResponse
-    {
-        try{
-            $user = Auth::user();
-            
-            // Check if the user has the required permission
-            if ($user->role != 'admin') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view inventory detail')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
+{
+    try {
+        $user = Auth::user();
+        
+        // Check if the user has the required permission
+        if ($user->role != 'admin') {
+            $businessId = $user->login_business;
+            if (!$user->hasBusinessPermission($businessId, 'view inventory detail')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
             }
-            $data = Lot::select('lots.*','inventory_details.stock as quantity')
-            ->join('inventory_details','inventory_details.lot_id','=','lots.id')
-            ->where('inventory_details.product_id',$product_id)
-            ->get();
-            return response()->json($data,200);
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
         }
+        
+        // Fetch product with the average price from all lots
+        $data = Lot::select(
+                'inventory_details.product_id',
+                DB::raw('AVG(lots.price) as average_price'),
+                DB::raw('SUM(inventory_details.stock) as total_quantity')
+            )
+            ->join('inventory_details', 'inventory_details.lot_id', '=', 'lots.id')
+            ->where('inventory_details.product_id', $product_id)
+            ->groupBy('inventory_details.product_id')
+            ->first();
+        
+        return response()->json($data, 200);
+    } catch (QueryException $e) {
+        return response()->json(['DB error' => $e->getMessage()], 400);
+    } catch (Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 400);
     }
+}
     
     
 }
