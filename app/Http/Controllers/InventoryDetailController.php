@@ -171,66 +171,33 @@ class InventoryDetailController extends Controller
     }
     
     public function inventoryProduct(): JsonResponse
-    {
-        try{
-            $user = Auth::user();
-            
-            // Check if the user has the required permission
-            if ($user->role != 'admin') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list inventory detail')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
-            $data = InventoryDetail::join('lots', 'inventory_details.lot_id', '=', 'lots.id')
-            ->join('products', 'inventory_details.product_id', '=', 'products.id')
-            ->select(
-                'products.id as product_id',
-                'products.title',
-                DB::raw('SUM(lots.quantity) as quantity'),
-                'lots.status'
-            )
-            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
-            ->orderBy('inventory_details.id', 'desc')->get();
-            return response()->json($data,200);
-        }catch(QueryException $e){
-            return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
-        }
-    }
-
-    /**
-     * Get the resource from storage by specified Lot id.
-     */
-    public function lotIndex(string $product_id): JsonResponse
 {
     try {
         $user = Auth::user();
-        
+
         // Check if the user has the required permission
         if ($user->role != 'admin') {
             $businessId = $user->login_business;
-            if (!$user->hasBusinessPermission($businessId, 'view inventory detail')) {
+            if (!$user->hasBusinessPermission($businessId, 'list inventory detail')) {
                 return response()->json([
                     'error' => 'User does not have the required permission.'
                 ], 403);
             }
         }
-        
-        // Fetch product with the average price from all lots
-        $data = Lot::select(
-                'inventory_details.product_id',
-                DB::raw('AVG(lots.price) as average_price'),
-                DB::raw('SUM(inventory_details.stock) as total_quantity')
+
+        $data = InventoryDetail::join('lots', 'inventory_details.lot_id', '=', 'lots.id')
+            ->join('products', 'inventory_details.product_id', '=', 'products.id')
+            ->select(
+                'products.id as product_id',
+                'products.title',
+                DB::raw('SUM(lots.quantity) as total_quantity'),
+                DB::raw('AVG(lots.price) as price'), // Latest price for the product
+                'lots.status'
             )
-            ->join('inventory_details', 'inventory_details.lot_id', '=', 'lots.id')
-            ->where('inventory_details.product_id', $product_id)
-            ->groupBy('inventory_details.product_id')
-            ->first();
-        
+            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
+            ->orderBy('inventory_details.id', 'desc')
+            ->get();
+
         return response()->json($data, 200);
     } catch (QueryException $e) {
         return response()->json(['DB error' => $e->getMessage()], 400);
@@ -238,6 +205,35 @@ class InventoryDetailController extends Controller
         return response()->json(['error' => $e->getMessage()], 400);
     }
 }
+
+    /**
+     * Get the resource from storage by specified Lot id.
+     */
+    public function lotIndex(string $product_id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view inventory detail')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = Lot::select('lots.*','inventory_details.stock as quantity')
+            ->join('inventory_details','inventory_details.lot_id','=','lots.id')
+            ->where('inventory_details.product_id',$product_id)
+            ->get();
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
     
     
 }
