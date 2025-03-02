@@ -191,7 +191,7 @@ class InventoryDetailController extends Controller
                 'products.id as product_id',
                 'products.title',
                 DB::raw('SUM(lots.quantity) as total_quantity'),
-                DB::raw('AVG(lots.price) as price'), // Latest price for the product
+                DB::raw('AVG(lots.purchase_unit_price) as unit_price'), // Latest price for the product
                 'lots.status'
             )
             ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
