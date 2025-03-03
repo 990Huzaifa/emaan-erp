@@ -291,8 +291,8 @@ class ReportsController extends Controller
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default to today
 
             // Ensure valid date format
-            $start_date = Carbon::parse($start_date)->toDateString();
-            $end_date = Carbon::parse($end_date)->toDateString();
+            $start_date = Carbon::parse($start_date)->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($end_date)->endOfDay()->toDateTimeString();
 
             // Common query filter for business scope
             $businessFilter = function ($query) use ($user, $businessId) {
