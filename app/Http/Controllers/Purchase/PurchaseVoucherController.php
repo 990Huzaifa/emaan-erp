@@ -284,7 +284,7 @@ class PurchaseVoucherController extends Controller
             DB::beginTransaction();
             $data->update([
                 'approved_by' => $user->id,
-                'approved_date' => now(),
+                'approved_date' => Carbon::now(),
                 'status'=> $request->status
                 ]);
             
