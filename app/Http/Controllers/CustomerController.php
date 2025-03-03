@@ -262,7 +262,7 @@ class CustomerController extends Controller
                     'telephone' => 'nullable|string|max:20',
                     'mobile' => 'required|string|max:12',
                     'credit_limit' => 'required|numeric',
-                    'class' => 'required|string|in,A,B,C',
+                    'class' => 'required|string|in:A,B,C',
 
             ],[
                 'name.required'=>'Name is Required',
