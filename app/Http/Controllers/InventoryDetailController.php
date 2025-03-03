@@ -222,6 +222,7 @@ class InventoryDetailController extends Controller
             $data = Lot::select('lots.*','inventory_details.stock as quantity')
             ->join('inventory_details','inventory_details.lot_id','=','lots.id')
             ->where('inventory_details.product_id',$product_id)
+            ->where('inventory_details.stock','>',0)
             ->get();
             return response()->json($data,200);
         }catch(QueryException $e){
