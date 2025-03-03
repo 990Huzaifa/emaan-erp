@@ -148,8 +148,8 @@ class ReportsController extends Controller
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
 
             // Ensure valid date format
-            $start_date = Carbon::parse($start_date)->toDateString();
-            $end_date = Carbon::parse($end_date)->toDateString();
+            $start_date = Carbon::parse($start_date)->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($end_date)->endOfDay()->toDateTimeString();
 
             // Query purchase vouchers with vendor names
             $query = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
