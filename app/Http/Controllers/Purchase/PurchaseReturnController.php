@@ -216,10 +216,13 @@ class PurchaseReturnController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Return Status',   
             ]);
+            DB::commit();
             return response()->json($data,200);
         }catch(QueryException $e){
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
