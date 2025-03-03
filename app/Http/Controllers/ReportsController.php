@@ -166,12 +166,7 @@ class ReportsController extends Controller
             $purchaseData = $query->orderBy('purchase_vouchers.voucher_date', 'desc')->get();
 
             // Calculate total voucher amount with business filter if applicable
-            $total = PurchaseVoucher::where('status', 1)
-            ->whereBetween('voucher_date', [$start_date, $end_date])
-            ->when(!empty($businessId), function ($q) use ($businessId) {
-                return $q->where('business_id', $businessId);
-            })
-            ->sum('voucher_amount');
+            $total = $query->sum('purchase_vouchers.voucher_amount');
 
             return response()->json(["data" => $purchaseData, "total" => $total]);
         } catch (Exception $e) {
@@ -204,7 +199,8 @@ class ReportsController extends Controller
             // Query sale vouchers with customer names
             $query = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
                 ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
-                ->whereBetween('sale_vouchers.voucher_date', [$start_date, $end_date])
+                ->where('sale_vouchers.voucher_date', '>=', $start_date)
+                ->where('sale_vouchers.voucher_date', '<=', $end_date)
                 ->where('sale_vouchers.status', 1);
 
             // Filter by business_id if provided
@@ -215,13 +211,7 @@ class ReportsController extends Controller
             // Fetch data and order by voucher date (descending)
             $salesData = $query->orderBy('sale_vouchers.voucher_date', 'desc')->get();
 
-            // Calculate total voucher amount for active sales
-            $total = SaleVoucher::where('status', 1)
-            ->whereBetween('voucher_date', [$start_date, $end_date])
-            ->when(!empty($businessId), function ($q) use ($businessId) {
-                return $q->where('business_id', $businessId);
-            })
-            ->sum('voucher_amount');
+            $total = $query->sum('sale_vouchers.voucher_amount');
 
             return response()->json(["data" => $salesData, "total" => $total]);
         } catch (Exception $e) {
