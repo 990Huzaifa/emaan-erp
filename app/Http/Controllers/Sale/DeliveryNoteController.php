@@ -371,7 +371,7 @@ class DeliveryNoteController extends Controller
                     $total_charged = $item->charged;
                 }
                 $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
-                $link = config('app.frontend_url').'/view-sale-orders/'.$data->sale_order->id;
+                $link =$data->sale_order_id;
                 // Debit amount to customer's account
                 Transaction::create([
                     'business_id' => $businessId,

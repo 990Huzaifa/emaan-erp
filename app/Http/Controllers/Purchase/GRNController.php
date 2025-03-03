@@ -323,7 +323,7 @@ class GRNController extends Controller
                 }
                 $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
                 // Credit amount to Vendor's account
-                $link = config('app.frontend_url').'/view-purchase-orders/'.$data->purhcase_order->id;
+                $link = $data->purhcase_order_id;
                 Transaction::create([
                     'business_id' => $businessId,
                     'acc_id' => $vendor->acc_id,
