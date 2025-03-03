@@ -193,14 +193,13 @@ class ReportsController extends Controller
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
 
             // Ensure valid date format
-            $start_date = Carbon::parse($start_date)->toDateString();
-            $end_date = Carbon::parse($end_date)->toDateString();
+            $start_date = Carbon::parse($start_date)->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($end_date)->endOfDay()->toDateTimeString();
 
             // Query sale vouchers with customer names
             $query = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
                 ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
-                ->where('sale_vouchers.voucher_date', '>=', $start_date)
-                ->where('sale_vouchers.voucher_date', '<=', $end_date)
+                ->whereBetween('sale_vouchers.voucher_date', [$start_date, $end_date])
                 ->where('sale_vouchers.status', 1);
 
             // Filter by business_id if provided
