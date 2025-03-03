@@ -231,5 +231,5 @@ class InventoryDetailController extends Controller
         }
     }
     
-    
+     
 }

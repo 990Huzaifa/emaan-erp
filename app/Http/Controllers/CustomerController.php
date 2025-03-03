@@ -262,6 +262,7 @@ class CustomerController extends Controller
                     'telephone' => 'nullable|string|max:20',
                     'mobile' => 'required|string|max:12',
                     'credit_limit' => 'required|numeric',
+                    'class' => 'required|string|in,A,B,C',
 
             ],[
                 'name.required'=>'Name is Required',
@@ -292,6 +293,10 @@ class CustomerController extends Controller
 
                 'credit_limit.required' => 'Credit limit is required.',
                 'credit_limit.numeric' => 'Credit limit must be a numeric value.',
+
+                'class.required' => 'Class is required.',
+                'class.string' => 'Class must be a string.',
+                'class.in' => 'Class must be A, B, or C.',
 
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -324,7 +329,8 @@ class CustomerController extends Controller
                 'website' => $request->website ?? null,
                 'address' => $request->address ?? null,
                 'logo' => $logo,
-                'credit_limit' => $request->credit_limit
+                'credit_limit' => $request->credit_limit,
+                'class' => $request->class
             ]);
             return response()->json($customer);
 
@@ -612,7 +618,5 @@ class CustomerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
-    
 
 }
