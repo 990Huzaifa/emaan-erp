@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Controllers\PaySlipController;
+use App\Http\Controllers\Hr\PaySlipController;
 use Illuminate\Console\Command;
 use App\Models\Employee;
 use App\Models\PaySlip;
