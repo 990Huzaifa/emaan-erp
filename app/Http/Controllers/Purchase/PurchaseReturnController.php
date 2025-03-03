@@ -202,7 +202,7 @@ class PurchaseReturnController extends Controller
             ]);
             if($data->status == 1){
                 foreach ($data->items as $item) {
-                    $inventory_detail = InventoryDetail::find($item->lot_id);
+                    $inventory_detail = InventoryDetail::where('lot_id',$item->lot_id)->first();
                     $lot = Lot::find($item->lot_id);
                     $inventory_detail->update([
                         'stock' => $inventory_detail->stock - $item->quantity,
