@@ -187,7 +187,6 @@ class InventoryDetailController extends Controller
                 'inventory_details.stock as quantity',
                 'inventory_details.in_stock'
             )
-            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'inventory_details.status')
             ->orderBy('inventory_details.id', 'desc')->get();
             return response()->json($data,200);
         }catch(QueryException $e){
@@ -215,9 +214,8 @@ class InventoryDetailController extends Controller
                 }
             }
             $data = Lot::select('lots.*','inventory_details.stock as quantity')
-            ->join('inventory_details','inventory_details.lot_id','=','lots.id')
-            ->where('inventory_details.product_id',$product_id)
-            ->where('inventory_details.stock','>',0)
+            ->where('product_id',$product_id)
+            ->where('quantiry','>',0)
             ->get();
             return response()->json($data,200);
         }catch(QueryException $e){
