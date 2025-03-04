@@ -224,7 +224,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             // Permission check for non-admin users
-            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'sales summary')) {
+            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'sales chart')) {
                 return response()->json([
                     'error' => 'User does not have the required permission.'
                 ], 403);
@@ -349,7 +349,7 @@ class ReportsController extends Controller
             $businessId = null;
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'sales summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
