@@ -142,7 +142,7 @@ class ExpenseVoucherController extends Controller
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
                     'voucher_amount' => $item['voucher_amount'],
-                    'voucher_date' => $request->voucher_date,
+                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status' => 0,
                     'created_by' => $user->id
                 ];
@@ -281,7 +281,7 @@ class ExpenseVoucherController extends Controller
                 $data->update([
                     'status'=>$request->status,
                     'approved_by' => $user->id,
-                    'approved_date' => now(),
+                    'approved_date' => Carbon::now(),
                     ]);
 
             if($data->status == 1){

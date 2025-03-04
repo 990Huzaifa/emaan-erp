@@ -283,7 +283,7 @@ class JournalVoucherController extends Controller
 
             $data->update([
                 'approved_by' => $user->id,
-                'approved_date' => now(),
+                'approved_date' => Carbon::now(),
                 'status'=>$request->status,
             ]);
 
