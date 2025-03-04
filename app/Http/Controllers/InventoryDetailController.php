@@ -184,13 +184,12 @@ class InventoryDetailController extends Controller
                     ], 403);
                 }
             }
-            $data = InventoryDetail::join('lots', 'inventory_details.lot_id', '=', 'lots.id')
-            ->join('products', 'inventory_details.product_id', '=', 'products.id')
+            $data = InventoryDetail::join('products', 'inventory_details.product_id', '=', 'products.id')
             ->select(
                 'products.id as product_id',
                 'products.title',
-                DB::raw('SUM(lots.quantity) as quantity'),
-                'lots.status'
+                'inventory_details.stock as quantity',
+                'inventory_details.in_stock'
             )
             ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
             ->orderBy('inventory_details.id', 'desc')->get();

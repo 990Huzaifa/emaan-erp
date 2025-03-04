@@ -313,13 +313,19 @@ class GRNController extends Controller
                         'status' => 1,
                         'total_price' => $item->purchase_unit_price * $item->quantity,
                     ]);
-                    InventoryDetail::create([
-                        'lot_id' => $lot->id,
-                        'product_id' => $item->product_id,
-                        'stock' => $item->quantity,
-                        'unit_price' => $item->sale_unit_price,
-                        'in_stock' => 1,
-                    ]);
+                    $check = InventoryDetail::where('product_id', $item->product_id)->first();
+                    if ($check) {
+                        $check->update([
+                            'stock' => $check->stock + $item->quantity
+                        ]);
+                    }else{
+                        InventoryDetail::create([
+                            'product_id' => $item->product_id,
+                            'stock' => $item->quantity,
+                            'in_stock' => 1,
+                        ]);
+                    }
+                    
                 }
                 $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
                 // Credit amount to Vendor's account
