@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sale;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Lot;
 use App\Models\Product;
 use App\Models\Transaction;
 use Exception;
@@ -360,7 +361,11 @@ class DeliveryNoteController extends Controller
             if($request->status == 1){
                 foreach ($data->items as $item) {
                     // hitting inventory minus in quantity
-                    $inventory_details = InventoryDetail::where('lot_id', $item->lot_id)->first();
+                    $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
+                    $lot = Lot::find($item->lot_id);
+                    $lot->update([
+                        'quantity' => $lot->quantity - $item->quantity,
+                    ]);
                     $inventory_details->update([
                         'stock' => $inventory_details->stock - $item->quantity,
                     ]);
