@@ -13,12 +13,9 @@ return new class extends Migration
     {
         Schema::create('inventory_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('lot_id');
-            $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onUpdate('cascade')->onDelete('cascade');
             $table->bigInteger('stock')->default(0);
-            $table->decimal('unit_price',8,2);
             $table->boolean('in_stock')->default(1);
             $table->timestamps();
         });
