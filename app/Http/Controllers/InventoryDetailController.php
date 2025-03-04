@@ -33,21 +33,19 @@ class InventoryDetailController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = InventoryDetail::join('lots', 'inventory_details.lot_id', '=', 'lots.id')
-            ->join('products', 'inventory_details.product_id', '=', 'products.id')
+            $query = InventoryDetail::join('products', 'inventory_details.product_id', '=', 'products.id')
             ->select(
                 'products.id',
                 'products.title',
-                DB::raw('SUM(inventory_details.stock) as total_quantity'),
-                'lots.status'
+                'inventory_details.stock as total_quantity',
+                'inventory_details.status'
             )
-            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
+            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'inventory_details.status')
             ->orderBy('inventory_details.id', 'desc');
 
             if (!empty($searchQuery)) {
                 $query->where(function ($q) use ($searchQuery) {
-                    $q->where('lots.lot_code', 'like', '%' . $searchQuery . '%')
-                      ->orWhere('products.title', 'like', '%' . $searchQuery . '%');
+                    $q->Where('products.title', 'like', '%' . $searchQuery . '%');
                 });
             }
             // Execute the query with pagination
