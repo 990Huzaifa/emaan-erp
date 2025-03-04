@@ -208,7 +208,7 @@ class PurchaseReturnController extends Controller
                         'stock' => $inventory_detail->stock - $item->quantity,
                     ]);
                     $lot->update([
-                        'quantity' => $inventory_detail->quantity - $item->quantity,
+                        'quantity' => $lot->quantity - $item->quantity,
                     ]);
                 }
             }            
