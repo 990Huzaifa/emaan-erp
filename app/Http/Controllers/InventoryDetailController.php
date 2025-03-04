@@ -191,7 +191,7 @@ class InventoryDetailController extends Controller
                 'inventory_details.stock as quantity',
                 'inventory_details.in_stock'
             )
-            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'lots.status')
+            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'inventory_details.status')
             ->orderBy('inventory_details.id', 'desc')->get();
             return response()->json($data,200);
         }catch(QueryException $e){
