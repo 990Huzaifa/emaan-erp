@@ -38,9 +38,9 @@ class InventoryDetailController extends Controller
                 'products.id',
                 'products.title',
                 'inventory_details.stock as total_quantity',
-                'inventory_details.status'
+                'inventory_details.in_stock as status'
             )
-            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'inventory_details.status')
+            ->groupBy('inventory_details.product_id', 'products.title', 'products.id', 'inventory_details.in_stock')
             ->orderBy('inventory_details.id', 'desc');
 
             if (!empty($searchQuery)) {
