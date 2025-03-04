@@ -213,9 +213,8 @@ class InventoryDetailController extends Controller
                     ], 403);
                 }
             }
-            $data = Lot::select('lots.*','inventory_details.stock as quantity')
-            ->where('product_id',$product_id)
-            ->where('quantiry','>',0)
+            $data = Lot::where('product_id',$product_id)
+            ->where('quantity','>',0)
             ->get();
             return response()->json($data,200);
         }catch(QueryException $e){
