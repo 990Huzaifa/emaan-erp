@@ -123,10 +123,9 @@ class InventoryDetailController extends Controller
                     'vendors.name as vendor_name',
                     'purchase_orders.order_code as purchase_order_code',
                     'goods_receive_notes.grn_code as grn_code',
-                    'inventory_details.stock as quantity'
+                    'lots.quantity'
                 )
                 ->where('lots.product_id', $id)
-                ->join('inventory_details', 'inventory_details.lot_id', '=', 'lots.id')
                 ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
                 ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')
                 ->join('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id');
