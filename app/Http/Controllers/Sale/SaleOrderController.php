@@ -317,7 +317,7 @@ class SaleOrderController extends Controller
             }
             $searchQuery = $request->query('search');
             $query = SaleOrder::with(['items' => function ($query) {
-                $query->with(['product:id,title', 'lot:id,lot_code']);
+                $query->with('product:id,title');
             }])// Select fields including vendor name
             ->orderBy('sale_orders.id', 'desc')->where('sale_orders.business_id',$businessId)
             ->where('sale_orders.status','=',1);
