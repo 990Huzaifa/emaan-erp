@@ -83,7 +83,6 @@ class SaleReturnController extends Controller
                 'items.*.quantity' => 'required|numeric',
                 'items.*.unit_price' => 'required|numeric',
                 'items.*.total_price' => 'required|numeric',
-                'items.*.lot_id' => 'nullable|exists:lots,id',
             ],[
                 'dn_id.required' => 'Delivery note ID is required.',
                 'dn_id.exists' => 'Delivery note does not exist.',
@@ -127,7 +126,6 @@ class SaleReturnController extends Controller
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['total_price'],
-                    'lot_id' => $item['lot_id'] ?? null,
                 ]);
             }
             DB::commit();
@@ -222,7 +220,7 @@ class SaleReturnController extends Controller
             if($request->status == 1){
                 foreach ($data->items as $item) {
                     $inventory_detail = InventoryDetail::where('product_id',$item->product_id)->first();
-                    $lot = Lot::find($item->lot_id);
+                    $lot = Lot::where('product_id',$item->product_id)->orderBy('created_at', 'desc')->first();
                     $inventory_detail->update([
                         'stock' => $inventory_detail->stock + $item->quantity,
                     ]);
