@@ -109,7 +109,6 @@ class SaleQuotationController extends Controller
                 SaleQuotationItem::create([
                     'sale_quotation_id' => $saleQuotation->id,
                     'product_id' => $product['product_id'],
-                    'lot_id' => $product['lot_id'],
                     'quantity' => $product['quantity'],
                 ]);
             }
@@ -151,7 +150,7 @@ class SaleQuotationController extends Controller
             
             // Fetch the sale quotation with items and lot codes for each product
             $saleQuotation = SaleQuotation::with(['items' => function ($query) {
-                $query->with(['product:id,title', 'lot:id,lot_code']);
+                $query->with('product:id,title');
             }])
             ->find($id);
     
@@ -228,7 +227,6 @@ class SaleQuotationController extends Controller
                     SaleQuotationItem::create([
                         'sale_quotation_id' => $id,
                         'product_id' => $item['product_id'],
-                        'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity']
                     ]);
                 }
