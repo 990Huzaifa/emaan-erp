@@ -120,7 +120,6 @@ class SaleOrderController extends Controller
                 SaleOrderItem::create([
                     'sale_order_id' => $data->id,
                     'product_id' => $item['product_id'],
-                    'lot_id' => $item['lot_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['total_price'],
@@ -160,7 +159,7 @@ class SaleOrderController extends Controller
                 }
             }
             $data = SaleOrder::with(['items' => function ($query) {
-                $query->with(['product:id,title', 'lot:id,lot_code']);
+                $query->with('product:id,title');
             }])
             ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
             ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
@@ -235,7 +234,6 @@ class SaleOrderController extends Controller
                     // Update existing item
                     $existingItems[$item['id']]->update([
                         'quantity' => $item['quantity'],
-                        'lot_id' => $item['lot_id'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
                         'tax' => $item['tax'],
@@ -246,7 +244,6 @@ class SaleOrderController extends Controller
                     SaleOrderItem::create([
                         'sale_order_id' => $id,
                         'product_id' => $item['product_id'],
-                        'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
