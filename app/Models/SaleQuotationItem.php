@@ -12,7 +12,6 @@ class SaleQuotationItem extends Model
     protected $fillable = [
         'sale_quotation_id',
         'product_id',
-        'lot_id',
         'quantity'
     ];
 
@@ -21,8 +20,4 @@ class SaleQuotationItem extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 
-    public function lot()
-    {
-        return $this->belongsTo(Lot::class, 'lot_id');
-    }
 }
