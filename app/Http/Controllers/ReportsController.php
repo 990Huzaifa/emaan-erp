@@ -231,12 +231,15 @@ class ReportsController extends Controller
             }
 
             $filterType = $request->input('filter_type'); // e.g., 'customer', 'month', 'item'
+            $startDate = $request->start_date ?? '1970-01-01';
+            $endDate = $request->end_date ?? now()->format('Y-m-d');
 
             $query = DB::table('sale_receipts AS sr')
             ->join('sale_receipt_items AS sri', 'sr.id', '=', 'sri.sale_receipt_id')
             ->join('customers AS c', 'sr.customer_id', '=', 'c.id')
             ->join('products AS p', 'sri.product_id', '=', 'p.id')
             ->where('sr.business_id', $businessId)
+            ->whereBetween('sr.receipt_date', [$startDate, $endDate])
             ->where('sr.status', 1); // Consider only completed sales
         
             // Apply filters based on request
