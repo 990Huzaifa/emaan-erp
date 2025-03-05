@@ -92,7 +92,6 @@ class DeliveryNoteController extends Controller
                     'items.*.charged' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
                     'items.*.total_price' => 'required|numeric',
-                    'items.*.lot_id' => 'required|exists:lots,id',
                     'items.*.tax' => 'required|numeric',
                 ],[
                     'sale_order_id.required' => 'Sale Order is required.',
@@ -121,9 +120,6 @@ class DeliveryNoteController extends Controller
                     'items.*.total_price.required' => 'Total Price is required.',
                     'items.*.total_price.numeric' => 'Total Price must be a number.',
 
-                    'items.*.lot_id.required' => 'Lot is required.',
-                    'items.*.lot_id.exists' => 'Lot does not exist.',
-
                     'items.*.tax.required' => 'Tax is required.',
                     'items.*.tax.numeric' => 'Tax must be a number.',
                 ]
@@ -146,7 +142,6 @@ class DeliveryNoteController extends Controller
                 DeliveryNoteItem::create([
                     'delivery_note_id' => $deliveryNote->id,
                     'product_id' => $item['product_id'],
-                    'lot_id'=> $item['lot_id'],
                     'quantity' => $item['quantity'],
                     'delivered' => $item['delivered'],
                     'charged' => $item['charged'],
@@ -189,19 +184,11 @@ class DeliveryNoteController extends Controller
                 }
             }
             $deliveryNote = DeliveryNote::with(['items' => function ($query) {
-                $query->with(['product:id,title', 'lot:id,lot_code']); // Include product and lot details
+                $query->with('product:id,title'); // Include product and lot details
             }])
             ->where('id', $id) // Filter by the specific purchase order ID
             ->first();
-            $response = $deliveryNote->toArray();
-            foreach ($response['items'] as &$item) {
-                if (isset($item['product'])) {
-                    $item['product']['lot_id'] = $item['lot']['id'] ?? null;
-                    $item['product']['lot_code'] = $item['lot']['lot_code'] ?? null;
-                    unset($item['lot']);
-                }
-            }
-    
+            $response = $deliveryNote->toArray();    
             return response()->json($response, 200);
 
         }catch(QueryException $e){
@@ -240,7 +227,6 @@ class DeliveryNoteController extends Controller
                     'items.*.charged' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
                     'items.*.total_price' => 'required|numeric',
-                    'items.*.lot_id' => 'required|exists:lots,id',
                     'items.*.tax' => 'required|numeric',
                 ],[
                     'sale_order_id.required' => 'Sale Order is required.',
@@ -269,9 +255,6 @@ class DeliveryNoteController extends Controller
                     'items.*.total_price.required' => 'Total Price is required.',
                     'items.*.total_price.numeric' => 'Total Price must be a number.',
 
-                    'items.*.lot_id.required' => 'Lot is required.',
-                    'items.*.lot_id.exists' => 'Lot does not exist.',
-
                     'items.*.tax.required' => 'Tax is required.',
                     'items.*.tax.numeric' => 'Tax must be a number.',
                 ]
@@ -293,7 +276,6 @@ class DeliveryNoteController extends Controller
                     $deliveryNoteItem = DeliveryNoteItem::find($item['id']);
                     $deliveryNoteItem->update([
                         'product_id' => $item['product_id'],
-                        'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity'],
                         'delivered' => $item['delivered'],
                         'charged' => $item['charged'],
@@ -306,7 +288,6 @@ class DeliveryNoteController extends Controller
                     DeliveryNoteItem::create([
                         'delivery_note_id' => $deliveryNote->id,
                         'product_id' => $item['product_id'],
-                        'lot_id' => $item['lot_id'],
                         'quantity' => $item['quantity'],
                         'delivered' => $item['delivered'],
                         'charged' => $item['charged'],
