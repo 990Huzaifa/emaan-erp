@@ -341,20 +341,31 @@ class DeliveryNoteController extends Controller
             $total_amount_dn = 0;
             if($request->status == 1){
                 foreach ($data->items as $item) {
-                    // hitting inventory minus in quantity
+                    // Fetch available lots in FIFO order
+                    $lots = Lot::where('product_id', $item->product_id)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+    
+                    $remainingQty = $item->quantity;
+                    
+                    foreach ($lots as $lot) {
+                        if ($remainingQty <= 0) break;
+
+                        $deductQty = min($lot->quantity, $remainingQty);
+                        $lot->update(['quantity' => $lot->quantity - $deductQty]);
+                        $remainingQty -= $deductQty;
+                    }
+
+                    // Update Inventory stock
                     $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
-                    $lot = Lot::find($item->lot_id);
-                    $lot->update([
-                        'quantity' => $lot->quantity - $item->quantity,
-                    ]);
-                    $inventory_details->update([
-                        'stock' => $inventory_details->stock - $item->quantity,
-                    ]);
+                    if ($inventory_details) {
+                        $inventory_details->update([
+                            'stock' => $inventory_details->stock - $item->quantity,
+                        ]);
+                    }
 
-
-                    $product = Product::find($item->product_id);
                     $total_amount_dn += $item->charged;
-                    $total_charged = $item->charged;
                 }
                 $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
                 $link =$data->sale_order_id;
