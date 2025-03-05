@@ -19,7 +19,7 @@ class SaleOrder extends Model
         'note',
         'user_id',
         'business_id',
-        'tax',
+        'total_tax',
         'special'
     ];
 

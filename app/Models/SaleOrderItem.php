@@ -16,7 +16,7 @@ class SaleOrderItem extends Model
         'quantity',
         'unit_price',
         'total_price',
-        'total_tax',
+        'tax',
     ];
 
     public function product()
