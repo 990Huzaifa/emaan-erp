@@ -88,7 +88,7 @@ class DashboardController extends Controller
     public function salesAnalysis(Request $request): JsonResponse
     {
         try{
-            $date = $request->input('date') ?? Carbon::now()->format('Y-M');
+            $date = $request->input('date') ?? Carbon::now()->format('Y-m');
 
             $salesGraph = SaleVoucher::where('status', 1)
             ->whereYear('voucher_date', substr($date, 0, 4))
