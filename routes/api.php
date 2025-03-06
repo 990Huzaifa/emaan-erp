@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdvanceLedgerController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Hr\DepartmentController;
 use App\Http\Controllers\Hr\DesignationController;
 use App\Http\Controllers\JournalVoucherController;
@@ -308,6 +309,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('balance-sheet',[ReportsController::class,'balanceSheet']);
 
     Route::get('sales-chart',[ReportsController::class,'salesChart']);
+
+
+
+    // Dashboard
+
+    Route::get('dashboard/customer',[DashboardController::class,'nonPaidCustomer']);
+    Route::get('dashboard/inventory',[DashboardController::class,'inventoryProducts']);
+    Route::get('dashboard/sale-analysis',[DashboardController::class,'salesAnalysis']);
 
 
 });
