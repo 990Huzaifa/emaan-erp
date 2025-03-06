@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\InventoryDetail;
 use App\Models\SaleVoucher;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,8 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+
+    
     public function nonPaidCustomer(Request $request): JsonResponse
     {
         try {
@@ -81,8 +84,17 @@ class DashboardController extends Controller
     public function salesAnalysis(Request $request): JsonResponse
     {
         try{
+            $date = $request->input('date') ?? Carbon::now()->format('Y-m');
+
+            $data = SaleVoucher::where('status', 1)
+            ->whereYear('voucher_date', substr($date, 0, 4))
+            ->whereMonth('voucher_date', substr($date, 5))
+            ->selectRaw('MONTH(voucher_date) as month, YEAR(voucher_date) as year, sum(voucher_amount) as total')
+            ->groupBy('month', 'year')
+            ->get();
+
             
-            return response()->json();
+            return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }
