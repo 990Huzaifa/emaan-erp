@@ -127,7 +127,7 @@ class DashboardController extends Controller
             ->value('latestMonth');
 
             // Get total sales for the entire year (up to the latest month)
-            $totalSale = SaleVoucher::where('status', 1)
+            $totalYearSale = SaleVoucher::where('status', 1)
             ->whereYear('voucher_date', $year)
             ->sum('voucher_amount');
 
@@ -139,7 +139,7 @@ class DashboardController extends Controller
 
             // Calculate percentage increase
             $percentageIncrease = ($previousMonthTotalSale > 0)
-            ? (($totalSale - $previousMonthTotalSale) / $previousMonthTotalSale) * 100
+            ? (($totalYearSale - $previousMonthTotalSale) / $previousMonthTotalSale) * 100
             : 0;
 
             // total of sales, current month sales, today sale, last month sales increase percentage
@@ -148,22 +148,14 @@ class DashboardController extends Controller
             // Current month sales
             $currentMonth = Carbon::now()->month;
             $currentYear = Carbon::now()->year;
-            $currentMonthSale = SaleVoucher::where('status', 1)
-                ->whereYear('voucher_date', $currentYear)
-                ->whereMonth('voucher_date', $currentMonth)
-                ->sum('voucher_amount');
+            $currentMonthSale = SaleVoucher::where('status', 1)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $currentMonth)->sum('voucher_amount');
 
             // Today's sales
-            $todaySale = SaleVoucher::where('status', 1)
-                ->whereDate('voucher_date', Carbon::now()->toDateString())
-                ->sum('voucher_amount');
+            $todaySale = SaleVoucher::where('status', 1)->whereDate('voucher_date', Carbon::now()->toDateString())->sum('voucher_amount');
 
             // Last month's sales
             $lastMonth = Carbon::now()->subMonth()->month;
-            $lastMonthSale = SaleVoucher::where('status', 1)
-                ->whereYear('voucher_date', $currentYear)
-                ->whereMonth('voucher_date', $lastMonth)
-                ->sum('voucher_amount');
+            $lastMonthSale = SaleVoucher::where('status', 1)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $lastMonth)->sum('voucher_amount');
 
             // Calculate percentage increase from last month
             $percentageInc = ($lastMonthSale > 0)
