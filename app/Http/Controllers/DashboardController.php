@@ -87,42 +87,61 @@ class DashboardController extends Controller
 
     public function salesAnalysis(Request $request): JsonResponse
     {
-        try{
+        try {
             $date = $request->input('date') ?? Carbon::now()->format('Y-m');
+            $year = substr($date, 0, 4); // Extract year
+            $month = substr($date, 5); // Extract month
 
+            // Sales Graph: Filtered by Year and Month
             $salesGraph = SaleVoucher::where('status', 1)
-            ->whereYear('voucher_date', substr($date, 0, 4))
-            ->whereMonth('voucher_date', substr($date, 5))
-            ->selectRaw('MONTH(voucher_date) as month, YEAR(voucher_date) as year, sum(voucher_amount) as total')
-            ->groupBy('month', 'year')
-            ->get();
+                ->whereYear('voucher_date', $year)
+                ->whereMonth('voucher_date', $month)
+                ->selectRaw('MONTH(voucher_date) as month, YEAR(voucher_date) as year, sum(voucher_amount) as total')
+                ->groupBy('month', 'year')
+                ->get();
 
-            $totalSaleOrderPending = SaleOrder::select('sale_orders.*')->where('status', 0)->count();
-            $totalSaleOrderApproved = SaleOrder::select('sale_orders.*')->where('status', 1)->count();
-            $totalSaleOrderDelivered = SaleOrder::select('sale_orders.*')->where('delivery_notes.status', 1)
-            ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')->count();
+            // Sales Data: Grouped by Month & Year (Pending, Approved, Delivered)
+            $totalSaleOrderPending = SaleOrder::whereYear('created_at', $year)
+                ->where('status', 0)
+                ->selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, COUNT(*) as count')
+                ->groupBy('month', 'year')
+                ->get();
 
-            $salesData = [
-                'totalSaleOrderPending' => $totalSaleOrderPending,
-                'totalSaleOrderApproved' => $totalSaleOrderApproved,
-                'totalSaleOrderDelivered' => $totalSaleOrderDelivered,
-            ];
+            $totalSaleOrderApproved = SaleOrder::whereYear('created_at', $year)
+                ->where('status', 1)
+                ->selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, COUNT(*) as count')
+                ->groupBy('month', 'year')
+                ->get();
 
-            $totalSale = SaleVoucher::where('status', 1)->sum('voucher_amount');
+            $totalSaleOrderDelivered = SaleOrder::whereYear('sale_orders.created_at', $year)
+                ->where('delivery_notes.status', 1)
+                ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
+                ->selectRaw('MONTH(sale_orders.created_at) as month, YEAR(sale_orders.created_at) as year, COUNT(*) as count')
+                ->groupBy('month', 'year')
+                ->get();
+
+            // Total Sale: Filtered by Year and Month
+            $totalSale = SaleVoucher::where('status', 1)
+                ->whereYear('voucher_date', $year)
+                ->whereMonth('voucher_date', $month)
+                ->sum('voucher_amount');
 
             $data = [
                 'salesGraph' => $salesGraph,
-                'salesData' => $salesData,
+                'salesData' => [
+                    'totalSaleOrderPending' => $totalSaleOrderPending,
+                    'totalSaleOrderApproved' => $totalSaleOrderApproved,
+                    'totalSaleOrderDelivered' => $totalSaleOrderDelivered,
+                ],
                 'totalSale' => $totalSale,
             ];
 
-            
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 }
