@@ -24,10 +24,10 @@ class DashboardController extends Controller
             $query = SaleVoucher::select(
                 'sale_vouchers.*',
                 'customers.name as customer_name',
-                'citys.name as city'
+                'cities.name as city'
             )
             ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
-            ->join('citys', 'customers.city_id', '=', 'citys.id');
+            ->join('cities', 'customers.city_id', '=', 'cities.id');
 
             // Apply filters
             if ($filter === 'non-paid') {
