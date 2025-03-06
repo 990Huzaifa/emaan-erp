@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\InventoryDetail;
+use App\Models\SaleOrder;
 use App\Models\SaleVoucher;
 use Carbon\Carbon;
 use Exception;
@@ -25,6 +26,7 @@ class DashboardController extends Controller
             $query = SaleVoucher::select(
                 'sale_vouchers.*',
                 'customers.name as customer_name',
+                'customers.c_code as customer_code',
                 'cities.name as city',
                 DB::raw("DATEDIFF(NOW(), sale_vouchers.voucher_date) as no_of_days")
             )
@@ -86,14 +88,33 @@ class DashboardController extends Controller
     public function salesAnalysis(Request $request): JsonResponse
     {
         try{
-            $date = $request->input('date') ?? Carbon::now()->format('Y-m');
+            $date = $request->input('date') ?? Carbon::now()->format('Y-M');
 
-            $data = SaleVoucher::where('status', 1)
+            $salesGraph = SaleVoucher::where('status', 1)
             ->whereYear('voucher_date', substr($date, 0, 4))
             ->whereMonth('voucher_date', substr($date, 5))
             ->selectRaw('MONTH(voucher_date) as month, YEAR(voucher_date) as year, sum(voucher_amount) as total')
             ->groupBy('month', 'year')
             ->get();
+
+            $totalSaleOrderPending = SaleOrder::select('sale_orders.*')->where('status', 0)->count();
+            $totalSaleOrderApproved = SaleOrder::select('sale_orders.*')->where('status', 1)->count();
+            $totalSaleOrderDelivered = SaleOrder::select('sale_orders.*')->where('delivery_notes.status', 1)
+            ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')->count();
+
+            $salesData = [
+                'totalSaleOrderPending' => $totalSaleOrderPending,
+                'totalSaleOrderApproved' => $totalSaleOrderApproved,
+                'totalSaleOrderDelivered' => $totalSaleOrderDelivered,
+            ];
+
+            $totalSale = SaleVoucher::where('status', 1)->sum('voucher_amount');
+
+            $data = [
+                'salesGraph' => $salesGraph,
+                'salesData' => $salesData,
+                'totalSale' => $totalSale,
+            ];
 
             
             return response()->json($data,200);
