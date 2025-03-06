@@ -142,6 +142,41 @@ class DashboardController extends Controller
             ? (($totalSale - $previousMonthTotalSale) / $previousMonthTotalSale) * 100
             : 0;
 
+            // total of sales, current month sales, today sale, last month sales increase percentage
+            $totalSale = SaleVoucher::where('status', 1)->sum('voucher_amount');
+
+            // Current month sales
+            $currentMonth = Carbon::now()->month;
+            $currentYear = Carbon::now()->year;
+            $currentMonthSale = SaleVoucher::where('status', 1)
+                ->whereYear('voucher_date', $currentYear)
+                ->whereMonth('voucher_date', $currentMonth)
+                ->sum('voucher_amount');
+
+            // Today's sales
+            $todaySale = SaleVoucher::where('status', 1)
+                ->whereDate('voucher_date', Carbon::now()->toDateString())
+                ->sum('voucher_amount');
+
+            // Last month's sales
+            $lastMonth = Carbon::now()->subMonth()->month;
+            $lastMonthSale = SaleVoucher::where('status', 1)
+                ->whereYear('voucher_date', $currentYear)
+                ->whereMonth('voucher_date', $lastMonth)
+                ->sum('voucher_amount');
+
+            // Calculate percentage increase from last month
+            $percentageInc = ($lastMonthSale > 0)
+                ? (($currentMonthSale - $lastMonthSale) / $lastMonthSale) * 100
+                : 0; // Avoid division by zero 
+
+            $salesView = [
+                'totalSale' => $totalSale,
+                'currentMonthSale' => $currentMonthSale,
+                'todaySale' => $todaySale,
+                'percentageIncrease' => round($percentageInc, 2)
+            ];
+
             $data = [
                 'salesGraph' => $salesGraph,
                 'salesData' => [
@@ -153,7 +188,8 @@ class DashboardController extends Controller
                     'totalSale' => $totalSale,
                     'previousMonthTotalSale' => $previousMonthTotalSale,
                     'percentageIncrease' => $percentageIncrease,
-                ]
+                ],
+                'salesView' => $salesView
             ];
 
             return response()->json($data, 200);
