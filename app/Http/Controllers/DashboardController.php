@@ -101,22 +101,22 @@ class DashboardController extends Controller
                 ->get();
 
             // Sales Data: Grouped by Month & Year (Pending, Approved, Delivered)
-            $totalSaleOrderPending = SaleOrder::whereYear('created_at', $year)
+            $totalSaleOrderPending = SaleOrder::whereYear('order_date', $year)
                 ->where('status', 0)
-                ->selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, COUNT(*) as count')
+                ->selectRaw('MONTH(order_date) as month, YEAR(order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
-            $totalSaleOrderApproved = SaleOrder::whereYear('created_at', $year)
+            $totalSaleOrderApproved = SaleOrder::whereYear('order_date', $year)
                 ->where('status', 1)
-                ->selectRaw('MONTH(created_at) as month, YEAR(created_at) as year, COUNT(*) as count')
+                ->selectRaw('MONTH(order_date) as month, YEAR(order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
-            $totalSaleOrderDelivered = SaleOrder::whereYear('sale_orders.created_at', $year)
+            $totalSaleOrderDelivered = SaleOrder::whereYear('sale_orders.order_date', $year)
                 ->where('delivery_notes.status', 1)
                 ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
-                ->selectRaw('MONTH(sale_orders.created_at) as month, YEAR(sale_orders.created_at) as year, COUNT(*) as count')
+                ->selectRaw('MONTH(sale_orders.order_date) as month, YEAR(sale_orders.order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
