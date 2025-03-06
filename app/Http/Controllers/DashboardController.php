@@ -9,6 +9,7 @@ use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
@@ -24,7 +25,8 @@ class DashboardController extends Controller
             $query = SaleVoucher::select(
                 'sale_vouchers.*',
                 'customers.name as customer_name',
-                'cities.name as city'
+                'cities.name as city',
+                DB::raw("DATEDIFF(NOW(), sale_vouchers.voucher_date) as no_of_days")
             )
             ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
             ->join('cities', 'customers.city_id', '=', 'cities.id');
@@ -34,12 +36,12 @@ class DashboardController extends Controller
                 $query->where('sale_vouchers.status', 0); // Unpaid vouchers
             } elseif ($filter === 'overdue') {
                 $query->where('sale_vouchers.status', 0)
-                    ->where('sale_vouchers.due_date', '<', now()); // Past due date
+                  ->having('no_of_days', '>', 30);
             }
 
             // Filter by month if provided
             if ($month) {
-                $query->whereMonth('sale_vouchers.due_date', $month);
+                $query->whereMonth('sale_vouchers.voucher_date', $month);
             }
 
             $data = $query->get();
@@ -56,13 +58,13 @@ class DashboardController extends Controller
     public function inventoryProducts(): JsonResponse
     {
         try{
-            $outOfStockProducts = InventoryDetail::select('inventory_details.*','products.name','products.image')
+            $outOfStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image')
             ->where('inventory_details.in_stock', 0)
             ->join('products','inventory_details.product_id','=','products.id')->get();
-            $inStockProducts = InventoryDetail::select('inventory_details.*','products.name','products.image')
+            $inStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image')
             ->where('inventory_details.in_stock', 1)
             ->join('products','inventory_details.product_id','=','products.id')->get();
-            $lowInStockProducts = InventoryDetail::select('inventory_details.*','products.name','products.image')
+            $lowInStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image')
             ->where('inventory_details.in_stock', 2)
             ->join('products','inventory_details.product_id','=','products.id')->get();
 
