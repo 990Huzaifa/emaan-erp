@@ -120,11 +120,27 @@ class DashboardController extends Controller
                 ->groupBy('month', 'year')
                 ->get();
 
-            // Total Sale: Filtered by Year and Month
+            // Get the latest month from sales data in the given year
+            $latestMonth = SaleVoucher::where('status', 1)
+            ->whereYear('voucher_date', $year)
+            ->selectRaw('MAX(MONTH(voucher_date)) as latestMonth')
+            ->value('latestMonth');
+
+            // Get total sales for the entire year (up to the latest month)
             $totalSale = SaleVoucher::where('status', 1)
-                ->whereYear('voucher_date', $year)
-                ->whereMonth('voucher_date', $month)
-                ->sum('voucher_amount');
+            ->whereYear('voucher_date', $year)
+            ->sum('voucher_amount');
+
+            // Get total sales for the previous month (if available)
+            $previousMonthTotalSale = SaleVoucher::where('status', 1)
+            ->whereYear('voucher_date', $year)
+            ->whereMonth('voucher_date', $latestMonth - 1) // Previous month
+            ->sum('voucher_amount');
+
+            // Calculate percentage increase
+            $percentageIncrease = ($previousMonthTotalSale > 0)
+            ? (($totalSale - $previousMonthTotalSale) / $previousMonthTotalSale) * 100
+            : 0;
 
             $data = [
                 'salesGraph' => $salesGraph,
@@ -133,7 +149,11 @@ class DashboardController extends Controller
                     'totalSaleOrderApproved' => $totalSaleOrderApproved,
                     'totalSaleOrderDelivered' => $totalSaleOrderDelivered,
                 ],
-                'totalSale' => $totalSale,
+                'sales' => [
+                    'totalSale' => $totalSale,
+                    'previousMonthTotalSale' => $previousMonthTotalSale,
+                    'percentageIncrease' => $percentageIncrease,
+                ]
             ];
 
             return response()->json($data, 200);
