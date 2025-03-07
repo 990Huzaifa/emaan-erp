@@ -213,11 +213,17 @@ class DashboardController extends Controller
 
             $total_customers = Customer::where('business_id',$businessId)->count();
             $lm_customers = Customer::where('business_id',$businessId)->whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->count();
+            $cm_customers = Customer::where('business_id', $businessId)->whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year)->count();
             $ipc_customers = ($lm_customers > 0) ? (($total_customers - $lm_customers) / $lm_customers) * 100 : 0;
+
+            $trend_customers = $this->checkTrend($cm_customers,$lm_customers);
 
             $total_inventory = InventoryDetail::distinct('product_id')->count();
             $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->distinct('product_id')->count();
+            $cm_inventory = InventoryDetail::whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year)->distinct('product_id')->count();
             $ipc_inventory = ($lm_inventory > 0) ? (($total_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
+
+            $trend_inventory = $this->checkTrend($cm_inventory,$lm_inventory);
 
             $total_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
 
@@ -238,11 +244,13 @@ class DashboardController extends Controller
             $data = [
                 'Customers' => [
                     'total' => $total_customers,
+                    'trend' => $trend_customers,
                     'ipc' => $ipc_customers,
 
                 ],
                 'Products' => [
                     'total' => $total_inventory,
+                    'trend' => $trend_inventory,
                     'ipc' => $ipc_inventory
                 ],
                 'Sales' => [
