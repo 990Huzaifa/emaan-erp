@@ -60,13 +60,13 @@ class DashboardController extends Controller
     public function inventoryProducts(): JsonResponse
     {
         try{
-            $outOfStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image')
+            $outOfStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','product.p_code as code')
             ->where('inventory_details.in_stock', 0)
             ->join('products','inventory_details.product_id','=','products.id')->get();
-            $inStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image')
+            $inStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','product.p_code as code')
             ->where('inventory_details.in_stock', 1)
             ->join('products','inventory_details.product_id','=','products.id')->get();
-            $lowInStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image')
+            $lowInStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','product.p_code as code')
             ->where('inventory_details.in_stock', 2)
             ->join('products','inventory_details.product_id','=','products.id')->get();
 
