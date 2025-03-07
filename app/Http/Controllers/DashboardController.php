@@ -201,7 +201,7 @@ class DashboardController extends Controller
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'view dashboard')) {
+                if (!$user->hasBusinessPermission($businessId, 'list products')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -210,16 +210,16 @@ class DashboardController extends Controller
             // here we count  total and increasing percentage in that total from last month
             $last_month = Carbon::now()->subMonth()->month;
 
-            $total_customers = Customer::count();
-            $lm_customers = Customer::whereMonth('created_at', $last_month)->count();
+            $total_customers = Customer::where('business_id',$businessId)->count();
+            $lm_customers = Customer::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
             $ipc_customers = ($lm_customers > 0) ? (($total_customers - $lm_customers) / $lm_customers) * 100 : 0;
 
             $total_inventory = InventoryDetail::groupBy('product_id')->count();
             $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month)->groupBy('product_id')->count();
             $ipc_inventory = ($lm_inventory > 0) ? (($total_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
 
-            $total_sale_orders = SaleOrder::count();
-            $lm_sale_orders = SaleOrder::whereMonth('created_at', $last_month)->count();
+            $total_sale_orders = SaleOrder::where('business_id',$businessId)->count();
+            $lm_sale_orders = SaleOrder::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
             $ipc_sale_orders = ($lm_sale_orders > 0) ? (($total_sale_orders - $lm_sale_orders) / $lm_sale_orders) * 100 : 0;
 
             $data = [
