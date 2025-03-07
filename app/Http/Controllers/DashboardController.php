@@ -225,11 +225,15 @@ class DashboardController extends Controller
             $lm_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
             $ipc_sale = ($lm_sales > 0) ? (($cm_sales - $lm_sales) / $lm_sales) * 100 : 0;
 
+            $trend_sales  = $this->checkTrend($cm_sales, $lm_sales);
+
             $total_purchases = PurchaseVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
 
             $cm_purchase = PurchaseVoucher::where('business_id', $businessId)->where('status',1)->whereMonth('voucher_date', Carbon::now()->month)->whereYear('voucher_date', Carbon::now()->year)->sum('voucher_amount');
             $lm_purchases = PurchaseVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
             $ipc_purchases = ($lm_purchases > 0) ? (($cm_purchase - $lm_purchases) / $lm_purchases) * 100 : 0;
+
+            $trend_purchases  = $this->checkTrend($cm_purchase, $lm_purchases);
 
             $data = [
                 'Customers' => [
@@ -241,12 +245,14 @@ class DashboardController extends Controller
                     'total_inventory' => $total_inventory,
                     'ipc_inventory' => $ipc_inventory
                 ],
-                'SaleOrders' => [
+                'Sales' => [
                     'total_sales' => $total_sales,
+                    'trend_sales' => $trend_sales,
                     'ipc_sale' => $ipc_sale
                 ],
                 'Purchases' => [
                     'total_purchases' => $total_purchases,
+                    'trend_purchases' => $trend_purchases,
                     'ipc_purchases' => $ipc_purchases
                 ]
             ];
@@ -258,5 +264,11 @@ class DashboardController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    private function checkTrend($current, $last)
+    {
+        return ($current >= $last) ? 1 : 0; // 1 for increase, 0 for decrease
+    }
+
 
 }
