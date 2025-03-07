@@ -237,23 +237,23 @@ class DashboardController extends Controller
 
             $data = [
                 'Customers' => [
-                    'total_customers' => $total_customers,
-                    'ipc_customers' => $ipc_customers,
+                    'total' => $total_customers,
+                    'ipc' => $ipc_customers,
 
                 ],
                 'Products' => [
-                    'total_inventory' => $total_inventory,
-                    'ipc_inventory' => $ipc_inventory
+                    'total' => $total_inventory,
+                    'ipc' => $ipc_inventory
                 ],
                 'Sales' => [
-                    'total_sales' => $total_sales,
-                    'trend_sales' => $trend_sales,
-                    'ipc_sale' => $ipc_sale
+                    'total' => $total_sales,
+                    'trend' => $trend_sales,
+                    'ipc' => $ipc_sale
                 ],
                 'Purchases' => [
-                    'total_purchases' => $total_purchases,
-                    'trend_purchases' => $trend_purchases,
-                    'ipc_purchases' => $ipc_purchases
+                    'total' => $total_purchases,
+                    'trend' => $trend_purchases,
+                    'ipc' => $ipc_purchases
                 ]
             ];
 
