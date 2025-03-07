@@ -215,7 +215,7 @@ class DashboardController extends Controller
             $lm_customers = Customer::where('business_id',$businessId)->whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->count();
             $ipc_customers = ($lm_customers > 0) ? (($total_customers - $lm_customers) / $lm_customers) * 100 : 0;
 
-            $total_inventory = InventoryDetail::groupBy('product_id')->count();
+            $total_inventory = InventoryDetail::distinct('product_id')->count();
             $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->groupBy('product_id')->count();
             $ipc_inventory = ($lm_inventory > 0) ? (($total_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
 
