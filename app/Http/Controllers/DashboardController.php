@@ -165,10 +165,13 @@ class DashboardController extends Controller
                 ? (($currentMonthSale - $lastMonthSale) / $lastMonthSale) * 100
                 : 0; // Avoid division by zero 
 
+            $sale_trend = $this->checkTrend($currentMonthSale,$lastMonthSale);
+
             $salesView = [
                 'totalSale' => $totalSale,
                 'currentMonthSale' => $currentMonthSale,
                 'todaySale' => $todaySale,
+                'trend' => $sale_trend,
                 'percentageIncrease' => round($percentageInc, 2)
             ];
 
