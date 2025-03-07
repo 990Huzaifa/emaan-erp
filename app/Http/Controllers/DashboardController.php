@@ -267,14 +267,12 @@ class DashboardController extends Controller
 
     private function checkTrend($current, $last)
     {
-        if ($last == 0 && $current == 0) {
-            return 2; // Stable
-        } elseif ($current >= $last) {
-            return 1; // Increase
-        } else {
-            return 0; // Decrease
+        if ($last == 0) {
+            return ($current > 0) ? 1 : 2; // If there are sales this month, it's an increase; otherwise, it's stable.
         }
+        return ($current >= $last) ? 1 : 0; // Increase if equal or greater, otherwise decrease.
     }
+
 
 
 
