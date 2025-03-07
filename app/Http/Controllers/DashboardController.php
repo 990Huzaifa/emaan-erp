@@ -207,12 +207,35 @@ class DashboardController extends Controller
                     ], 403);
                 }
             }
+            // here we count  total and increasing percentage in that total from last month
+            $last_month = Carbon::now()->subMonth()->month;
+
+            $total_customers = Customer::count();
+            $lm_customers = Customer::whereMonth('created_at', $last_month)->count();
+            $ipc_customers = ($lm_customers > 0) ? (($total_customers - $lm_customers) / $lm_customers) * 100 : 0;
+
+            $total_inventory = InventoryDetail::groupBy('product_id')->count();
+            $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month)->groupBy('product_id')->count();
+            $ipc_inventory = ($lm_inventory > 0) ? (($total_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
+
+            $total_sale_orders = SaleOrder::count();
+            $lm_sale_orders = SaleOrder::whereMonth('created_at', $last_month)->count();
+            $ipc_sale_orders = ($lm_sale_orders > 0) ? (($total_sale_orders - $lm_sale_orders) / $lm_sale_orders) * 100 : 0;
 
             $data = [
-                'totalCustomers' => Customer::count(),
-                'totalProducts' => InventoryDetail::groupBy('product_id')->count(),
-                'totalSaleOrders' => SaleOrder::count(),
-                'totalVouchers' => SaleVoucher::count(),
+                'Customers' => [
+                    'total_customers' => $total_customers,
+                    'ipc_customers' => $ipc_customers,
+
+                ],
+                'Products' => [
+                    'total_inventory' => $total_inventory,
+                    'ipc_inventory' => $ipc_inventory
+                ],
+                'SaleOrders' => [
+                    'total_sale_orders' => $total_sale_orders,
+                    'ipc_sale_orders' => $ipc_sale_orders
+                ],
             ];
 
             return response()->json($data, 200);

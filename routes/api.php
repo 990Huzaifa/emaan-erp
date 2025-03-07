@@ -317,6 +317,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('dashboard/customer',[DashboardController::class,'nonPaidCustomer']);
     Route::get('dashboard/inventory',[DashboardController::class,'inventoryProducts']);
     Route::get('dashboard/sale-analysis',[DashboardController::class,'salesAnalysis']);
+    Route::get('dashboard/statistics',[DashboardController::class,'statistics']);
 
 
 });
