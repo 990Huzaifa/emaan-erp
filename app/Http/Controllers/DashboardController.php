@@ -267,8 +267,15 @@ class DashboardController extends Controller
 
     private function checkTrend($current, $last)
     {
-        return ($current >= $last) ? 1 : 0; // 1 for increase, 0 for decrease
+        if ($last == 0 && $current == 0) {
+            return 2; // Stable
+        } elseif ($current >= $last) {
+            return 1; // Increase
+        } else {
+            return 0; // Decrease
+        }
     }
+
 
 
 }
