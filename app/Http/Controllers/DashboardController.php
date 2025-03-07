@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\InventoryDetail;
+use App\Models\PurchaseOrder;
 use App\Models\SaleOrder;
 use App\Models\SaleVoucher;
 use Carbon\Carbon;
@@ -222,6 +223,10 @@ class DashboardController extends Controller
             $lm_sale_orders = SaleOrder::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
             $ipc_sale_orders = ($lm_sale_orders > 0) ? (($total_sale_orders - $lm_sale_orders) / $lm_sale_orders) * 100 : 0;
 
+            $total_purchases = PurchaseOrder::where('business_id',$businessId)->count();
+            $lm_purchases = PurchaseOrder::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
+            $ipc_purchases = ($lm_purchases > 0) ? (($total_purchases - $lm_purchases) / $lm_purchases) * 100 : 0;
+
             $data = [
                 'Customers' => [
                     'total_customers' => $total_customers,
@@ -236,6 +241,10 @@ class DashboardController extends Controller
                     'total_sale_orders' => $total_sale_orders,
                     'ipc_sale_orders' => $ipc_sale_orders
                 ],
+                'Purchases' => [
+                    'total_purchases' => $total_purchases,
+                    'ipc_purchases' => $ipc_purchases
+                ]
             ];
 
             return response()->json($data, 200);
