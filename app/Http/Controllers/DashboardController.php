@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\InventoryDetail;
-use App\Models\PurchaseOrder;
+use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
 use App\Models\SaleVoucher;
 use Carbon\Carbon;
@@ -209,23 +209,27 @@ class DashboardController extends Controller
                 }
             }
             // here we count  total and increasing percentage in that total from last month
-            $last_month = Carbon::now()->subMonth()->month;
+            $last_month_date = Carbon::now()->subMonth();
 
             $total_customers = Customer::where('business_id',$businessId)->count();
-            $lm_customers = Customer::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
+            $lm_customers = Customer::where('business_id',$businessId)->whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->count();
             $ipc_customers = ($lm_customers > 0) ? (($total_customers - $lm_customers) / $lm_customers) * 100 : 0;
 
             $total_inventory = InventoryDetail::groupBy('product_id')->count();
-            $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month)->groupBy('product_id')->count();
+            $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->groupBy('product_id')->count();
             $ipc_inventory = ($lm_inventory > 0) ? (($total_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
 
-            $total_sale_orders = SaleOrder::where('business_id',$businessId)->count();
-            $lm_sale_orders = SaleOrder::where('business_id',$businessId)->whereMonth('order_date', $last_month)->count();
-            $ipc_sale_orders = ($lm_sale_orders > 0) ? (($total_sale_orders - $lm_sale_orders) / $lm_sale_orders) * 100 : 0;
+            $total_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
 
-            $total_purchases = PurchaseOrder::where('business_id',$businessId)->count();
-            $lm_purchases = PurchaseOrder::where('business_id',$businessId)->whereMonth('order_date', $last_month)->count();
-            $ipc_purchases = ($lm_purchases > 0) ? (($total_purchases - $lm_purchases) / $lm_purchases) * 100 : 0;
+            $cm_sales = SaleVoucher::where('business_id', $businessId)->where('status',1)->whereMonth('voucher_date', Carbon::now()->month)->whereYear('voucher_date', Carbon::now()->year)->sum('voucher_amount');
+            $lm_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
+            $ipc_sale = ($lm_sales > 0) ? (($cm_sales - $lm_sales) / $lm_sales) * 100 : 0;
+
+            $total_purchases = PurchaseVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
+
+            $cm_purchase = PurchaseVoucher::where('business_id', $businessId)->where('status',1)->whereMonth('voucher_date', Carbon::now()->month)->whereYear('voucher_date', Carbon::now()->year)->sum('voucher_amount');
+            $lm_purchases = PurchaseVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
+            $ipc_purchases = ($lm_purchases > 0) ? (($cm_purchase - $lm_purchases) / $lm_purchases) * 100 : 0;
 
             $data = [
                 'Customers' => [
@@ -238,8 +242,8 @@ class DashboardController extends Controller
                     'ipc_inventory' => $ipc_inventory
                 ],
                 'SaleOrders' => [
-                    'total_sale_orders' => $total_sale_orders,
-                    'ipc_sale_orders' => $ipc_sale_orders
+                    'total_sales' => $total_sales,
+                    'ipc_sale' => $ipc_sale
                 ],
                 'Purchases' => [
                     'total_purchases' => $total_purchases,
