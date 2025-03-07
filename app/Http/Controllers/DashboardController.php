@@ -220,11 +220,11 @@ class DashboardController extends Controller
             $ipc_inventory = ($lm_inventory > 0) ? (($total_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
 
             $total_sale_orders = SaleOrder::where('business_id',$businessId)->count();
-            $lm_sale_orders = SaleOrder::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
+            $lm_sale_orders = SaleOrder::where('business_id',$businessId)->whereMonth('voucher_date', $last_month)->count();
             $ipc_sale_orders = ($lm_sale_orders > 0) ? (($total_sale_orders - $lm_sale_orders) / $lm_sale_orders) * 100 : 0;
 
             $total_purchases = PurchaseOrder::where('business_id',$businessId)->count();
-            $lm_purchases = PurchaseOrder::where('business_id',$businessId)->whereMonth('created_at', $last_month)->count();
+            $lm_purchases = PurchaseOrder::where('business_id',$businessId)->whereMonth('voucher_date', $last_month)->count();
             $ipc_purchases = ($lm_purchases > 0) ? (($total_purchases - $lm_purchases) / $lm_purchases) * 100 : 0;
 
             $data = [
