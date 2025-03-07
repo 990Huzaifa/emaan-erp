@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
 use App\Models\InventoryDetail;
 use App\Models\SaleOrder;
 use App\Models\SaleVoucher;
@@ -10,6 +11,7 @@ use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
@@ -60,13 +62,13 @@ class DashboardController extends Controller
     public function inventoryProducts(): JsonResponse
     {
         try{
-            $outOfStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','product.p_code as code')
+            $outOfStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','products.p_code as code')
             ->where('inventory_details.in_stock', 0)
             ->join('products','inventory_details.product_id','=','products.id')->get();
-            $inStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','product.p_code as code')
+            $inStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','products.p_code as code')
             ->where('inventory_details.in_stock', 1)
             ->join('products','inventory_details.product_id','=','products.id')->get();
-            $lowInStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','product.p_code as code')
+            $lowInStockProducts = InventoryDetail::select('inventory_details.*','products.title','products.image','products.p_code as code')
             ->where('inventory_details.in_stock', 2)
             ->join('products','inventory_details.product_id','=','products.id')->get();
 
@@ -182,6 +184,35 @@ class DashboardController extends Controller
                     'percentageIncrease' => $percentageIncrease,
                 ],
                 'salesView' => $salesView
+            ];
+
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function statistics(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view dashboard')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $data = [
+                'totalCustomers' => Customer::count(),
+                'totalProducts' => InventoryDetail::groupBy('product_id')->count(),
+                'totalSaleOrders' => SaleOrder::count(),
+                'totalVouchers' => SaleVoucher::count(),
             ];
 
             return response()->json($data, 200);
