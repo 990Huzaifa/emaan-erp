@@ -386,8 +386,18 @@ class ReportsController extends Controller
 
             // get inventory
             $grn_ids = GoodsReceiveNote::where('business_id', $businessId)->pluck('id');
-            $products_ids = Lot::whereIn('grn_id', $grn_ids)->distinct('product_id')->pluck('product_id');
-            $inventory = InventoryDetail::whereIn('product_id', $products_ids)->get();
+            $lotsData = Lot::whereIn('grn_id', $grn_ids)
+                ->select(
+                    'product_id',
+                    DB::raw('SUM(quantity) as total_quantity'),
+                    DB::raw('SUM(quantity * sale_unit_price) as total_value')
+                )
+                ->groupBy('product_id')
+                ->get();
+
+
+            // This is simply the sum of total values of all products.
+            $inventory_total = $lotsData->sum('total_value');
 
             // getting balance of accounts and total
             $bank_total = 0;
@@ -408,10 +418,7 @@ class ReportsController extends Controller
                 $customer_total += $customer;
             }
 
-            $inventory_total = 0;
-            foreach ($inventory as $key => $item) {
-                $inventory_total += $item->stock * $item->unit_price;
-            }
+            
 
             $business = Business::find($businessId);
 
