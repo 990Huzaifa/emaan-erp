@@ -102,6 +102,7 @@ class DashboardController extends Controller
                 ->whereMonth('voucher_date', $month);
 
             // Handle Daily Data
+            $formattedData = [];
             if ($graphFilter === 'daily') {
                 $salesGraph = $query->selectRaw('DAY(voucher_date) as day, SUM(voucher_amount) as total')
                     ->groupBy('day')
@@ -111,7 +112,7 @@ class DashboardController extends Controller
 
                 // Fill missing days with 0
                 $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
-                $formattedData = [];
+                
                 for ($day = 1; $day <= $daysInMonth; $day++) {
                     $formattedData[] = [
                         'day' => $day,
@@ -132,7 +133,7 @@ class DashboardController extends Controller
                 $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
                 $weeksInMonth = ceil($daysInMonth / 7);
             
-                $formattedData = [];
+                
                 for ($week = 1; $week <= $weeksInMonth; $week++) {
                     $formattedData[] = [
                         'week' => $week,
