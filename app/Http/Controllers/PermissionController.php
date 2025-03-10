@@ -99,7 +99,8 @@ class PermissionController extends Controller
                     'create sale orders',
                     'edit sale orders',
                     'approve sale orders',
-                    'delete sale orders'
+                    'delete sale orders',
+                    'special approve sale orders',
                 ],
                 "Delivery Note" => [
                     'list delivery notes',
@@ -120,8 +121,7 @@ class PermissionController extends Controller
                     'view sale voucher',
                     'list sale voucher',
                     'edit sale voucher',
-                    'approve sale voucher',
-                    'special approve sale voucher'
+                    'approve sale voucher'
                 ],
                 "Sale Return" => [
                     'create sale return',

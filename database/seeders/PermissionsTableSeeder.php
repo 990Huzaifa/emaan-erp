@@ -55,12 +55,15 @@ class PermissionsTableSeeder extends Seeder
             'edit purchase orders',
             'approve purchase orders',
             'delete purchase orders',
+            
             'list sale orders',
             'view sale orders',
             'create sale orders',
             'edit sale orders',
             'approve sale orders',
             'delete sale orders',
+            'special approve sale orders',
+
             'list goods received notes',
             'view goods received notes',
             'create goods received notes',
@@ -91,7 +94,7 @@ class PermissionsTableSeeder extends Seeder
             'list sale voucher',
             'edit sale voucher',
             'approve sale voucher',
-            'special approve sale voucher',
+            
 
             'create purchase invoice',
             'view purchase invoice',
