@@ -386,8 +386,8 @@ class ReportsController extends Controller
 
             // get inventory
             $grn_ids = GoodsReceiveNote::where('business_id', $businessId)->pluck('id');
-            $lots_ids = Lot::whereIn('grn_id', $grn_ids)->pluck('id');
-            $inventory = InventoryDetail::whereIn('lot_id', $lots_ids)->get();
+            $products_ids = Lot::whereIn('grn_id', $grn_ids)->distinct('product_id')->pluck('procudt_id');
+            $inventory = InventoryDetail::whereIn('product_id', $products_ids)->get();
 
             // getting balance of accounts and total
             $bank_total = 0;
