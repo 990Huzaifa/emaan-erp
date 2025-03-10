@@ -94,14 +94,53 @@ class DashboardController extends Controller
             $date = $request->input('date') ?? Carbon::now()->format('Y-m');
             $year = substr($date, 0, 4); // Extract year
             $month = substr($date, 5); // Extract month
+            $graphFilter = request('graph_filter');
 
             // Sales Graph: Filtered by Year and Month
-            $salesGraph = SaleVoucher::where('status', 1)
+            $query = SaleVoucher::where('status', 1)
                 ->whereYear('voucher_date', $year)
-                ->whereMonth('voucher_date', $month)
-                ->selectRaw('MONTH(voucher_date) as month, YEAR(voucher_date) as year, sum(voucher_amount) as total')
-                ->groupBy('month', 'year')
-                ->get();
+                ->whereMonth('voucher_date', $month);
+
+            // Handle Daily Data
+            if ($graphFilter === 'daily') {
+                $salesGraph = $query->selectRaw('DAY(voucher_date) as day, SUM(voucher_amount) as total')
+                    ->groupBy('day')
+                    ->orderBy('day')
+                    ->get()
+                    ->keyBy('day');
+
+                // Fill missing days with 0
+                $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+                $formattedData = [];
+                for ($day = 1; $day <= $daysInMonth; $day++) {
+                    $formattedData[] = [
+                        'day' => $day,
+                        'total' => $salesGraph[$day]->total ?? 0
+                    ];
+                }
+            }
+
+            // Handle Weekly Data
+            elseif ($graphFilter === 'weekly') {
+                $salesGraph = $query->selectRaw('WEEK(voucher_date, 1) as week, SUM(voucher_amount) as total')
+                    ->groupBy('week')
+                    ->orderBy('week')
+                    ->get()
+                    ->keyBy('week');
+
+                // Get total weeks in month
+                $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfWeek();
+                $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfWeek();
+                $weeksInMonth = ceil($endOfMonth->diffInDays($startOfMonth) / 7);
+
+                $formattedData = [];
+                for ($week = 1; $week <= $weeksInMonth; $week++) {
+                    $formattedData[] = [
+                        'week' => $week,
+                        'total' => $salesGraph[$week]->total ?? 0
+                    ];
+                }
+            }
 
             // Sales Data: Grouped by Month & Year (Pending, Approved, Delivered)
             $totalSaleOrderPending = SaleOrder::whereYear('order_date', $year)
@@ -176,7 +215,7 @@ class DashboardController extends Controller
             ];
 
             $data = [
-                'salesGraph' => $salesGraph,
+                'salesGraph' => $formattedData,
                 'salesData' => [
                     'totalSaleOrderPending' => $totalSaleOrderPending,
                     'totalSaleOrderApproved' => $totalSaleOrderApproved,
