@@ -122,17 +122,16 @@ class DashboardController extends Controller
 
             // Handle Weekly Data
             elseif ($graphFilter === 'weekly') {
-                $salesGraph = $query->selectRaw('WEEK(voucher_date, 1) as week, SUM(voucher_amount) as total')
+                $salesGraph = $query->selectRaw('FLOOR((DAY(voucher_date)-1)/7)+1 as week, SUM(voucher_amount) as total')
                     ->groupBy('week')
                     ->orderBy('week')
                     ->get()
                     ->keyBy('week');
-
-                // Get total weeks in month
-                $startOfMonth = Carbon::createFromDate($year, $month, 1)->startOfWeek();
-                $endOfMonth = Carbon::createFromDate($year, $month, 1)->endOfMonth()->endOfWeek();
-                $weeksInMonth = ceil($endOfMonth->diffInDays($startOfMonth) / 7);
-
+            
+                // Calculate total weeks in the month
+                $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+                $weeksInMonth = ceil($daysInMonth / 7);
+            
                 $formattedData = [];
                 for ($week = 1; $week <= $weeksInMonth; $week++) {
                     $formattedData[] = [
