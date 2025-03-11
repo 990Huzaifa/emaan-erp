@@ -563,7 +563,7 @@ class ReportsController extends Controller
 
             $perpage = $request->input('perpage', 10);
 
-            $customers = Customer::select('customers.*','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            $customers = Customer::select('customers.id','customers.name','customers.acc_id','customers.c_code','customers.address','opening_balances.amount as opening_balance', 'transactions.current_balance')
             ->when($businessId, function ($query) use ($businessId) {
                 return $query->where('customers.business_id', $businessId);
             })
@@ -595,7 +595,7 @@ class ReportsController extends Controller
             }
             $perpage = $request->input('perpage', 10);
 
-            $vendors = Vendor::select('vendors.*','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            $vendors = Vendor::select('vendors.id','vendors.name','vendors.acc_id','vendors.v_code','vendors.address','opening_balances.amount as opening_balance', 'transactions.current_balance')
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
             ->join('transactions', 'vendors.acc_id', '=', 'transactions.acc_id')
             ->paginate($perpage);
