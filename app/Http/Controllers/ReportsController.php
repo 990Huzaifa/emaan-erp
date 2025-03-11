@@ -565,7 +565,7 @@ class ReportsController extends Controller
 
             $customers = Customer::select('customers.*','opening_balances.amount as opening_balance', 'transactions.current_balance')
             ->when($businessId, function ($query) use ($businessId) {
-                return $query->where('business_id', $businessId);
+                return $query->where('customers.business_id', $businessId);
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
             ->join('transactions', 'customers.acc_id', '=', 'transactions.acc_id')
