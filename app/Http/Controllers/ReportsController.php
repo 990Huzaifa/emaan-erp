@@ -606,7 +606,7 @@ class ReportsController extends Controller
             $accounts  = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
                 ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
                 ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
-                ->where('chart_of_accounts.parent_code', $acc_code)
+                ->whereIn('chart_of_accounts.parent_code', $acc_code)
                 ->select([
                     'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
                     'chart_of_accounts.name as account_name', // Account name from chart of accounts
