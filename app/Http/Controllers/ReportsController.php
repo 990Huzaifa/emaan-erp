@@ -580,6 +580,55 @@ class ReportsController extends Controller
         }
     }
 
+    public function cnbBalances(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = null;
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }else{
+                $businessId = $request->input('business_id');
+                if (empty($businessId)) throw new Exception('business id required', 404);
+            }
+
+            $perpage = $request->input('perpage', 10);
+
+            $acc_code = ChartOfAccount::select('code')->where('name',['CASH','BANK'])->value('code');
+            // Define the query with specific columns to fetch
+            $accounts  = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
+                ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
+                ->join('opening_balances', 'business_has_accounts.chart_of_account_id', '=', 'opening_balances.acc_id')
+                ->where('chart_of_accounts.parent_code', $acc_code)
+                ->select([
+                    'business_has_accounts.chart_of_account_id as acc_id', // Account ID from business has accounts
+                    'chart_of_accounts.name as account_name', // Account name from chart of accounts
+                    'chart_of_accounts.code as account_code'
+                ])->get();
+            
+                $data = $accounts->map(function ($account) {
+                    return [
+                        'acc_id' => $account->acc_id,
+                        'account_name' => $account->account_name,
+                        'account_code' => $account->account_code,
+                        'opening_balance' => $account->opening_balance,
+                        'current balance' => currentBalance($account->acc_id) // Use helper function
+                    ];
+                });
+
+                return response()->json($data);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
 
     public function vendorBalances(Request $request): JsonResponse
     {

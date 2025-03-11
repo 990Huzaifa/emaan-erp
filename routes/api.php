@@ -314,6 +314,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('customer-balances',[ReportsController::class,'customerBalances']);
 
     Route::get('vendor-balances',[ReportsController::class,'vendorBalances']);
+    Route::get('cnb-balances',[ReportsController::class,'cnbBalances']);
 
     Route::get('sales-chart',[ReportsController::class,'salesChart']);
 
