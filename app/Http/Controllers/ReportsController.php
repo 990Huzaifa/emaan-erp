@@ -173,6 +173,50 @@ class ReportsController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+    public function partyPurchaseSummary(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'purchase summary')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $start_date = $request->input('start_date', PurchaseVoucher::min('voucher_date')); // Default: earliest transaction date
+            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
+            $vendorId = $request->input('vendor_id'); // Default: earliest transaction date
+
+            // Ensure valid date format
+            $start_date = Carbon::parse($start_date)->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($end_date)->endOfDay()->toDateTimeString();
+
+            // Query purchase vouchers with vendor names
+            $query = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
+                ->join('vendors', 'purchase_vouchers.vendor_id', '=', 'vendors.id')
+                ->whereBetween('purchase_vouchers.voucher_date', [$start_date, $end_date])
+                ->where('purchase_vouchers.vendor_id', $vendorId)
+                ->where('purchase_vouchers.status', 1);
+
+            // Apply business_id filter if the user is not an admin
+            if (!empty($businessId)) {
+                $query->where('purchase_vouchers.business_id', $businessId);
+            }
+
+            // Fetch data ordered by voucher date (descending)
+            $purchaseData = $query->orderBy('purchase_vouchers.voucher_date', 'desc')->get();
+
+            // Calculate total voucher amount with business filter if applicable
+            $total = $query->sum('purchase_vouchers.voucher_amount');
+
+            return response()->json(["data" => $purchaseData, "total" => $total]);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 
 
     public function salesSummary(Request $request): JsonResponse
@@ -200,6 +244,51 @@ class ReportsController extends Controller
             $query = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
                 ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
                 ->whereBetween('sale_vouchers.voucher_date', [$start_date, $end_date])
+                ->where('sale_vouchers.status', 1);
+
+            // Filter by business_id if provided
+            if (!empty($businessId)) {
+                $query->where('sale_vouchers.business_id', $businessId);
+            }
+
+            // Fetch data and order by voucher date (descending)
+            $salesData = $query->orderBy('sale_vouchers.voucher_date', 'desc')->get();
+
+            $total = $query->sum('sale_vouchers.voucher_amount');
+
+            return response()->json(["data" => $salesData, "total" => $total]);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function partySalesSummary(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'sales summary')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+
+            $start_date = $request->input('start_date', SaleVoucher::min('voucher_date')); // Default: earliest transaction date
+            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
+            $customerId = $request->input('customer_id'); // customer id
+
+            // Ensure valid date format
+            $start_date = Carbon::parse($start_date)->startOfDay()->toDateTimeString();
+            $end_date = Carbon::parse($end_date)->endOfDay()->toDateTimeString();
+
+            // Query sale vouchers with customer names
+            $query = SaleVoucher::select('sale_vouchers.*', 'customers.name as customer_name')
+                ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
+                ->whereBetween('sale_vouchers.voucher_date', [$start_date, $end_date])
+                ->where('sale_vouchers.customer_id', $customerId)
                 ->where('sale_vouchers.status', 1);
 
             // Filter by business_id if provided
