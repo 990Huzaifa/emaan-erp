@@ -16,6 +16,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
 use App\Models\SaleVoucher;
+use App\Models\Vendor;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Carbon\Carbon;
 use Exception;
@@ -539,6 +540,72 @@ class ReportsController extends Controller
 
         }catch(Exception $e){
             return response()->json(['error'=> $e->getMessage()], 400);
+        }
+    }
+
+
+    public function customerBalances(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = null;
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }else{
+                $businessId = $request->input('business_id');
+                if (empty($businessId)) throw new Exception('business id required', 404);
+            }
+
+            $perpage = $request->input('perpage', 10);
+
+            $customers = Customer::select('customers.*','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            ->when($businessId, function ($query) use ($businessId) {
+                return $query->where('business_id', $businessId);
+            })
+            ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
+            ->join('transactions', 'customers.acc_id', '=', 'transactions.acc_id')
+            ->paginate($perpage);
+
+            return response()->json($customers);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function vendorBalances(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perpage = $request->input('perpage', 10);
+
+            $vendors = Vendor::select('vendors.*','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
+            ->join('transactions', 'vendors.acc_id', '=', 'transactions.acc_id')
+            ->paginate($perpage);
+
+            return response()->json($vendors);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
     

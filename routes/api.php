@@ -311,6 +311,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('balance-sheet',[ReportsController::class,'balanceSheet']);
 
+    Route::get('customer-balances',[ReportsController::class,'customerBalances']);
+
+    Route::get('vendor-balances',[ReportsController::class,'vendorBalances']);
+
     Route::get('sales-chart',[ReportsController::class,'salesChart']);
 
 
