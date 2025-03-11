@@ -598,8 +598,10 @@ class ReportsController extends Controller
             }
 
             $perpage = $request->input('perpage', 10);
-
-            $acc_code = ChartOfAccount::select('code')->where('name',['CASH','BANK'])->value('code');
+            // where name cash and bank select code value
+            $acc_code = ChartOfAccount::whereIn('name', ['CASH', 'BANK'])
+    ->pluck('code')
+    ->toArray();
             // Define the query with specific columns to fetch
             $accounts  = BusinessHasAccount::where('business_has_accounts.business_id', $businessId)
                 ->join('chart_of_accounts', 'business_has_accounts.chart_of_account_id', '=', 'chart_of_accounts.id')
