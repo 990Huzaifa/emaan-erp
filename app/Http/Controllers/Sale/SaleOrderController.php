@@ -158,11 +158,9 @@ class SaleOrderController extends Controller
                     ], 403);
                 }
             }
-            $data = SaleOrder::with(['items' => function ($query) {
-                $query->with('product:id,title');
-            }])
-            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
-            ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
+            $data = SaleOrder::with(['items.product.measurementUnit:id,name'])
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
+            ->select('sale_orders.*', 'customers.name as customer_name')
             ->find($id);
             if (empty($data)) throw new Exception('No SO found', 404);
             return response()->json($data,200);
