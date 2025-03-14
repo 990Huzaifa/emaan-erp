@@ -353,16 +353,12 @@ class SaleVoucherController extends Controller
         $class = "A";
         $last_voucher = SaleVoucher::where('customer_id',$customerId)->where('status',1)->orderBy('id','desc')->first();
         if(!empty($last_voucher)){
-            switch ($last_voucher->days) {
-                case $last_voucher->days <= 20:
-                    $class = "A";
-                    break;
-                case $last_voucher->days <= 45:
-                    $class = "B";
-                    break;                
-                default:
-                    $class = "C";
-                    break;
+            if($last_voucher->days <= 20){
+                $class = "A";
+            }elseif ($last_voucher->days <= 45) {
+                $class = "B";
+            }else{
+                $class = "C";
             }
         }
         $customer  = Customer::find($customerId);
