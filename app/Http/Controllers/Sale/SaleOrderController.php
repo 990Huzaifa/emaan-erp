@@ -145,54 +145,33 @@ class SaleOrderController extends Controller
      * Display the specified resource.
      */
     public function show(string $id): JsonResponse
-{
-    try {
-        $user = Auth::user();
-
-        // Permission Check
-        if ($user->role != 'admin') {
-            $businessId = $user->login_business;
-            if (!$user->hasBusinessPermission($businessId, 'view sale orders')) {
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view sale orders')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
-        }
-
-        $saleOrder = SaleOrder::with(['items.product.measurementUnit:id,name'])
-            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
-            ->select('sale_orders.*', 'customers.name as customer_name')
+            $data = SaleOrder::with(['items' => function ($query) {
+                $query->with('product:id,title');
+            }])
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
+            ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
             ->find($id);
-
-        if (empty($saleOrder)) {
-            throw new Exception('No SO found', 404);
+            if (empty($data)) throw new Exception('No SO found', 404);
+            return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        // Transform Items for clean response
-        $saleOrder->items->transform(function ($item) {
-            return [
-                'id' => $item->id,
-                'product_id' => $item->product->id,
-                'product' => [
-                    'id' => $item->product->id,
-                    'title' => $item->product->title,
-                    'measurement_unit' => $item->product->measurementUnit->name ?? null,
-                ],
-                'quantity' => $item->quantity,
-                'unit_price' => $item->unit_price,
-                'total_price' => $item->total_price,
-                'tax' => $item->tax,
-            ];
-        });
-
-        return response()->json($saleOrder, 200);
-
-    } catch (QueryException $e) {
-        return response()->json(['DB error' => $e->getMessage()], 400);
-    } catch (Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 400);
     }
-}
 
     public function update(Request $request, string $id): JsonResponse
     {
