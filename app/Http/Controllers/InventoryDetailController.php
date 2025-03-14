@@ -194,7 +194,7 @@ class InventoryDetailController extends Controller
                 'measurement_units.name as measurement_unit',
                 DB::raw('COALESCE(AVG(CASE WHEN lots.quantity != 0 THEN lots.sale_unit_price END), 0) as sale_price') // Calculate average price
             )
-            ->groupBy('products.id', 'products.title', 'inventory_details.stock', 'inventory_details.in_stock') // Group by product to get avg per product
+            ->groupBy('products.id', 'products.title', 'inventory_details.stock', 'inventory_details.in_stock', 'measurement_units.name') // Group by product to get avg per product
             ->orderBy('inventory_details.id', 'desc')->get();
             return response()->json($data,200);
         }catch(QueryException $e){
