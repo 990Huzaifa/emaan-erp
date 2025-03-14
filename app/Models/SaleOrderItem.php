@@ -9,6 +9,8 @@ class SaleOrderItem extends Model
 {
     use HasFactory;
 
+    protected $appends = ['measurement_unit'];
+
     protected $fillable = [
         'sale_order_id',
         'product_id',
@@ -21,5 +23,10 @@ class SaleOrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function getMeasurementUnitNameAttribute()
+    {
+        return $this->measurementUnit->name ?? null;
     }
 }
