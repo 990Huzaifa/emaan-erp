@@ -113,7 +113,7 @@ class InventoryDetailController extends Controller
             // Fetch product details (common for all lots)
             $productDetail = Product::join('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id')
                 ->select('products.id', 'products.title', 'products.image', 'measurement_units.name as measurement_unit')
-                ->where('id', $id)
+                ->where('products.id', $id)
                 ->first();
 
             if (!$productDetail) {
