@@ -13,10 +13,7 @@ class NotificationController extends Controller
         $user = Auth::user();
 
         // Return both unread and read notifications
-        return response()->json([
-            'unread_notifications' => $user->unreadNotifications,
-            'read_notifications' => $user->notifications()->whereNotNull('read_at')->get(),
-        ]);
+        return response()->json($user->notifications()->get(),200);
         // return response()->json([
         //     'notifications' => $user->unreadNotifications,
         // ]);
