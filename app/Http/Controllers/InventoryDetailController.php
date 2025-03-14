@@ -34,11 +34,13 @@ class InventoryDetailController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
             $query = InventoryDetail::join('products', 'inventory_details.product_id', '=', 'products.id')
+            ->join('measurement_units', 'products.measurement_id', '=', 'measurement_units.id')
             ->select(
                 'products.id',
                 'products.title',
                 'inventory_details.stock as total_quantity',
-                'inventory_details.in_stock as status'
+                'inventory_details.in_stock as status',
+                'measurement_units.name as measurement_unit'
             )
             ->orderBy('inventory_details.id', 'desc');
 
