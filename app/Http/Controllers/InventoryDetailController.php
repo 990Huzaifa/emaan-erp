@@ -34,7 +34,7 @@ class InventoryDetailController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
             $query = InventoryDetail::join('products', 'inventory_details.product_id', '=', 'products.id')
-            ->join('measurement_units', 'products.measurement_id', '=', 'measurement_units.id')
+            ->join('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id')
             ->select(
                 'products.id',
                 'products.title',
