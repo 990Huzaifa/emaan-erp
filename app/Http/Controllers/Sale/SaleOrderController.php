@@ -158,10 +158,24 @@ class SaleOrderController extends Controller
                     ], 403);
                 }
             }
-            $data = SaleOrder::with(['items.product.measurementUnit:id,name'])
-            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
-            ->select('sale_orders.*', 'customers.name as customer_name')
-            ->find($id);
+            $data = SaleOrder::with([
+            'items.product' => function ($query) {
+                $query->select('id', 'title', 'measurement_unit_id'); // zaroori hai measurement_unit_id select karna
+            },
+            'items.product.measurementUnit:id,name' // eager loading for performance
+        ])
+        ->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
+        ->select('sale_orders.*', 'customers.name as customer_name')
+        ->find($id);
+            
+            $data->items->transform(function ($item) {
+            $item->product = [
+                'id' => $item->product->id,
+                'title' => $item->product->title,
+                'measurement_unit' => $item->product->measurement_unit_name,
+            ];
+            return $item;
+        });
             if (empty($data)) throw new Exception('No SO found', 404);
             return response()->json($data,200);
         }catch(QueryException $e){

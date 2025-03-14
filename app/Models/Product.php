@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     use HasFactory;
+    protected $appends = ['measurement_unit_name'];
 
     protected $fillable = [
         'p_code',
@@ -34,5 +35,10 @@ class Product extends Model
     public function measurementUnit()
     {
         return $this->belongsTo(MeasurementUnit::class, 'measurement_unit_id', 'id');
+    }
+
+    public function getMeasurementUnitNameAttribute()
+    {
+        return $this->measurementUnit->name ?? null;
     }
 }
