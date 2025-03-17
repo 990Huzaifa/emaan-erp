@@ -21,9 +21,9 @@ return [
 
     'allowed_origins' => ['*'],
 
-    'allowed_origins_patterns' => [],
-
     'allowed_headers' => ['*'],
+    
+    'allowed_origins_patterns' => [],
 
     'exposed_headers' => [],
 
