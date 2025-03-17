@@ -124,7 +124,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::post('/broadcasting/auth', [NotificationController::class, 'markAsRead']);
+    Route::post('/broadcasting/auth', [NotificationController::class, 'broadcast']);
         
     
     Route::get('profile',[AuthController::class,'profile']);
