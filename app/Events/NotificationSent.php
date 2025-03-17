@@ -16,19 +16,21 @@ class NotificationSent
 
     public $message;
     public $url;
+    public $userId;
 
     /**
      * Create a new event instance.
      */
-    public function __construct($message, $url = null)
+    public function __construct($message, $userId, $url = null)
     {
         $this->message = $message;
         $this->url = $url;
+        $this->userId = $userId;
     }
 
     public function broadcastOn()
     {
-        return new Channel('notifications');
+        return new Channel('notification.{$this->userId}');
     }
 
     public function broadcastAs()
