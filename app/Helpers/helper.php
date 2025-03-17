@@ -327,23 +327,19 @@ function notUsedfunc($acc_id, $change, $isDebit = true): float
 }
 
 
-function notifyPartners($user_id, $business_id, $message,$url = null){
+function notifyUser($user_id, $business_id,$permission, $message,$url = null){
 
-    $userIds = UserHasBusiness::where('business_id', $business_id)
-            ->where('user_id', '!=', $user_id)
-            ->pluck('user_id')
-            ->toArray();
+    $businesses = UserHasBusiness::where('business_id',$business_id)->get();
 
-            // Fetch users based on the retrieved user IDs
-            $users = User::select('id', 'name')
-                ->whereIn('id', $userIds)
-                ->where('role','partner')
-                ->get();
+    foreach ($businesses as $businessAccount) {
+        $user = User::find($businessAccount->user_id);
+        $user->hasBusinessPermission($business_id, $permission);
 
-            foreach ($users as $user) {
-                $user->notify(new GeneralNotification($message, $url));
-            }
+        if ($user->hasBusinessPermission($business_id, $permission)) {
+            $user->notify(new GeneralNotification($message, $url));
 
+        }
+    }
 }
 
 

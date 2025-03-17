@@ -100,7 +100,11 @@ class PurchaseQuotationController extends Controller
             }
             $quotation->refresh();
             $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$quotation->id;
-            notifyPartners($user->id, $businessId, 'New purchase quotation created',$n_url);
+            if(isset($request->status) && $request->status == 1){
+                notifyUser($user->id, $businessId,'create purchase order', 'New purchase quotation created',$n_url);
+            }else{
+                notifyUser($user->id, $businessId,'approve purchase quotation', 'New purchase quotation created',$n_url);
+            }
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User create purchase quotation',
