@@ -103,9 +103,7 @@ Route::get('/optimize-clear', function () {
     return 'Optimization cache cleared!';
 });
 
-Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
-    return Broadcast::auth($request);
-});
+
 
 // Auth Routes
 
@@ -126,6 +124,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::get('/notifications', [NotificationController::class, 'getNotifications']);
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/broadcasting/auth', [NotificationController::class, 'markAsRead']);
+        
     
     Route::get('profile',[AuthController::class,'profile']);
     
