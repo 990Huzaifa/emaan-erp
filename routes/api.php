@@ -1,5 +1,5 @@
 <?php
-
+use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\AdvanceLedgerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Hr\DepartmentController;
@@ -101,6 +101,10 @@ Route::get('/', function () {
 Route::get('/optimize-clear', function () {
     Artisan::call('optimize:clear');
     return 'Optimization cache cleared!';
+});
+
+Route::middleware('auth:sanctum')->post('/broadcasting/auth', function (Request $request) {
+    return Broadcast::auth($request);
 });
 
 // Auth Routes
