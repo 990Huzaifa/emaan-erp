@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -34,19 +35,22 @@ class NotificationController extends Controller
     }
 
 
-    public function broadcast(Request $request)
+    public function broadcast(Request $request): JsonResponse
     {
-        $response = Broadcast::auth($request);
-    
-        // Decode the default response to modify channel_data format
-        $responseData = json_decode($response->getContent(), true);
-    
-        if (isset($responseData['channel_data'])) {
-            // Ensure channel_data is decoded properly
-            $responseData['channel_data'] = json_decode($responseData['channel_data'], true);
+            try{
+                $response = Broadcast::auth($request);
+        
+            // Ensure response is always an array
+            $responseData = is_array($response) ? $response : json_decode($response->getContent(), true);
+        
+            if (isset($responseData['channel_data']) && is_string($responseData['channel_data'])) {
+                // Decode channel_data only if it is a string
+                $responseData['channel_data'] = json_decode($responseData['channel_data'], true);
+            }
+        
+            return response()->json($responseData);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-    
-        return response()->json($responseData);
-
     }
 }
