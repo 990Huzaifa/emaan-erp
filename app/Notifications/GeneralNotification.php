@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
 class GeneralNotification extends Notification
 {
@@ -33,7 +34,7 @@ class GeneralNotification extends Notification
      */
     public function via($notifiable)
     {
-        return ['database']; // You can add 'mail', 'broadcast', 'nexmo', etc.
+        return ['database', 'broadcast']; // You can add 'mail', 'broadcast', 'nexmo', etc.
     }
 
     /**
@@ -62,5 +63,15 @@ class GeneralNotification extends Notification
         return (new MailMessage)
             ->subject('New Notification')
             ->line($this->message);
+    }
+
+
+    public function toBroadcast($notifiable)
+    {
+        return new BroadcastMessage([
+            'message' => $this->message,
+            'url' => $this->url,
+            'sent_at' => now(),
+        ]);
     }
 }
