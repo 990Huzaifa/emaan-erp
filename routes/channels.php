@@ -19,5 +19,5 @@ use Illuminate\Support\Facades\Broadcast;
 // });
 
 Broadcast::channel('notification.{id}', function ($user, $id) {
-    return (int) Auth::user()->id === (int) $id;
+    return $user->id == $id ? $user : false;
 });

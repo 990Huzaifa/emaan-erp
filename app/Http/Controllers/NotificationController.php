@@ -50,7 +50,7 @@ class NotificationController extends Controller
         
             return response()->json($responseData);
         }catch(Exception $e){
-            return response()->json(['error' => $e->getMessage()], 400);
+            return response()->json(['error' => 'Unable to broadcast'], 400);
         }
     }
 }
