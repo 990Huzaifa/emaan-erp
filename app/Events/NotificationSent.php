@@ -26,11 +26,21 @@ class NotificationSent implements ShouldBroadcast
         $this->message = $message;
         $this->url = $url;
         $this->userId = $userId;
+
+        \Log::info('NotificationSent event triggered', ['userId' => $userId, 'message' => $message]);
     }
 
     public function broadcastOn()
     {
         return new PrivateChannel('notification.'.$this->userId);
+    }
+
+    public function broadcastWith()
+    {
+        return [
+            'message' => $this->message,
+            'url' => $this->url,
+        ];
     }
 
     public function broadcastAs()
