@@ -13,15 +13,13 @@ class NotificationController extends Controller
 {
     public function getNotifications(Request $request): JsonResponse
     {
-        // $user = Auth::user();
+        $user = Auth::user();
 
-        // // Return both unread and read notifications
-        // return response()->json($user->notifications()->select('id', 'data','read_at','created_at')->get(),200);
-        // // return response()->json([
-        // //     'notifications' => $user->unreadNotifications,
-        // // ]);
-        event(new NotificationSent('Test message', 31));
-        return response()->json(['status' => 'Message sent']);
+        // Return both unread and read notifications
+        return response()->json($user->notifications()->select('id', 'data','read_at','created_at')->get(),200);
+        // return response()->json([
+        //     'notifications' => $user->unreadNotifications,
+        // ]);
 
 
 

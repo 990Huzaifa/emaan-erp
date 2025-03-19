@@ -27,7 +27,6 @@ class NotificationSent implements ShouldBroadcast
         $this->url = $url;
         $this->userId = $userId;
 
-        \Log::info('NotificationSent event triggered', ['userId' => $userId, 'message' => $message]);
     }
 
     public function broadcastOn()

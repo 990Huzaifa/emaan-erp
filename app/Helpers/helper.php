@@ -338,7 +338,7 @@ function notifyUser($user_id, $business_id,$permission, $message,$url = null){
 
         if ($user->hasBusinessPermission($business_id, $permission)) {
             $user->notify(new GeneralNotification($message, $url));
-            broadcast(new NotificationSent($message, $user->id, $url));
+            event(new NotificationSent($message, $user->id, $url));
         }
     }
 }
