@@ -20,7 +20,7 @@ class NotificationController extends Controller
         // // return response()->json([
         // //     'notifications' => $user->unreadNotifications,
         // // ]);
-        event(new NotificationSent('Test message', 33));
+        event(new NotificationSent('Test message', 31));
         return response()->json(['status' => 'Message sent']);
 
 
