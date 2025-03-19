@@ -100,7 +100,7 @@ class PurchaseQuotationController extends Controller
             }
             $quotation->refresh();
             $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$quotation->id;
-            if(isset($request->status) && $request->status == 1){
+            if($request->status == 1){
                 notifyUser($user->id, $businessId,'create purchase orders', 'New purchase quotation created',$n_url);
             }else{
                 notifyUser($user->id, $businessId,'approve purchase quotations', 'New purchase quotation created',$n_url);
