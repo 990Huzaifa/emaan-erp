@@ -122,6 +122,12 @@ class PurchaseOrderController extends Controller
                     'total_price' => $item['total_price'],
                     'tax' => $item['tax'],
                 ]); 
+            }
+            $n_url = config('app.frontend_url').'/view-purchase-order/'.$data->id;
+            if($request->status == 1){
+                notifyUser($user->id, $businessId,'create goods received notes', 'New purchase order created and approved',$n_url);
+            }else{
+                notifyUser($user->id, $businessId,'approve purchase orders', 'New purchase order created',$n_url);
             }         
             Log::create([
                 'user_id' => $user->id,
