@@ -103,7 +103,10 @@ Route::get('/optimize-clear', function () {
     return 'Optimization cache cleared!';
 });
 
-
+Route::get('/run-queue', function () {
+    Artisan::call('queue:work');
+    return 'Optimization cache cleared!';
+});
 
 // Auth Routes
 
