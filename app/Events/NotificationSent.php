@@ -33,6 +33,11 @@ class NotificationSent implements ShouldBroadcast
         return new Channel('notification.{$this->userId}');
     }
 
+    public function broadcastWith()
+    {
+        return ['message' => $this->message , 'url' => $this->url, 'userId' => $this->userId ];
+    }
+
     public function broadcastAs()
     {
         return 'notification.sent';
