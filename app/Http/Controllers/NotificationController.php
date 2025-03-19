@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\NotificationSent;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -12,13 +13,18 @@ class NotificationController extends Controller
 {
     public function getNotifications(Request $request): JsonResponse
     {
-        $user = Auth::user();
+        // $user = Auth::user();
 
-        // Return both unread and read notifications
-        return response()->json($user->notifications()->select('id', 'data','read_at','created_at')->get(),200);
-        // return response()->json([
-        //     'notifications' => $user->unreadNotifications,
-        // ]);
+        // // Return both unread and read notifications
+        // return response()->json($user->notifications()->select('id', 'data','read_at','created_at')->get(),200);
+        // // return response()->json([
+        // //     'notifications' => $user->unreadNotifications,
+        // // ]);
+        event(new NotificationSent('Test message', 33));
+        return response()->json(['status' => 'Message sent']);
+
+
+
     }
 
     public function markAsRead(Request $request, $id): JsonResponse

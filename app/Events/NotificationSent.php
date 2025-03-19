@@ -28,20 +28,10 @@ class NotificationSent implements ShouldBroadcast
         $this->userId = $userId;
     }
 
+
     public function broadcastOn()
     {
-        return [
-            new PrivateChannel('notification.' . $this->userId)
-        ];
+        return new PrivateChannel('notification.'.$this->userId);
     }
 
-    public function broadcastWith()
-    {
-        return ['message' => $this->message , 'url' => $this->url, 'userId' => $this->userId ];
-    }
-
-    public function broadcastAs()
-    {
-        return 'notification.sent';
-    }
 }
