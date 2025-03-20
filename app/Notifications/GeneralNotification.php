@@ -17,15 +17,17 @@ class GeneralNotification extends Notification implements ShouldQueue
 
     public $message;
     public $url;
+    public $userId;
 
     /**
      * Create a new notification instance.
      *
      * @param string $message The message for the notification.
      */
-    public function __construct($message, $url = null)
+    public function __construct($message, $userId, $url = null)
     {
         $this->message = $message;
+        $this->userId = $userId;
         $this->url = $url;
     }
 
@@ -68,6 +70,12 @@ class GeneralNotification extends Notification implements ShouldQueue
             ->line($this->message);
     }
 
+    public function broadcastOn()
+    {
+        // Ensure broadcasting goes to the correct public channel
+        return new PrivateChannel('notification.' .  $this->userId); // You can customize the channel name
+    }
+
 
     public function toBroadcast($notifiable)
     {
@@ -78,9 +86,4 @@ class GeneralNotification extends Notification implements ShouldQueue
         ]);
     }
 
-    public function broadcastOn()
-    {
-        // Ensure broadcasting goes to the correct public channel
-        return new Channel('public-notification');
-    }
 }
