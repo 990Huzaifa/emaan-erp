@@ -41,6 +41,7 @@ return [
                 'debug' => true,
                 'cluster' => env('PUSHER_APP_CLUSTER'),
                 'useTLS' => true,
+                'encrypted' => true,
                 'authEndpoint' => 'https://eeman.zetdigi.com/api/broadcasting/auth',
             ],
         ],
