@@ -40,6 +40,7 @@ class NotificationSent implements ShouldBroadcast
     {
         return [
             'message' => $this->message,
+            'userId' => $this->userId,
             'url' => $this->url,
         ];
     }
