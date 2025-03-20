@@ -10,7 +10,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class GeneralNotification extends Notification implements ShouldQueue, ShouldBroadcast
+class GeneralNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
