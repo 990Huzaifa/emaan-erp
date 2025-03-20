@@ -161,7 +161,7 @@ class UserController extends Controller
                 'email' => $request->email,
                 'setup_code' => $setupCode,
             ]);
-            $user->notify(new GeneralNotification("Welcome to the platform! Your account has been successfully created."));
+            notifyUserWelcome($user->id,"Welcome to the platform! Your account has been successfully created.");
             $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
             // sync permissions to user according to business
             foreach ($str_permissions as $businessId => $permissions) {

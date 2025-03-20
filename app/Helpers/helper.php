@@ -343,6 +343,14 @@ function notifyUser($user_id, $business_id,$permission, $message,$url = null){
     }
 }
 
+function notifyUserWelcome($user_id,$message){
+
+    $user = User::find($user_id);
+
+    $user->notify(new GeneralNotification($message, $user->id));
+    broadcast(new NotificationSent($message, $user->id));
+}
+
 
 function timeLimit($id)
 {
