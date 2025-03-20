@@ -2,7 +2,8 @@
 
 namespace App\Notifications;
 
-
+use Illuminate\Broadcasting\Channel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Notification;
@@ -75,5 +76,11 @@ class GeneralNotification extends Notification implements ShouldQueue
             'url' => $this->url,
             'sent_at' => now(),
         ]);
+    }
+
+    public function broadcastOn()
+    {
+        // Ensure broadcasting goes to the correct public channel
+        return new Channel('public-notification');
     }
 }
