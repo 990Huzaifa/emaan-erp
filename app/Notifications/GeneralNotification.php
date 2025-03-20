@@ -75,6 +75,11 @@ class GeneralNotification extends Notification implements ShouldQueue
         // Ensure broadcasting goes to the correct public channel
         return new PrivateChannel('notification.' .  $this->userId); // You can customize the channel name
     }
+    
+    public function broadcastAs()
+    {
+        return 'NotificationSent';  // Event name, can be used in React frontend to listen
+    }
 
 
     public function toBroadcast($notifiable)
