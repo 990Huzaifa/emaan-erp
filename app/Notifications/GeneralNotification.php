@@ -4,12 +4,13 @@ namespace App\Notifications;
 
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class GeneralNotification extends Notification implements ShouldQueue
+class GeneralNotification extends Notification implements ShouldQueue, ShouldBroadcast
 {
     use Queueable;
 
