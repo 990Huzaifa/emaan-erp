@@ -522,7 +522,7 @@ class DashboardController extends Controller
 
             // approved
             $approved = SaleOrder::where('sale_orders.business_id', $user->login_business)
-            ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.purchase_order_id')
+            ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
             ->where('delivery_notes.status', 1);
             if($start_date && $end_date){
                 $approved->whereBetween('created_at', [$start_date, $end_date]);
