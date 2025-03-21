@@ -383,40 +383,28 @@ class DashboardController extends Controller
                 }
             }
 
-            // Step 1: Get the total sales for all sale vouchers
-            $totalSales = SaleVoucher::join('sale_voucher_items', 'sale_vouchers.id', '=', 'sale_voucher_items.sale_voucher_id')
-                ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
-                ->where('sale_vouchers.status', 1) // Active sales only
-                ->where('customers.business_id', $user->login_business) // Only sales for the logged-in business
-                ->sum(DB::raw('sale_voucher_items.quantity * sale_voucher_items.unit_price')); // Sum of total sales
+            // Step 1: Get the total sales for all vouchers
+            $totalSales = SaleVoucher::where('status', 1)  // Only paid vouchers
+                ->where('business_id', $user->login_business) // Sales for the logged-in business
+                ->sum('voucher_amount'); // Sum of all voucher amounts
 
-            // Step 2: Get customers by city
-            $citiesSales = Customer::select('customers.city_id', 'cities.name as city')
+            // Step 2: Get sales data grouped by city
+            $salesByCity = SaleVoucher::select('customers.city_id', 'cities.name as city', DB::raw('SUM(sale_vouchers.voucher_amount) as total_sales'))
+                ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
                 ->join('cities', 'customers.city_id', '=', 'cities.id')
-                ->groupBy('customers.city_id', 'cities.name') // Group by city to get sales city-wise
+                ->where('sale_vouchers.status', 1)  // Only paid vouchers
+                ->where('sale_vouchers.business_id', $user->login_business) // Sales for the logged-in business
+                ->groupBy('customers.city_id', 'cities.name') // Group by city
                 ->get();
 
-            // Step 3: Get total sales for each city
-            $salesByCity = [];
+            // Step 3: Calculate percentage for each city
+            $result = $salesByCity->map(function($cityData) use ($totalSales) {
+                $cityData->percentage = ($totalSales > 0) ? ($cityData->total_sales / $totalSales) * 100 : 0;
+                return $cityData;
+            });
 
-            foreach ($citiesSales as $cityData) {
-                // For each city, calculate total sales
-                $cityTotalSales = SaleVoucher::join('sale_voucher_items', 'sale_vouchers.id', '=', 'sale_voucher_items.sale_voucher_id')
-                    ->where('sale_vouchers.status', 1) // Active sale vouchers
-                    ->where('sale_vouchers.customer_id', 'in', function($query) use ($cityData) {
-                        $query->select('id')->from('customers')->where('city_id', $cityData->city_id);
-                    })
-                    ->sum(DB::raw('sale_voucher_items.quantity * sale_voucher_items.unit_price')); // Sum of total sales
-
-                $salesByCity[] = [
-                    'city' => $cityData->city,
-                    'total_sales' => $cityTotalSales,
-                    'percentage' => ($totalSales > 0) ? ($cityTotalSales / $totalSales) * 100 : 0 // Calculate percentage
-                ];
-            }
-
-            // Step 4: Return response
-            return response()->json($salesByCity);
+            // Step 4: Return the response
+            return response()->json($result);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
