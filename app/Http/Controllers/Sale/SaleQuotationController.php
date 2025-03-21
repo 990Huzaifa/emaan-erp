@@ -104,7 +104,12 @@ class SaleQuotationController extends Controller
                 'business_id' => $businessId,
                 'status' => $request->status ?? 0
             ]);
-
+            $n_url = config('app.frontend_url').'/view-sale-quotation/'.$saleQuotation->id;
+            if($request->status == 1){
+                notifyUser($user->id, $businessId,'create sale orders', 'New sale quotation created and approved',$n_url);
+            }else{
+                notifyUser($user->id, $businessId,'approve sale quotations', 'New sale quotation created',$n_url);
+            }
             foreach ($request->products as $product) {
                 SaleQuotationItem::create([
                     'sale_quotation_id' => $saleQuotation->id,

@@ -122,6 +122,8 @@ class GRNController extends Controller
                     'tax' => $item['tax'],
                 ]);
             }
+            $n_url = config('app.frontend_url').'/view-goods-received-note/'.$GRN->id;
+            notifyUser($user->id, $businessId,'approve goods received notes', 'New Goods received note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'user created GRN',

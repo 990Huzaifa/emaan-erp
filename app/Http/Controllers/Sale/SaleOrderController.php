@@ -125,6 +125,12 @@ class SaleOrderController extends Controller
                     'total_price' => $item['total_price'],
                     'tax' => $item['tax'],
                 ]); 
+            }
+            $n_url = config('app.frontend_url').'/view-sale-order/'.$data->id;
+            if($request->status == 1){
+                notifyUser($user->id, $businessId,'create delivery notes', 'New sale order created and approved',$n_url);
+            }else{
+                notifyUser($user->id, $businessId,'approve sale orders', 'New sale order created',$n_url);
             }         
             Log::create([
                 'user_id' => $user->id,

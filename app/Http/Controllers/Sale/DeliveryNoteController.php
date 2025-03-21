@@ -150,6 +150,8 @@ class DeliveryNoteController extends Controller
                     'tax' => $item['tax'],
                 ]);
             }
+            $n_url = config('app.frontend_url').'/view-delivery-notes/'.$deliveryNote->id;
+            notifyUser($user->id, $businessId,'approve delivery notes', 'New Delivery note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Create Delivery Note',
