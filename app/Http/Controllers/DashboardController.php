@@ -344,6 +344,7 @@ class DashboardController extends Controller
             ->join('products', 'sale_receipt_items.product_id', '=', 'products.id') // Join with Products to get the product title
             ->select('sale_receipt_items.product_id', 'products.title', DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_sales')) // Select product_id, product title and total sales
             ->groupBy('sale_receipt_items.product_id', 'products.title')  // Group by product_id and product title
+            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
             ->get();
 
             return response()->json($query, 200);
