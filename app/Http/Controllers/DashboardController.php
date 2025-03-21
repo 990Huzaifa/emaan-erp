@@ -29,13 +29,21 @@ class DashboardController extends Controller
 
             // Base Query
             $query = SaleVoucher::select(
-                'sale_vouchers.*',
+                'sale_vouchers.customer_id',
+                'sale_vouchers.voucher_date',
+                'sale_vouchers.status',
                 'customers.name as customer_name',
                 'customers.c_code as customer_code',
                 'cities.name as city',
+                DB::raw("transactions.current_balance as balance"),
                 DB::raw("DATEDIFF(NOW(), sale_vouchers.voucher_date) as no_of_days")
             )
             ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
+            ->join('chart_of_accounts', 'customers.id', '=', 'chart_of_accounts.ref_id')
+            ->join(
+                DB::raw('(SELECT acc_id, current_balance FROM transactions WHERE id IN (SELECT MAX(id) FROM transactions GROUP BY acc_id)) as transactions'),
+                'chart_of_accounts.id', '=', 'transactions.acc_id'
+            )
             ->join('cities', 'customers.city_id', '=', 'cities.id');
 
             // Apply filters
