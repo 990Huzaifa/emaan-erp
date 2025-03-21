@@ -572,8 +572,8 @@ class DashboardController extends Controller
             $todayHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
             ->where('sale_receipts.status', 1)
-            ->where('created_at', '>=', Carbon::now()->startOfDay())
-            ->where('created_at', '<=', Carbon::now()->endOfDay())
+            ->where('sale_receipts.created_at', '>=', Carbon::now()->startOfDay())
+            ->where('sale_receipts.created_at', '<=', Carbon::now()->endOfDay())
             ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
             ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
             ->first();
@@ -582,8 +582,8 @@ class DashboardController extends Controller
             $last30DaysHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
             ->where('sale_receipts.status', 1)
-            ->where('created_at', '>=', Carbon::now()->subDays(30))
-            ->where('created_at', '<=', Carbon::now())
+            ->where('sale_receipts.created_at', '>=', Carbon::now()->subDays(30))
+            ->where('sale_receipts.created_at', '<=', Carbon::now())
             ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
             ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
             ->first();
@@ -592,8 +592,8 @@ class DashboardController extends Controller
             $last60DaysHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
             ->where('sale_receipts.status', 1)
-            ->where('created_at', '>=', Carbon::now()->subDays(60))
-            ->where('created_at', '<=', Carbon::now())
+            ->where('sale_receipts.created_at', '>=', Carbon::now()->subDays(60))
+            ->where('sale_receipts.created_at', '<=', Carbon::now())
             ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
             ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
             ->first();
@@ -602,7 +602,7 @@ class DashboardController extends Controller
             $orders = SaleReceipt::where('business_id', $businessId)
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
             ->where('sale_receipts.status', 1)
-            ->whereBetween('created_at', [$start_date, $end_date])
+            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date])
             ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
             ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
             ->get();
