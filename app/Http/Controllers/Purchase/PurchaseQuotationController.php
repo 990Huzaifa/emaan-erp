@@ -99,7 +99,7 @@ class PurchaseQuotationController extends Controller
                 ]);
             }
             $quotation->refresh();
-            $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$quotation->id;
+            $n_url ='/view-purchase-quotation/'.$quotation->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create purchase orders', 'New purchase quotation created and approved',$n_url);
             }else{
@@ -214,7 +214,7 @@ class PurchaseQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Quotation',   
             ]);
-            $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$id;
+            $n_url ='/view-purchase-quotation/'.$id;
             notifyUser($user->id, $businessId,'view purchase quotations', 'purchase quotation has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
@@ -247,7 +247,7 @@ class PurchaseQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Quotation Status',   
             ]);
-            $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$id;
+            $n_url ='/view-purchase-quotation/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create purchase orders', 'purchase quotation approved successfully',$n_url);
             }elseif($request->status == 2){

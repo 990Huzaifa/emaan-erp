@@ -122,7 +122,7 @@ class GRNController extends Controller
                     'tax' => $item['tax'],
                 ]);
             }
-            $n_url = config('app.frontend_url').'/view-goods-received-note/'.$GRN->id;
+            $n_url ='/view-goods-received-note/'.$GRN->id;
             notifyUser($user->id, $businessId,'approve goods received notes', 'New Goods received note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
@@ -355,7 +355,7 @@ class GRNController extends Controller
                     'description' => 'update GRN Status to approved',   
                 ]);
 
-                $n_url = config('app.frontend_url').'/view-goods-received-note/'.$id;
+                $n_url ='/view-goods-received-note/'.$id;
                 notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Approved successfully',$n_url);
             }else{
                 Log::create([
@@ -363,7 +363,7 @@ class GRNController extends Controller
                     'description' => 'update GRN Status to rejected',   
                 ]);
 
-                $n_url = config('app.frontend_url').'/view-goods-received-note/'.$id;
+                $n_url ='/view-goods-received-note/'.$id;
                 notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Rejected',$n_url);
             }
             

@@ -123,7 +123,7 @@ class PurchaseOrderController extends Controller
                     'tax' => $item['tax'],
                 ]); 
             }
-            $n_url = config('app.frontend_url').'/view-purchase-order/'.$data->id;
+            $n_url ='/view-purchase-order/'.$data->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create goods received notes', 'New purchase order created and approved',$n_url);
             }else{
@@ -260,7 +260,7 @@ class PurchaseOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Order',   
             ]);
-            $n_url = config('app.frontend_url').'/view-purchase-order/'.$id;
+            $n_url ='/view-purchase-order/'.$id;
             notifyUser($user->id, $businessId,'view purchase orders', 'purchase order has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
@@ -294,7 +294,7 @@ class PurchaseOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Order Status',   
             ]);
-            $n_url = config('app.frontend_url').'/view-purchase-order/'.$id;
+            $n_url ='/view-purchase-order/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create goods received notes', 'purchase order approved successfully',$n_url);
             }elseif($request->status == 2){
