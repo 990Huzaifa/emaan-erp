@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Customer;
 use App\Models\InventoryDetail;
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
 use App\Models\SaleReceipt;
@@ -337,7 +338,7 @@ class DashboardController extends Controller
 
     // after new dashboard UI
 
-    public function saleByProduct(): JsonResponse
+    public function saleByProduct(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -350,14 +351,23 @@ class DashboardController extends Controller
                     ], 403);
                 }
             }
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
             $query = SaleReceipt::where('business_id', $user->login_business)  // Filter SaleReceipt by business_id
             ->where('status', 1)  // Ensure the status is active
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id') // Join with SaleReceiptItems
             ->join('products', 'sale_receipt_items.product_id', '=', 'products.id') // Join with Products to get the product title
             ->select('sale_receipt_items.product_id', 'products.title', DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_sales')) // Select product_id, product title and total sales
             ->groupBy('sale_receipt_items.product_id', 'products.title')  // Group by product_id and product title
-            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
-            ->get();
+            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc');
+
+            if ($start_date && $end_date) {
+                $query->whereBetween('sale_receipts.voucher_date', [$start_date, $end_date]);
+            }
+
+            $query = $query->get();
 
             return response()->json($query, 200);
 
@@ -368,7 +378,7 @@ class DashboardController extends Controller
         }
     }
 
-    public function saleByCity(): JsonResponse
+    public function saleByCity(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -383,6 +393,8 @@ class DashboardController extends Controller
                 }
             }
 
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
             // Step 1: Get the total sales for all vouchers
             $totalSales = SaleVoucher::where('status', 1)  // Only paid vouchers
                 ->where('business_id', $user->login_business) // Sales for the logged-in business
@@ -394,9 +406,13 @@ class DashboardController extends Controller
                 ->join('cities', 'customers.city_id', '=', 'cities.id')
                 ->where('sale_vouchers.status', 1)  // Only paid vouchers
                 ->where('sale_vouchers.business_id', $user->login_business) // Sales for the logged-in business
-                ->groupBy('customers.city_id', 'cities.name') // Group by city
-                ->get();
+                ->groupBy('customers.city_id', 'cities.name'); // Group by city
 
+            if ($start_date && $end_date) {
+                $salesByCity->whereBetween('sale_vouchers.voucher_date', [$start_date, $end_date]);
+            }
+
+            $salesByCity = $salesByCity->get();
             // Step 3: Calculate percentage for each city
             $result = $salesByCity->map(function($cityData) use ($totalSales) {
                 $cityData->percentage = ($totalSales > 0) ? ($cityData->total_sales / $totalSales) * 100 : 0;
@@ -413,4 +429,194 @@ class DashboardController extends Controller
         }
     }
 
+    public function purchaseOrders(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            $totalPurchaseOrders = PurchaseOrder::where('business_id', $businessId);
+        
+            if ($start_date && $end_date) {
+                $totalPurchaseOrders->whereBetween('created_at', [$start_date, $end_date]);
+            }
+
+            $totalCount = $totalPurchaseOrders->count();
+
+            // pending, approved, rejected in percentage
+            $pending = PurchaseOrder::where('business_id', $user->login_business)
+            ->where('status', 0);
+            if($start_date && $end_date){
+                $pending->whereBetween('created_at', [$start_date, $end_date]);
+            }
+            $pendingCount = $pending->count();
+
+
+            // approved
+            $approved = PurchaseOrder::where('purchase_orders.business_id', $user->login_business)
+            ->join('goods_receive_notes', 'purchase_orders.id', '=', 'goods_receive_notes.purchase_order_id')
+            ->where('goods_receive_notes.status', 1);
+            if($start_date && $end_date){
+                $approved->whereBetween('created_at', [$start_date, $end_date]);
+            }
+            $approvedCount = $approved->count();
+
+
+            // rejected
+            $rejected = PurchaseOrder::where('business_id', $user->login_business)
+            ->where('status', 2);
+            if($start_date && $end_date){
+                $rejected->whereBetween('created_at', [$start_date, $end_date]);
+            }
+            $rejectedCount = $rejected->count();
+
+            // make percentage
+
+            $pendingPercentage = ($totalCount > 0) ? ($pendingCount / $totalCount) * 100 : 0;
+            $approvedPercentage = ($totalCount > 0) ? ($approvedCount / $totalCount) * 100 : 0;
+            $rejectedPercentage = ($totalCount > 0) ? ($rejectedCount / $totalCount) * 100 : 0;
+
+            // Return the response with the percentages
+            return response()->json([
+                'pending_percentage' => $pendingPercentage,
+                'approved_percentage' => $approvedPercentage,
+                'rejected_percentage' => $rejectedPercentage,
+            ]);
+
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function saleOrders(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            $totalPurchaseOrders = SaleOrder::where('business_id', $businessId);
+        
+            if ($start_date && $end_date) {
+                $totalPurchaseOrders->whereBetween('created_at', [$start_date, $end_date]);
+            }
+
+            $totalCount = $totalPurchaseOrders->count();
+
+            // pending, approved, rejected in percentage
+            $pending = SaleOrder::where('business_id', $user->login_business)
+            ->where('status', 0);
+            if($start_date && $end_date){
+                $pending->whereBetween('created_at', [$start_date, $end_date]);
+            }
+            $pendingCount = $pending->count();
+
+
+            // approved
+            $approved = SaleOrder::where('sale_orders.business_id', $user->login_business)
+            ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.purchase_order_id')
+            ->where('delivery_notes.status', 1);
+            if($start_date && $end_date){
+                $approved->whereBetween('created_at', [$start_date, $end_date]);
+            }
+            $approvedCount = $approved->count();
+
+
+            // rejected
+            $rejected = SaleOrder::where('business_id', $user->login_business)
+            ->where('status', 2);
+            if($start_date && $end_date){
+                $rejected->whereBetween('created_at', [$start_date, $end_date]);
+            }
+            $rejectedCount = $rejected->count();
+
+            // make percentage
+
+            $pendingPercentage = ($totalCount > 0) ? ($pendingCount / $totalCount) * 100 : 0;
+            $approvedPercentage = ($totalCount > 0) ? ($approvedCount / $totalCount) * 100 : 0;
+            $rejectedPercentage = ($totalCount > 0) ? ($rejectedCount / $totalCount) * 100 : 0;
+
+            // Return the response with the percentages
+            return response()->json([
+                'pending_percentage' => $pendingPercentage,
+                'approved_percentage' => $approvedPercentage,
+                'rejected_percentage' => $rejectedPercentage,
+            ]);
+
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function AOV(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            // today hightest amount order
+            $todayHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
+            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
+            ->where('sale_receipts.status', 1)
+            ->where('created_at', '>=', Carbon::now()->startOfDay())
+            ->where('created_at', '<=', Carbon::now()->endOfDay())
+            ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
+            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
+            ->first();
+
+            // last 30 days highest amount order
+            $last30DaysHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
+            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
+            ->where('sale_receipts.status', 1)
+            ->where('created_at', '>=', Carbon::now()->subDays(30))
+            ->where('created_at', '<=', Carbon::now())
+            ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
+            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
+            ->first();
+
+            // last 60 days highest amount order
+            $last60DaysHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
+            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
+            ->where('sale_receipts.status', 1)
+            ->where('created_at', '>=', Carbon::now()->subDays(60))
+            ->where('created_at', '<=', Carbon::now())
+            ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
+            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
+            ->first();
+
+            // graph of orders
+            $orders = SaleReceipt::where('business_id', $businessId)
+            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
+            ->where('sale_receipts.status', 1)
+            ->whereBetween('created_at', [$start_date, $end_date])
+            ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
+            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
+            ->get();
+
+            return response()->json([
+                'today_highest_amount_order' => $todayHighestAmountOrder,
+                'last_30_days_highest_amount_order' => $last30DaysHighestAmountOrder,
+                'last_60_days_highest_amount_order' => $last60DaysHighestAmountOrder,
+                'orders' => $orders,
+            ]);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }

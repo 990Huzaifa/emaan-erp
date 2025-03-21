@@ -325,8 +325,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('sales-chart',[ReportsController::class,'salesChart']);
 
-
-
     // Dashboard
 
     Route::get('dashboard/customer',[DashboardController::class,'nonPaidCustomer']);
@@ -336,6 +334,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::get('dashboard/sale-by-product',[DashboardController::class,'saleByProduct']);
     Route::get('dashboard/sale-by-city',[DashboardController::class,'saleByCity']);
+
+    Route::get('dashboard/purchase-orders',[DashboardController::class,'purchaseOrders']);
+    Route::get('dashboard/sale-orders',[DashboardController::class,'saleOrders']);
+
+    Route::get('dashboard/aov',[DashboardController::class,'AOV']);
 
 
 });
