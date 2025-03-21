@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Lot;
 use App\Models\Product;
+use App\Models\SaleReceipt;
 use App\Models\Transaction;
 use Exception;
 use App\Models\Log;
@@ -479,7 +480,11 @@ class DeliveryNoteController extends Controller
             $data->update([
                 'status' => 3
             ]);
-            
+
+            // sales receipt update
+            SaleReceipt::where('dn_id', $id)->update([
+                'status' => 3
+            ]);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'update Delivery Note Status to reversed',   

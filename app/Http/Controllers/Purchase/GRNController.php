@@ -8,6 +8,7 @@ use App\Models\GoodsReceiveNoteItem;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\Product;
+use App\Models\PurchaseInvoice;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use Exception;
@@ -436,7 +437,10 @@ class GRNController extends Controller
             $data->update([
                 'status' => 3
             ]);
-            
+            // purchase invoice updates
+            PurchaseInvoice::where('grn_id', $id)->update([
+                'status' => 3
+            ]);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'update GRN Status to reversed',   
