@@ -6,6 +6,8 @@ use App\Models\Customer;
 use App\Models\InventoryDetail;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
+use App\Models\SaleReceipt;
+use App\Models\SaleReceiptItem;
 use App\Models\SaleVoucher;
 use Carbon\Carbon;
 use Exception;
@@ -58,7 +60,6 @@ class DashboardController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-
 
     public function inventoryProducts(): JsonResponse
     {
@@ -322,7 +323,34 @@ class DashboardController extends Controller
         return ($current >= $last) ? 1 : 0; // Increase if equal or greater, otherwise decrease.
     }
 
+    // after new dashboard UI
 
+    public function saleByProduct(): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list products')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $query = SaleReceiptItem::select('sale_receipt_items.product_id', DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_sales'))
+            ->join('products', 'sale_receipt_items.product_id', '=', 'products.id')
+            ->groupBy('sale_receipt_items.product_id')
+            ->get();
+
+            return response()->json($query, 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 
 
 }
