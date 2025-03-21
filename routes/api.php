@@ -335,6 +335,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('dashboard/statistics',[DashboardController::class,'statistics']);
     
     Route::get('dashboard/sale-by-product',[DashboardController::class,'saleByProduct']);
+    Route::get('dashboard/sale-by-city',[DashboardController::class,'saleByCity']);
 
 
 });
