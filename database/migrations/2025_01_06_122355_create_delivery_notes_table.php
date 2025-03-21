@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('dn_date');
             $table->string('received_by');
             $table->text('remarks')->nullable();
-            $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
+            $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected, 3 = reversed');
             $table->timestamps();
         });
     }

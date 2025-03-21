@@ -355,7 +355,10 @@ class DeliveryNoteController extends Controller
                         if ($remainingQty <= 0) break;
 
                         $deductQty = min($lot->quantity, $remainingQty);
-                        $lot->update(['quantity' => $lot->quantity - $deductQty]);
+                        $lot->update([
+                            'quantity' => $lot->quantity - $deductQty,
+                            'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
+                        ]);
                         $remainingQty -= $deductQty;
                     }
 
@@ -404,6 +407,85 @@ class DeliveryNoteController extends Controller
             }
             
             
+            DB::commit();
+            return response()->json($data);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function reverse(string $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'reverse delivery notes')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = DeliveryNote::find($id);
+            DB::beginTransaction();
+            if (empty($data)) throw new Exception('Delivery Note not found', 400);
+            if($data->status != 1) throw new Exception('status can not be reversed', 400);
+            
+            // reversal start
+            $customer = Customer::find($data->sale_order->customer_id);
+            $total_amount_dn = 0;
+            foreach ($data->items as $item) {
+                // Fetch available lots in FIFO order
+                $lot = Lot::where('product_id', $item->product_id)
+                ->orderBy('quantity', 'asc')
+                ->first();
+
+                $lot->update([
+                    'quantity' => $lot->quantity + $item->quantity,
+                    'total_price' => $lot->total_price + $item->charged
+                ]);
+                
+
+                // Update Inventory stock
+                $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
+                if ($inventory_details) {
+                    $inventory_details->update([
+                        'stock' => $inventory_details->stock + $item->quantity,
+                    ]);
+                }
+
+                $total_amount_dn += $item->charged;
+            }
+            $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,false);
+            $link =$data->sale_order_id;
+            // Debit amount to customer's account
+            Transaction::create([
+                'business_id' => $businessId,
+                'acc_id' => $customer->acc_id,
+                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'credit amount to customer account becasue this transaction reversed by DN with the SO is '.$data->sale_order->order_code,
+                'link' => $link,
+                'debit' => 0.00, // FIXED
+                'credit' => $total_amount_dn, // FIXED
+                'current_balance' => $c_cb
+            ]);
+            // status changes
+            $data->update([
+                'status' => 3
+            ]);
+            
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'update Delivery Note Status to reversed',   
+            ]);
+            $n_url ='/view-delivery-notes/'.$id;
+            notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note reversed successfully',$n_url);
             DB::commit();
             return response()->json($data);
         }catch(QueryException $e){

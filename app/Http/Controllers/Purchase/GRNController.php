@@ -379,7 +379,81 @@ class GRNController extends Controller
         }
     }
     
-    
+    public function reverse($id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'reverse goods received notes')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $data = GoodsReceiveNote::find($id);
+            DB::beginTransaction();
+            if (empty($data)) throw new Exception('Goods Receive Note not found', 400);
+            if($data->status != 1) throw new Exception('status can not be reversed', 400);
+            
+
+            // reversal start
+            $vendor = Vendor::find($data->purchase_order->vendor_id);
+            $total_amount_grn = 0;
+            foreach ($data->items as $item) {
+                $lot = Lot::where('product_id', $item->product_id)
+                ->where('grn_id', $id)->first();
+
+                $lot->update([
+                    'quantity' => $lot->quantity + $item->quantity,
+                    'total_price' => $lot->total_price + ($item->billed * $item->quantity),
+                ]);
+                $check = InventoryDetail::where('product_id', $item->product_id)->first();
+                
+                $check->update([
+                    'stock' => $check->stock + $item->quantity
+                ]);
+                $total_amount_grn += $item->billed;
+            }
+
+            // reveresd transaction
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+            // Credit amount to Vendor's account
+            $link = $data->purhcase_order_id;
+            Transaction::create([
+                'business_id' => $businessId,
+                'acc_id' => $vendor->acc_id,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'debit amount to vendor account because of GRN reversal with the PO is '. $data->purchase_order->order_code,
+                'link' => $link,
+                'credit' => 0.00, // No money debited from business account
+                'debit' => $total_amount_grn, // Money credited to business account
+                'current_balance' => $v_cb
+            ]);
+            // status change
+            $data->update([
+                'status' => 3
+            ]);
+            
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'update GRN Status to reversed',   
+            ]);
+            $n_url ='/view-goods-received-note/'.$id;
+            notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note reversed successfully',$n_url);
+            DB::commit();
+            return response()->json($data);
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     public function list(): JsonResponse
     {
         try{

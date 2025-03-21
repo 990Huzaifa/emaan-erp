@@ -233,6 +233,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('grn',GRNController::class)->only('index','store','show','update');
     Route::put('status/{id}/grn',[GRNController::class,'updateStatus']);
+    Route::put('reverse/{id}/grn',[GRNController::class,'reverse']);
     Route::get('list/grn',[GRNController::class,'list']);
     
     Route::apiResource('purchase-invoice',PurchaseInvoiceController::class)->only('index','store','show','update');
@@ -267,6 +268,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('delivery-note',DeliveryNoteController::class)->only('index','store','show','update');
     Route::put('status/{id}/delivery-note',[DeliveryNoteController::class,'updateStatus']);
+    Route::put('reverse/{id}/delivery-note',[DeliveryNoteController::class,'reverse']);
     Route::get('list/dn',[DeliveryNoteController::class,'list']);
     
     Route::apiResource('sale-receipt',SaleReceiptController::class)->only('index','store','show','update');
