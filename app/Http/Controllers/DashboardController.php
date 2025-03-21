@@ -33,10 +33,9 @@ class DashboardController extends Controller
                 'sale_vouchers.voucher_date',
                 'sale_vouchers.status',
                 'customers.name as customer_name',
-                'customers.c_code as customer_code',
+                'sale_vouchers.voucher_amount',
                 'cities.name as city',
-                DB::raw("transactions.current_balance as balance"),
-                DB::raw("DATEDIFF(NOW(), sale_vouchers.voucher_date) as no_of_days")
+                DB::raw("transactions.current_balance as balance")
             )
             ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
             ->join('chart_of_accounts', 'customers.id', '=', 'chart_of_accounts.ref_id')
@@ -60,7 +59,7 @@ class DashboardController extends Controller
             }
 
             // Make sure we only get the latest voucher for each customer
-            $query->groupBy('sale_vouchers.customer_id') // Group by customer_id to get unique customers
+            $query->groupBy('sale_vouchers.customer_id','sale_vouchers.voucher_date','sale_vouchers.status','customers.name','cities.name', 'sale_vouchers.voucher_amount') // Group by customer_id to get unique customers
                   ->orderBy('sale_vouchers.voucher_date', 'desc'); // Sort by voucher date to get the latest one
 
             $data = $query->get();
