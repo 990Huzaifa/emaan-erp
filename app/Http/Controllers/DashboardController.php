@@ -338,9 +338,12 @@ class DashboardController extends Controller
                     ], 403);
                 }
             }
-            $query = SaleReceiptItem::select('sale_receipt_items.product_id', DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_sales'))
-            ->join('products', 'sale_receipt_items.product_id', '=', 'products.id')
-            ->groupBy('sale_receipt_items.product_id')
+            $query = SaleReceipt::where('business_id', $user->login_business)  // Filter SaleReceipt by business_id
+            ->where('status', 1)  // Ensure the status is active
+            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id') // Join with SaleReceiptItems
+            ->join('products', 'sale_receipt_items.product_id', '=', 'products.id') // Join with Products to get the product title
+            ->select('sale_receipt_items.product_id', 'products.title', DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_sales')) // Select product_id, product title and total sales
+            ->groupBy('sale_receipt_items.product_id', 'products.title')  // Group by product_id and product title
             ->get();
 
             return response()->json($query, 200);
