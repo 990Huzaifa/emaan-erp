@@ -15,8 +15,21 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
 
-        // Return both unread and read notifications
-        return response()->json($user->notifications()->select('id', 'data','read_at','created_at')->get(),200);
+        $perpage = $request->query('perpage', 10);
+        $filter = $request->input('filter');
+
+        $query = $user->notifications()->select('id', 'data','read_at','created_at');
+
+        if ($filter === 'unread') {
+            $query->whereNull('read_at');
+        }elseif ($filter === 'read') {
+            $query->whereNotNull('read_at');
+        }
+
+        $data = $query->orderBy('created_at', 'desc')->paginate($perpage);
+
+        return response()->json($data,200);
+        
         // return response()->json([
         //     'notifications' => $user->unreadNotifications,
         // ]);
@@ -41,9 +54,10 @@ class NotificationController extends Controller
 
     public function broadcast(Request $request): JsonResponse
     {
-            try{
-                $response = Broadcast::auth($request);
-        
+        try{
+            $user = Auth::user();
+            $response = Broadcast::auth($request);
+    
             // Ensure response is always an array
             $responseData = is_array($response) ? $response : json_decode($response->getContent(), true);
         
