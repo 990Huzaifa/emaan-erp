@@ -59,7 +59,12 @@ class DashboardController extends Controller
                 $query->whereMonth('sale_vouchers.voucher_date', $month);
             }
 
+            // Make sure we only get the latest voucher for each customer
+            $query->groupBy('sale_vouchers.customer_id') // Group by customer_id to get unique customers
+                  ->orderBy('sale_vouchers.voucher_date', 'desc'); // Sort by voucher date to get the latest one
+
             $data = $query->get();
+
 
             return response()->json($data);
         } catch (QueryException $e) {
