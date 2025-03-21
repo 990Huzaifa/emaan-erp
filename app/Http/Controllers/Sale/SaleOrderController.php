@@ -263,6 +263,8 @@ class SaleOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Order',   
             ]);
+            $n_url = config('app.frontend_url').'/view-sale-order/'.$id;
+            notifyUser($user->id, $businessId,'view sale orders', 'sale order has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -296,6 +298,12 @@ class SaleOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Order Status',   
             ]);
+            $n_url = config('app.frontend_url').'/view-sale-order/'.$id;
+            if($request->status == 1){
+                notifyUser($user->id, $businessId,'create delivery notes', 'sale order approved successfully',$n_url);
+            }elseif($request->status == 2){
+                notifyUser($user->id, $businessId,'view sale orders', 'sale order Rejected',$n_url);
+            }
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

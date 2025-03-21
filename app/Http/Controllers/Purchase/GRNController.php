@@ -352,8 +352,19 @@ class GRNController extends Controller
 
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update GRN Status',   
+                    'description' => 'update GRN Status to approved',   
                 ]);
+
+                $n_url = config('app.frontend_url').'/view-goods-received-note/'.$id;
+                notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Approved successfully',$n_url);
+            }else{
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'update GRN Status to rejected',   
+                ]);
+
+                $n_url = config('app.frontend_url').'/view-goods-received-note/'.$id;
+                notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Rejected',$n_url);
             }
             
 

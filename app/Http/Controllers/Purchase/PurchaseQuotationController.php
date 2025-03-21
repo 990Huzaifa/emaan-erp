@@ -120,7 +120,7 @@ class PurchaseQuotationController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -214,6 +214,8 @@ class PurchaseQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Quotation',   
             ]);
+            $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$id;
+            notifyUser($user->id, $businessId,'view purchase quotations', 'purchase quotation has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -245,6 +247,12 @@ class PurchaseQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Purchase Quotation Status',   
             ]);
+            $n_url = config('app.frontend_url').'/view-purchase-quotation/'.$id;
+            if($request->status == 1){
+                notifyUser($user->id, $businessId,'create purchase orders', 'purchase quotation approved successfully',$n_url);
+            }elseif($request->status == 2){
+                notifyUser($user->id, $businessId,'view purchase quotations', 'purchase quotation Rejected',$n_url);
+            }
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);

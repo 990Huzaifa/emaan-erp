@@ -242,6 +242,8 @@ class SaleQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Quotation',   
             ]);
+            $n_url = config('app.frontend_url').'/view-sale-quotation/'.$id;
+            notifyUser($user->id, $businessId,'view sale quotations', 'sale quotation has been updated',$n_url);
             DB::commit();
             return response()->json($data);
         }catch(QueryException $e){
@@ -277,6 +279,12 @@ class SaleQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Quotation Status',   
             ]);
+            $n_url = config('app.frontend_url').'/view-sale-quotation/'.$id;
+            if($request->status == 1){
+                notifyUser($user->id, $businessId,'create sale orders', 'sale quotation approved successfully',$n_url);
+            }elseif($request->status == 2){
+                notifyUser($user->id, $businessId,'view sale quotations', 'sale quotation Rejected',$n_url);
+            }
             return response()->json($data);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
