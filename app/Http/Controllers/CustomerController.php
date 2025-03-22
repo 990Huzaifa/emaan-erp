@@ -44,7 +44,7 @@ class CustomerController extends Controller
                 }
                 $query = $query->where('business_id',$businessId);
             }
-            $perPage = $request->query('per_page', 10);
+            $perPage = $request->query('per_page', 25);
             $searchQuery = $request->query('search');
             $city = $request->query('city');
             $class = $request->query('class');
