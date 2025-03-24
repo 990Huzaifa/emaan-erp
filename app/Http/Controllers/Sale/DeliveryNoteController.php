@@ -151,7 +151,7 @@ class DeliveryNoteController extends Controller
                     'tax' => $item['tax'],
                 ]);
             }
-            $n_url ='/view-delivery-notes/'.$deliveryNote->id;
+            $n_url ='view-delivery-notes/'.$deliveryNote->id;
             notifyUser($user->id, $businessId,'approve delivery notes', 'New Delivery note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
@@ -396,14 +396,14 @@ class DeliveryNoteController extends Controller
                     'user_id' => $user->id,
                     'description' => 'update Delivery Note Status to approved',   
                 ]);
-                $n_url ='/view-delivery-notes/'.$id;
+                $n_url ='view-delivery-notes/'.$id;
                 notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note Approved successfully',$n_url);
             }else{
                 Log::create([
                     'user_id' => $user->id,
                     'description' => 'update Delivery Note Status to rejected',   
                 ]);
-                $n_url ='/view-delivery-notes/'.$id;
+                $n_url ='view-delivery-notes/'.$id;
                 notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note Rejected',$n_url);
             }
             
@@ -489,7 +489,7 @@ class DeliveryNoteController extends Controller
                 'user_id' => $user->id,
                 'description' => 'update Delivery Note Status to reversed',   
             ]);
-            $n_url ='/view-delivery-notes/'.$id;
+            $n_url ='view-delivery-notes/'.$id;
             notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note reversed successfully',$n_url);
             DB::commit();
             return response()->json($data);

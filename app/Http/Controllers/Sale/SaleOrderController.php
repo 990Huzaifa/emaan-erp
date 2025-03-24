@@ -126,7 +126,7 @@ class SaleOrderController extends Controller
                     'tax' => $item['tax'],
                 ]); 
             }
-            $n_url ='/view-sale-order/'.$data->id;
+            $n_url ='view-sale-order/'.$data->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create delivery notes', 'New sale order created and approved',$n_url);
             }else{
@@ -263,7 +263,7 @@ class SaleOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Order',   
             ]);
-            $n_url ='/view-sale-order/'.$id;
+            $n_url ='view-sale-order/'.$id;
             notifyUser($user->id, $businessId,'view sale orders', 'sale order has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
@@ -298,7 +298,7 @@ class SaleOrderController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Order Status',   
             ]);
-            $n_url ='/view-sale-order/'.$id;
+            $n_url ='view-sale-order/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create delivery notes', 'sale order approved successfully',$n_url);
             }elseif($request->status == 2){

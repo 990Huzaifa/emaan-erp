@@ -104,7 +104,7 @@ class SaleQuotationController extends Controller
                 'business_id' => $businessId,
                 'status' => $request->status ?? 0
             ]);
-            $n_url ='/view-sale-quotation/'.$saleQuotation->id;
+            $n_url ='view-sale-quotation/'.$saleQuotation->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create sale orders', 'New sale quotation created and approved',$n_url);
             }else{
@@ -242,7 +242,7 @@ class SaleQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Quotation',   
             ]);
-            $n_url ='/view-sale-quotation/'.$id;
+            $n_url ='view-sale-quotation/'.$id;
             notifyUser($user->id, $businessId,'view sale quotations', 'sale quotation has been updated',$n_url);
             DB::commit();
             return response()->json($data);
@@ -279,7 +279,7 @@ class SaleQuotationController extends Controller
                 'user_id' => $user->id,
                 'description' => 'Update Sale Quotation Status',   
             ]);
-            $n_url ='/view-sale-quotation/'.$id;
+            $n_url ='view-sale-quotation/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create sale orders', 'sale quotation approved successfully',$n_url);
             }elseif($request->status == 2){
