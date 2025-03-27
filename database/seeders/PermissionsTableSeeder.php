@@ -69,6 +69,8 @@ class PermissionsTableSeeder extends Seeder
             'create goods received notes',
             'edit goods received notes',
             'approve goods received notes',
+            'reverse goods received notes',
+
             'list purchase quotations',
             'view purchase quotations',
             'create purchase quotations',
@@ -149,6 +151,7 @@ class PermissionsTableSeeder extends Seeder
             'create delivery notes',
             'edit delivery notes',
             'approve delivery notes',
+            'reverse delivery notes',
 
             'list expense voucher',
             'view expense voucher',
