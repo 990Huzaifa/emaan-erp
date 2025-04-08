@@ -406,6 +406,7 @@ class GRNController extends Controller
             $total_amount_grn = 0;
             foreach ($data->items as $item) {
                 $lot = Lot::where('product_id', $item->product_id)
+                ->where('vendor_id', $vendor->id)
                 ->where('grn_id', $id)->first();
 
                 $lot->update([
