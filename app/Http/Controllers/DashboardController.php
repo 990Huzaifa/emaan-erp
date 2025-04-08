@@ -44,8 +44,12 @@ class DashboardController extends Controller
                 DB::raw('(SELECT acc_id, current_balance FROM transactions WHERE id IN (SELECT MAX(id) FROM transactions GROUP BY acc_id)) as transactions'),
                 'chart_of_accounts.id', '=', 'transactions.acc_id'
             )
+            ->where('transactions.current_balance', '>', 0)
             ->join('cities', 'customers.city_id', '=', 'cities.id');
-
+            
+            if(Auth::user()->role != 'admin'){
+                $query->where('customers.business_id', Auth::user()->login_business);
+            }
             // Apply filters
             if ($filter === 'non-paid') {
                 $query->where('sale_vouchers.status', 0); // Unpaid vouchers
