@@ -28,6 +28,11 @@ class DashboardController extends Controller
             $month = $request->input('month');
             $filter = $request->input('filter'); // 'non-paid' or 'overdue'
 
+            // Subquery to get latest voucher per customer
+            $latestVouchers = DB::table('sale_vouchers as sv1')
+            ->select('sv1.customer_id', DB::raw('MAX(sv1.voucher_date) as latest_voucher_date'))
+            ->groupBy('sv1.customer_id');
+
             // Base Query
             $query = SaleVoucher::select(
                 'sale_vouchers.customer_id',
@@ -45,7 +50,11 @@ class DashboardController extends Controller
                 'chart_of_accounts.id', '=', 'transactions.acc_id'
             )
             ->where('transactions.current_balance', '>', 0)
-            ->join('cities', 'customers.city_id', '=', 'cities.id');
+            ->join('cities', 'customers.city_id', '=', 'cities.id')
+            ->joinSub($latestVouchers, 'lv', function($join) {
+                $join->on('sale_vouchers.customer_id', '=', 'lv.customer_id')
+                     ->on('sale_vouchers.voucher_date', '=', 'lv.latest_voucher_date');
+            });
             
             if(Auth::user()->role != 'admin'){
                 $query->where('customers.business_id', Auth::user()->login_business);
