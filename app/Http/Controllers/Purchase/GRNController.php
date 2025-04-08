@@ -330,7 +330,8 @@ class GRNController extends Controller
                     }
                     
                 }
-                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+                // entry is credit but amount will be debited
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
                 // Credit amount to Vendor's account
                 $link = $data->purhcase_order_id;
                 Transaction::create([
@@ -339,8 +340,8 @@ class GRNController extends Controller
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
                     'link' => $link,
-                    'debit' => 0.00, // No money debited from business account
                     'credit' => $total_amount_grn, // Money credited to business account
+                    'debit' => 0.00, // No money debited from business account
                     'current_balance' => $v_cb
                 ]);
 
@@ -420,8 +421,9 @@ class GRNController extends Controller
             }
 
             // reveresd transaction
-            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
-            // Credit amount to Vendor's account
+            // entry is debit but amount will be credit
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+            // Debit amount to Vendor's account
             $link = $data->purhcase_order_id;
             Transaction::create([
                 'business_id' => $businessId,
