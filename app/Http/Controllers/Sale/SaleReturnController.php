@@ -226,6 +226,7 @@ class SaleReturnController extends Controller
                     ]);
                     $lot->update([
                         'quantity' => $lot->quantity + $item->quantity,
+                        'total_price' => $lot->total_price + ($item->unit_price * $item->quantity),
                     ]);
                 }
             }
