@@ -50,8 +50,7 @@ class DashboardController extends Controller
             if ($filter === 'non-paid') {
                 $query->where('sale_vouchers.status', 0); // Unpaid vouchers
             } elseif ($filter === 'overdue') {
-                $query->where('sale_vouchers.status', 0)
-                  ->having('sale_vouchers.days', '>', 30);
+                $query->where('sale_vouchers.days', '>', 30);
             }
 
             // Filter by month if provided
