@@ -60,13 +60,11 @@ class AuthController extends Controller
                 'user_id' => $user->id,
                 'description' => 'User logged in',
             ]);
+            $user->update([
+                'last_login' => now(),
+                'ip' => $request->ip(),
+            ]);
             if($user->role == 'user'){
-                $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id');
-            
-                // Now fetch the business records based on the business IDs
-                $businesses = Business::whereIn('id', $userBusinesses)->get();
-                return response()->json(["access_token"=>$this->accessToken,"userInfo"=>$user,'role'=>'user','businesses'=>$businesses ]);
-            }elseif($user->role == 'partner'){
                 $userBusinesses = UserHasBusiness::where('user_id', $user->id)->pluck('business_id');
             
                 // Now fetch the business records based on the business IDs

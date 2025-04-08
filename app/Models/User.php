@@ -33,6 +33,8 @@ class User extends Authenticatable
         'login_business',
         'is_verify',
         'role',
+        'last_login',
+        'ip',
         'status',
     ];
 
