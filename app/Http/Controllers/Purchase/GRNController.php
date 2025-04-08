@@ -422,7 +422,7 @@ class GRNController extends Controller
 
             // reveresd transaction
             // entry is debit but amount will be credit
-            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
             // Debit amount to Vendor's account
             $link = $data->purhcase_order_id;
             Transaction::create([
