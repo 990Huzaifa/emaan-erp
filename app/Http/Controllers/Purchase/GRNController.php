@@ -410,7 +410,7 @@ class GRNController extends Controller
 
                 $lot->update([
                     'quantity' => $lot->quantity + $item->quantity,
-                    'total_price' => $lot->total_price + ($item->billed * $item->quantity),
+                    'total_price' => $lot->quantity  * $lot->purchase_unit_price,
                 ]);
                 $check = InventoryDetail::where('product_id', $item->product_id)->first();
                 
