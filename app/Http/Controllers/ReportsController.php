@@ -60,21 +60,21 @@ class ReportsController extends Controller
 
             // Join the data with the Product table
             $inventoryReport = Product::
-    leftJoinSub($purchaseItems, 'purchased', 'products.id', '=', 'purchased.product_id')
-    ->leftJoinSub($soldItems, 'sold', 'products.id', '=', 'sold.product_id')
-    ->where(function($query) {
-        $query->whereNotNull('purchased.total_in')
-              ->orWhereNotNull('sold.total_out');
-    })
-    ->whereBetween(DB::raw('DATE(products.created_at)'), [$startDate, $endDate])
-    ->select(
-        'products.id as product_id',
-        'products.title',
-        'products.image',
-        DB::raw('COALESCE(purchased.total_in, 0) as total_in'),
-        DB::raw('COALESCE(sold.total_out, 0) as total_out')
-    )
-    ->paginate($perpage);
+                leftJoinSub($purchaseItems, 'purchased', 'products.id', '=', 'purchased.product_id')
+                ->leftJoinSub($soldItems, 'sold', 'products.id', '=', 'sold.product_id')
+                ->where(function($query) {
+                    $query->whereNotNull('purchased.total_in')
+                        ->orWhereNotNull('sold.total_out');
+                })
+                ->whereBetween(DB::raw('DATE(products.created_at)'), [$startDate, $endDate])
+                ->select(
+                    'products.id as product_id',
+                    'products.title',
+                    'products.image',
+                    DB::raw('COALESCE(purchased.total_in, 0) as total_in'),
+                    DB::raw('COALESCE(sold.total_out, 0) as total_out')
+                )
+                ->paginate($perpage);
 
             return response()->json($inventoryReport);
         } catch (Exception $e) {

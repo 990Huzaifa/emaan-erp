@@ -117,6 +117,9 @@ class DashboardController extends Controller
     public function salesAnalysis(Request $request): JsonResponse
     {
         try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
             $date = $request->input('date') ?? Carbon::now()->format('Y-m');
             $year = substr($date, 0, 4); // Extract year
             $month = substr($date, 5); // Extract month
@@ -189,17 +192,20 @@ class DashboardController extends Controller
 
             // Get the latest month from sales data in the given year
             $latestMonth = SaleVoucher::where('status', 1)
+            ->where('business_id', $businessId)
             ->whereYear('voucher_date', $year)
             ->selectRaw('MAX(MONTH(voucher_date)) as latestMonth')
             ->value('latestMonth');
 
             // Get total sales for the entire year (up to the latest month)
             $totalYearSale = SaleVoucher::where('status', 1)
+            ->where('business_id', $businessId)
             ->whereYear('voucher_date', $year)
             ->sum('voucher_amount');
 
             // Get total sales for the previous month (if available)
             $previousMonthTotalSale = SaleVoucher::where('status', 1)
+            ->where('business_id', $businessId)
             ->whereYear('voucher_date', $year)
             ->whereMonth('voucher_date', $latestMonth - 1) // Previous month
             ->sum('voucher_amount');
@@ -210,19 +216,19 @@ class DashboardController extends Controller
             : 0;
 
             // total of sales, current month sales, today sale, last month sales increase percentage
-            $totalSale = SaleVoucher::where('status', 1)->sum('voucher_amount');
+            $totalSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->sum('voucher_amount')->sum('voucher_amount');
 
             // Current month sales
             $currentMonth = Carbon::now()->month;
             $currentYear = Carbon::now()->year;
-            $currentMonthSale = SaleVoucher::where('status', 1)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $currentMonth)->sum('voucher_amount');
+            $currentMonthSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $currentMonth)->sum('voucher_amount');
 
             // Today's sales
-            $todaySale = SaleVoucher::where('status', 1)->whereDate('voucher_date', Carbon::now()->toDateString())->sum('voucher_amount');
+            $todaySale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereDate('voucher_date', Carbon::now()->toDateString())->sum('voucher_amount');
 
             // Last month's sales
             $lastMonth = Carbon::now()->subMonth()->month;
-            $lastMonthSale = SaleVoucher::where('status', 1)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $lastMonth)->sum('voucher_amount');
+            $lastMonthSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $lastMonth)->sum('voucher_amount');
 
             // Calculate percentage increase from last month
             $percentageInc = ($lastMonthSale > 0)
