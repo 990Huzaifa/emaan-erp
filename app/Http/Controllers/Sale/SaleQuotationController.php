@@ -120,7 +120,7 @@ class SaleQuotationController extends Controller
 
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User saved sale quotation',
+                'description' => 'User saved sale quotation. Code:'. $quotation_code,
             ]);
 
             DB::commit();
@@ -240,7 +240,7 @@ class SaleQuotationController extends Controller
             SaleQuotationItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Quotation',   
+                'description' => 'Update Sale Quotation. Code:'. $data->quotation_code,
             ]);
             $n_url ='view-sale-quotation/'.$id;
             notifyUser($user->id, $businessId,'view sale quotations', 'sale quotation has been updated',$n_url);
@@ -277,7 +277,7 @@ class SaleQuotationController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Quotation Status',   
+                'description' => 'Update Sale Quotation Status. Code:'. $data->quotation_code,
             ]);
             $n_url ='view-sale-quotation/'.$id;
             if($request->status == 1){

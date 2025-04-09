@@ -121,7 +121,10 @@ class SaleReceiptController extends Controller
                     'tax' => $item->tax,
                 ]);
             }
-
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Create Sale Receipt. Code:'. $receipt_no,
+            ]);
             DB::commit();
             return response()->json($saleReceipt, 200);
         }catch(QueryException $e){
@@ -203,7 +206,7 @@ class SaleReceiptController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update sale receipt Status',   
+                'description' => 'update sale receipt Status. Code: '. $data->receipt_no,   
             ]);
             return response()->json($data);
         }catch(QueryException $e){

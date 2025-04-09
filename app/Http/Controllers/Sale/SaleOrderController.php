@@ -134,7 +134,7 @@ class SaleOrderController extends Controller
             }         
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Sale Order',   
+                'description' => 'Create Sale Order. Code:'. $order_code,
             ]);
             DB::commit();
             return response()->json($data);
@@ -261,7 +261,7 @@ class SaleOrderController extends Controller
             SaleOrderItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Order',   
+                'description' => 'Update Sale Order. Code:'. $data->order_code,
             ]);
             $n_url ='view-sale-order/'.$id;
             notifyUser($user->id, $businessId,'view sale orders', 'sale order has been updated',$n_url);
@@ -296,7 +296,7 @@ class SaleOrderController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Order Status',   
+                'description' => 'Update Sale Order Status. Code:'. $data->order_code,   
             ]);
             $n_url ='view-sale-order/'.$id;
             if($request->status == 1){

@@ -141,6 +141,10 @@ class SaleVoucherController extends Controller
                 ];
             }
             SaleVoucher::insert($data);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Sale Vouchers created successfully',   
+            ]);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -252,12 +256,12 @@ class SaleVoucherController extends Controller
                     'credit' => 0.00, // No money credited to business account
                     'current_balance' => $b_cb
                 ]);
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Voucher status change to PAID and trnsaction done successfully. Code: ' . $data->voucher_code,   
+                ]);
             }
             
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
-            ]);
 
             DB::commit();
             return response()->json($data, 200);
@@ -333,6 +337,11 @@ class SaleVoucherController extends Controller
                 'voucher_date' => $request->voucher_date,
                 'voucher_amount' => $request->voucher_amount,
                 'status' => 0, // 0 un paid, 1 paid
+            ]);
+
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Voucher updated successfully. Code: ' . $data->voucher_code,   
             ]);
             DB::commit();
             return response()->json($data, 200);

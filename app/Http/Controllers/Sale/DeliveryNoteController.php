@@ -155,7 +155,7 @@ class DeliveryNoteController extends Controller
             notifyUser($user->id, $businessId,'approve delivery notes', 'New Delivery note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Delivery Note',
+                'description' => 'Create Delivery Note. Code: '.$dn_code,
             ]);
             DB::commit();
             return response()->json($deliveryNote,200);
@@ -303,7 +303,7 @@ class DeliveryNoteController extends Controller
             }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Delivery Note',
+                'description' => 'Updated Delivery Note. Code'. $deliveryNote->dn_code,
             ]);
             DB::commit();
             return response()->json($deliveryNote,200);
@@ -394,14 +394,14 @@ class DeliveryNoteController extends Controller
 
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update Delivery Note Status to approved',   
+                    'description' => 'update Delivery Note Status to approved. Code: '. $data->dn_code,   
                 ]);
                 $n_url ='view-delivery-notes/'.$id;
                 notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note Approved successfully',$n_url);
             }else{
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update Delivery Note Status to rejected',   
+                    'description' => 'update Delivery Note Status to rejected. Code: '. $data->dn_code,   
                 ]);
                 $n_url ='view-delivery-notes/'.$id;
                 notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note Rejected',$n_url);
@@ -487,7 +487,7 @@ class DeliveryNoteController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update Delivery Note Status to reversed',   
+                'description' => 'update Delivery Note Status to reversed. Code: '. $data->dn_code,  
             ]);
             $n_url ='view-delivery-notes/'.$id;
             notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note reversed successfully',$n_url);
