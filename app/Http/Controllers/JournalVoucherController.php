@@ -41,6 +41,7 @@ class JournalVoucherController extends Controller
             $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name','partners.name as partner_name')
             ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->join('partners', 'journal_vouchers.partner_id', '=', 'partners.id')
+            ->where('journal_vouchers.business_id','=',$businessId)
             ->orderBy('id', 'desc');
 
 
