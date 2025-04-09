@@ -127,6 +127,7 @@ class DashboardController extends Controller
 
             // Sales Graph: Filtered by Year and Month
             $query = SaleVoucher::where('status', 1)
+                ->where('business_id', $businessId)
                 ->whereYear('voucher_date', $year)
                 ->whereMonth('voucher_date', $month);
 
@@ -172,18 +173,21 @@ class DashboardController extends Controller
 
             // Sales Data: Grouped by Month & Year (Pending, Approved, Delivered)
             $totalSaleOrderPending = SaleOrder::whereYear('order_date', $year)
+                ->where('business_id', $businessId)
                 ->where('status', 0)
                 ->selectRaw('MONTH(order_date) as month, YEAR(order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
             $totalSaleOrderApproved = SaleOrder::whereYear('order_date', $year)
+                ->where('business_id', $businessId)
                 ->where('status', 1)
                 ->selectRaw('MONTH(order_date) as month, YEAR(order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
             $totalSaleOrderDelivered = SaleOrder::whereYear('sale_orders.order_date', $year)
+                ->where('sale_orders.business_id', $businessId)
                 ->where('delivery_notes.status', 1)
                 ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
                 ->selectRaw('MONTH(sale_orders.order_date) as month, YEAR(sale_orders.order_date) as year, COUNT(*) as count')
