@@ -146,6 +146,10 @@ class PurchaseReturnVoucherController extends Controller
                 ];
             }
             PurchaseReturnVoucher::insert($data);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Purchase Return Vouchers successfully'
+            ]);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -255,6 +259,10 @@ class PurchaseReturnVoucherController extends Controller
                 'voucher_amount' => $request->voucher_amount,
             ]);
             DB::commit();
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Update Purchase Return Vouchers successfully. code: '.$data->voucher_code
+            ]);
             return response()->json($data, 200);
         }catch(QueryException $e){
             DB::rollBack();
@@ -323,12 +331,14 @@ class PurchaseReturnVoucherController extends Controller
                         'debit' => $total_billed, // Money credited from business account
                         'current_balance' => $b_cb
                     ]);
+
+                    Log::create([
+                        'user_id' => $user->id,
+                        'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->voucher_code,   
+                    ]);
                 }
             
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
-            ]);
+            
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){

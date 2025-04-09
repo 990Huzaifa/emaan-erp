@@ -131,7 +131,7 @@ class PurchaseOrderController extends Controller
             }         
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Purchase Order',   
+                'description' => 'Create Purchase Order code: '.$data->order_code,   
             ]);
             return response()->json($data);
         }catch(QueryException $e){
@@ -258,7 +258,7 @@ class PurchaseOrderController extends Controller
             PurchaseOrderItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order',   
+                'description' => 'Update Purchase Order. code: '.$data->order_code,   
             ]);
             $n_url ='view-purchase-order/'.$id;
             notifyUser($user->id, $businessId,'view purchase orders', 'purchase order has been updated',$n_url);
@@ -292,7 +292,7 @@ class PurchaseOrderController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order Status',   
+                'description' => 'Update Purchase Order Status. code: '.$data->order_code,   
             ]);
             $n_url ='view-purchase-order/'.$id;
             if($request->status == 1){

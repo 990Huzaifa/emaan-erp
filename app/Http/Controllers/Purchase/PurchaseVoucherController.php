@@ -322,12 +322,13 @@ class PurchaseVoucherController extends Controller
                         'credit' => $total_billed, // Money credited from business account
                         'current_balance' => $b_cb
                     ]);
+                    Log::create([
+                        'user_id' => $user->id,
+                        'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->code,   
+                    ]);
                 }
             
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
-            ]);
+            
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){

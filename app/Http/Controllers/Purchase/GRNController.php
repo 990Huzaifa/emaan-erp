@@ -127,7 +127,7 @@ class GRNController extends Controller
             notifyUser($user->id, $businessId,'approve goods received notes', 'New Goods received note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'user created GRN',
+                'description' => 'user created GRN code:'.$grn_code,
             ]);
             DB::commit();
             return response()->json($GRN,200);
@@ -253,7 +253,7 @@ class GRNController extends Controller
             }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update GRN',   
+                'description' => 'Update GRN code: '. $GRN->grn_code,   
             ]);
             DB::commit();
             return response()->json($GRN,200);
@@ -354,7 +354,7 @@ class GRNController extends Controller
 
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update GRN Status to approved',   
+                    'description' => 'update GRN Status to approved code: '. $data->grn_code,   
                 ]);
 
                 $n_url ='view-goods-received-note/'.$id;
@@ -362,7 +362,7 @@ class GRNController extends Controller
             }else{
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update GRN Status to rejected',   
+                    'description' => 'update GRN Status to rejected code: '. $data->grn_code,   
                 ]);
 
                 $n_url ='view-goods-received-note/'.$id;
@@ -446,7 +446,7 @@ class GRNController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update GRN Status to reversed',   
+                'description' => 'update GRN Status to reversed code: '. $data->grn_code,
             ]);
             $n_url ='view-goods-received-note/'.$id;
             notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note reversed successfully',$n_url);

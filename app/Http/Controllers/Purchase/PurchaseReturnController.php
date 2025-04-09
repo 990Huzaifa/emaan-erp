@@ -118,6 +118,10 @@ class PurchaseReturnController extends Controller
                     'total' => $item['total'],
                 ]);
             }
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Purchase Return created successfully code: '. $pr_code,
+            ]);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -215,7 +219,7 @@ class PurchaseReturnController extends Controller
             }            
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Return Status',   
+                'description' => 'Update Purchase Return Status. code: '. $data->pr_code,   
             ]);
             DB::commit();
             return response()->json($data,200);

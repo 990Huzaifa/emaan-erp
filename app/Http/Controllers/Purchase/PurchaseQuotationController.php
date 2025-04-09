@@ -107,7 +107,7 @@ class PurchaseQuotationController extends Controller
             }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User create purchase quotation',
+                'description' => 'User create purchase quotation. code: '. $quotation->quotation_code,
             ]);
             return response()->json($quotation);
         }catch(QueryException $e){
@@ -212,7 +212,7 @@ class PurchaseQuotationController extends Controller
             PurchaseQuotationItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Quotation',   
+                'description' => 'Update Purchase Quotation. code: '. $data->quotation_code,   
             ]);
             $n_url ='view-purchase-quotation/'.$id;
             notifyUser($user->id, $businessId,'view purchase quotations', 'purchase quotation has been updated',$n_url);
@@ -245,7 +245,7 @@ class PurchaseQuotationController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Quotation Status',   
+                'description' => 'Update Purchase Quotation Status. code: '.$data->quotation_code,   
             ]);
             $n_url ='view-purchase-quotation/'.$id;
             if($request->status == 1){

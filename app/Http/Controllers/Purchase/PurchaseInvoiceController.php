@@ -116,7 +116,10 @@ class PurchaseInvoiceController extends Controller
                     'tax' => $item->tax,
                 ]);
             }
-
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Purchase Invoice created successfully code: '. $purchaseInvoice->invoice_no,
+            ]);
             DB::commit();
             return response()->json($purchaseInvoice, 200);
         }catch(QueryException $e){
@@ -197,7 +200,7 @@ class PurchaseInvoiceController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update purchase invoice Status',   
+                'description' => 'Update purchase invoice Status code: '. $data->invoice_no,   
             ]);
             return response()->json($data);
         }catch(QueryException $e){
