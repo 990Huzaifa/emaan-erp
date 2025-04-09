@@ -216,7 +216,7 @@ class DashboardController extends Controller
             : 0;
 
             // total of sales, current month sales, today sale, last month sales increase percentage
-            $totalSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->sum('voucher_amount')->sum('voucher_amount');
+            $totalSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->sum('voucher_amount');
 
             // Current month sales
             $currentMonth = Carbon::now()->month;
