@@ -567,15 +567,29 @@ class ReportsController extends Controller
 
             $perpage = $request->input('perpage', 10);
 
-            $customers = Customer::select('customers.id','customers.name','customers.acc_id','customers.c_code','customers.address','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            $customers = Customer::select(
+                'customers.id',
+                'customers.name',
+                'customers.acc_id',
+                'customers.c_code',
+                'customers.address',
+                'opening_balances.amount as opening_balance',
+                'transactions.current_balance'
+            )
             ->when($businessId, function ($query) use ($businessId) {
                 return $query->where('customers.business_id', $businessId);
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
-            ->join('transactions', 'customers.acc_id', '=', 'transactions.acc_id')
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
+                             INNER JOIN (
+                                 SELECT acc_id, MAX(id) as max_id 
+                                 FROM transactions 
+                                 GROUP BY acc_id
+                             ) t2 ON t1.id = t2.max_id
+                         ) as transactions'), 'customers.acc_id', '=', 'transactions.acc_id')
             ->orderBy('transactions.id', 'desc')
-            ->distinct('transactions.acc_id')
             ->paginate($perpage);
+
 
             return response()->json($customers);
 
