@@ -453,7 +453,7 @@ class DeliveryNoteController extends Controller
 
                 $lot->update([
                     'quantity' => $lot->quantity + $item->quantity,
-                    'total_price' => $lot->quantity  * $lot->purchase_unit_price
+                    'total_price' => $lot->total_price + ($lot->sale_unit_price * $item->quantity)
                 ]);
                 
 
