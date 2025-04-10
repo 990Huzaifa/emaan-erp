@@ -224,12 +224,12 @@ class PurchaseReturnController extends Controller
                 // entry is credit but amount will be debited
                 $v_cb = calculateBalance($vendor->acc_id,$total_amount_pr,true);
                 // Credit amount to Vendor's account
-                $link = $data->purhcase_order_id;
+                $link = $data->id;
                 Transaction::create([
                     'business_id' => $businessId,
                     'acc_id' => $vendor->acc_id,
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
+                    'description' => 'credit amount to vendor account by PR code is '. $data->pr_code,
                     'link' => $link,
                     'debit' => $total_amount_pr, // Money credited to business account
                     'credit' => 0.00, // No money debited from business account
