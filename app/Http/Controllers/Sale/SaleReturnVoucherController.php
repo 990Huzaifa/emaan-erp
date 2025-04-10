@@ -225,8 +225,8 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => $customer_acc,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'Payment made by customer: ' . $customer->name,
-                    'credit' => $total_billed, // No money deducted from customer's side
                     'debit' => 0.00, // Money credited to customer
+                    'credit' => $total_billed, // No money deducted from customer's side
                     'current_balance' => $c_cb // Updated balance for customer account
                 ]);
 

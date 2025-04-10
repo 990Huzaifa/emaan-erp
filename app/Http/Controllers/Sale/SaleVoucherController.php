@@ -232,8 +232,8 @@ class SaleVoucherController extends Controller
                 // for products
                 $total_billed = $data->voucher_amount;
 
-                $c_cb = calculateBalance($customer_acc, $total_billed, false); // Debit customer's account
-                $b_cb = calculateBalance($data->acc_id, $total_billed, true);  // Credit business's account
+                $c_cb = calculateBalance($customer_acc, $total_billed, true); // Debit customer's account
+                $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
                 
                 // Credit amount to customer's account
                 Transaction::create([
@@ -252,8 +252,8 @@ class SaleVoucherController extends Controller
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'Payment received from customer: ' . $customer->name,
-                    'debit' => $total_billed, // Money debited from business account
                     'credit' => 0.00, // No money credited to business account
+                    'debit' => $total_billed, // Money debited from business account
                     'current_balance' => $b_cb
                 ]);
                 Log::create([
