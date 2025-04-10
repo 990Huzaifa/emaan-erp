@@ -666,10 +666,26 @@ class ReportsController extends Controller
             }
             $perpage = $request->input('perpage', 10);
 
-            $vendors = Vendor::select('vendors.id','vendors.name','vendors.acc_id','vendors.v_code','vendors.address','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            $vendors = Vendor::select(
+                'vendors.id',
+                'vendors.name',
+                'vendors.acc_id',
+                'vendors.v_code',
+                'vendors.address',
+                'opening_balances.amount as opening_balance',
+                'transactions.current_balance'
+            )
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-            ->join('transactions', 'vendors.acc_id', '=', 'transactions.acc_id')
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
+                             INNER JOIN (
+                                 SELECT acc_id, MAX(id) as max_id 
+                                 FROM transactions 
+                                 GROUP BY acc_id
+                             ) t2 ON t1.id = t2.max_id
+                         ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.id', 'desc')
             ->paginate($perpage);
+
 
             return response()->json($vendors);
 
