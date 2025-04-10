@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sale;
 
+use App\Models\Customer;
 use App\Models\DeliveryNote;
 use App\Models\InventoryDetail;
 use App\Models\Log;
