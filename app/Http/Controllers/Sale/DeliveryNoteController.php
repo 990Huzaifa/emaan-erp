@@ -343,6 +343,7 @@ class DeliveryNoteController extends Controller
             $customer = Customer::find($data->sale_order->customer_id);
             $total_amount_dn = 0;
             if($request->status == 1){
+                // Loop through each item in the delivery note
                 foreach ($data->items as $item) {
                     // Fetch available lots in FIFO order
                     $lots = Lot::where('product_id', $item->product_id)
@@ -350,12 +351,14 @@ class DeliveryNoteController extends Controller
                     ->orderBy('created_at', 'asc')
                     ->get();
     
-                    $remainingQty = $item->quantity;
+                    $remainingQty = $item->quantity; // Total quantity to deduct from lots
                     
+                    // Deduct item quantity from lots one by one (FIFO)
                     foreach ($lots as $lot) {
-                        if ($remainingQty <= 0) break;
+                        if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
 
-                        $deductQty = min($lot->quantity, $remainingQty);
+                        $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
+                        // Update lot: reduce quantity and total_price based on unit price
                         $lot->update([
                             'quantity' => $lot->quantity - $deductQty,
                             'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
@@ -363,7 +366,7 @@ class DeliveryNoteController extends Controller
                         $remainingQty -= $deductQty;
                     }
 
-                    // Update Inventory stock
+                    // Update overall inventory stock for the product
                     $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
                     if ($inventory_details) {
                         $inventory_details->update([
@@ -373,6 +376,7 @@ class DeliveryNoteController extends Controller
 
                     $total_amount_dn += $item->charged;
                 }
+
                 $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
                 $link =$data->sale_order_id;
                 // Debit amount to customer's account
