@@ -232,7 +232,7 @@ class SaleReturnController extends Controller
                     $total_amount_sr += $item->total_price;
                 }
 
-                $c_cb = calculateBalance($customer->acc_id,change: $total_amount_sr,false);
+                $c_cb = calculateBalance($customer->acc_id, $total_amount_sr,false);
                 $link =$data->_id;
                 // Debit amount to customer's account
                 Transaction::create([
