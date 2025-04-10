@@ -573,6 +573,8 @@ class ReportsController extends Controller
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
             ->join('transactions', 'customers.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.id', 'desc')
+            ->distinct('transactions.acc_id')
             ->paginate($perpage);
 
             return response()->json($customers);
