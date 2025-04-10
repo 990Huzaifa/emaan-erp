@@ -6,6 +6,7 @@ use App\Models\GoodsReceiveNote;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\PurchaseOrder;
+use App\Models\Transaction;
 use App\Models\Vendor;
 use Exception;
 use App\Models\Log;
