@@ -305,10 +305,10 @@ class PurchaseReturnVoucherController extends Controller
                     $total_billed = $data->voucher_amount;
 
                     // Calculate Cash/Bank Account Current Balance (Post-Credit)
-                    $b_cb = calculateBalance($data->acc_id, $total_billed, false); // Cash account is credited (reduced)
+                    $b_cb = calculateBalance($data->acc_id, $total_billed, true); // Cash account is credited (reduced)
 
                     // Calculate Vendor Account Current Balance (Post-Debit)
-                    $v_cb = calculateBalance($vendor_acc, $total_billed, true); // Vendor account is debited
+                    $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
                     
                     // Credit amount to vendor's account
                     Transaction::create([

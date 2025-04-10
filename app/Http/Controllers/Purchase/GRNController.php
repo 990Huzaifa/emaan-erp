@@ -330,7 +330,7 @@ class GRNController extends Controller
                     }
                     
                 }
-                // entry is credit but amount will be debited
+                // entry is credit but amount will be debited(sum)
                 $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
                 // Credit amount to Vendor's account
                 $link = $data->purhcase_order_id;

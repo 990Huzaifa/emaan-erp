@@ -6,6 +6,7 @@ use App\Models\GoodsReceiveNote;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\PurchaseOrder;
+use App\Models\Vendor;
 use Exception;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -199,12 +200,13 @@ class PurchaseReturnController extends Controller
                 }
             }
             $data = PurchaseReturn::find($id);
-            
+            $vendor = Vendor::find($data->vendor_id);
             DB::beginTransaction();
             $data->update([
                 'status' => $request->status
             ]);
             if($data->status == 1){
+                $total_amount_pr = 0;
                 foreach ($data->items as $item) {
                     $inventory_detail = InventoryDetail::where('product_id',$item->product_id)->first();
                     $lot = Lot::find($item->lot_id);
@@ -215,7 +217,23 @@ class PurchaseReturnController extends Controller
                         'quantity' => $lot->quantity - $item->quantity,
                         'total_price' => $lot->purchase_unit_price * ($lot->quantity - $item->quantity),
                     ]);
+                    $total_amount_pr += $item->total;
                 }
+
+                // entry is credit but amount will be debited
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_pr,true);
+                // Credit amount to Vendor's account
+                $link = $data->purhcase_order_id;
+                Transaction::create([
+                    'business_id' => $businessId,
+                    'acc_id' => $vendor->acc_id,
+                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
+                    'link' => $link,
+                    'debit' => $total_amount_pr, // Money credited to business account
+                    'credit' => 0.00, // No money debited from business account
+                    'current_balance' => $v_cb
+                ]);
             }            
             Log::create([
                 'user_id' => $user->id,
