@@ -213,10 +213,15 @@ class PermissionsTableSeeder extends Seeder
 
             'sales summary',
             'purchase summary',
+            'party sales summary',
+            'party purchase summary',
             'invenoty report',
             'financial report',
             'sales chart',
             'balance sheet',
+            'customer balance',
+            'vendor balance',
+            'cashnbank balance',
         ];
 
         // Loop through each permission and create it

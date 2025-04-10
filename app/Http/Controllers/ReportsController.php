@@ -184,7 +184,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'purchase summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'party purchase summary')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -273,7 +273,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'sales summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'party sales summary')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -555,7 +555,7 @@ class ReportsController extends Controller
             $businessId = null;
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                if (!$user->hasBusinessPermission($businessId, 'customer balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -591,7 +591,7 @@ class ReportsController extends Controller
             $businessId = null;
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                if (!$user->hasBusinessPermission($businessId, 'cashnbank balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -642,7 +642,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                if (!$user->hasBusinessPermission($businessId, 'vendor balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

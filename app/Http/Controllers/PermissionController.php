@@ -218,10 +218,15 @@ class PermissionController extends Controller
                 "Reports" => [
                     'sales summary',
                     'purchase summary',
+                    'party sales summary',
+                    'party purchase summary',
                     'inventory report',
                     'financial report',
                     'sales chart',
                     'balance sheet',
+                    'customer balance',
+                    'vendor balance',
+                    'cashnbank balance',
                 ]
             ];
 
