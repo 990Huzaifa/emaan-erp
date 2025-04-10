@@ -9,6 +9,7 @@ use App\Models\Log;
 use App\Models\Lot;
 use App\Models\SaleOrder;
 use App\Models\SaleReturn;
+use App\Models\Transaction;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
