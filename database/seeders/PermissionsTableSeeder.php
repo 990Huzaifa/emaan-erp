@@ -221,6 +221,7 @@ class PermissionsTableSeeder extends Seeder
             'balance sheet',
             'customer balance',
             'vendor balance',
+            'employee balance',
             'cashnbank balance',
         ];
 

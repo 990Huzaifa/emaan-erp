@@ -7,6 +7,7 @@ use App\Models\BusinessHasAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\DeliveryNoteItem;
+use App\Models\Employee;
 use App\Models\GoodsReceiveNote;
 use App\Models\GoodsReceiveNoteItem;
 use App\Models\InventoryDetail;
@@ -688,6 +689,50 @@ class ReportsController extends Controller
 
 
             return response()->json($vendors);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function employeeBalances(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'employee balance')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perpage = $request->input('perpage', 10);
+
+            $employees = Employee::select(
+                'employees.id',
+                'employees.name',
+                'employees.acc_id',
+                'employees.e_code',
+                'employees.address',
+                'opening_balances.amount as opening_balance',
+                'transactions.current_balance'
+            )
+            ->join('opening_balances', 'employees.acc_id', '=', 'opening_balances.acc_id')
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
+                             INNER JOIN (
+                                 SELECT acc_id, MAX(id) as max_id 
+                                 FROM transactions 
+                                 GROUP BY acc_id
+                             ) t2 ON t1.id = t2.max_id
+                         ) as transactions'), 'employees.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.id', 'desc')
+            ->paginate($perpage);
+
+
+            return response()->json($employees);
 
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);

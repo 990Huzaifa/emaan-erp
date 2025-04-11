@@ -315,17 +315,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('sale-summary',[ReportsController::class,'salesSummary']);
     Route::get('purchase-summary',[ReportsController::class,'purchaseSummary']);
 
+    Route::get('sales-chart',[ReportsController::class,'salesChart']);
     Route::get('party-sale-summary',[ReportsController::class,'partySalesSummary']);
     Route::get('party-purchase-summary',[ReportsController::class,'partyPurchaseSummary']);
 
     Route::get('balance-sheet',[ReportsController::class,'balanceSheet']);
 
     Route::get('customer-balances',[ReportsController::class,'customerBalances']);
-
+    Route::get('employee-balances',[ReportsController::class,'employeeBalances']);
     Route::get('vendor-balances',[ReportsController::class,'vendorBalances']);
     Route::get('cnb-balances',[ReportsController::class,'cnbBalances']);
 
-    Route::get('sales-chart',[ReportsController::class,'salesChart']);
 
     // Dashboard
 

@@ -227,6 +227,7 @@ class PermissionController extends Controller
                     'customer balance',
                     'vendor balance',
                     'cashnbank balance',
+                    'employee balance',
                 ]
             ];
 
