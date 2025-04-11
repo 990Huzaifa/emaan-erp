@@ -174,9 +174,9 @@ class DeliveryNoteController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -186,20 +186,39 @@ class DeliveryNoteController extends Controller
                     ], 403);
                 }
             }
-            $deliveryNote = DeliveryNote::with(['items' => function ($query) {
-                $query->with('product:id,title'); // Include product and lot details
-            }])
-            ->where('id', $id) // Filter by the specific purchase order ID
+
+            $deliveryNote = DeliveryNote::with([
+                'items.product.measurementUnit' // eager load nested relations
+            ])
+            ->where('id', $id)
             ->first();
-            $response = $deliveryNote->toArray();    
+
+            if (!$deliveryNote) {
+                return response()->json(['error' => 'Delivery note not found.'], 404);
+            }
+
+            // Convert to array for transformation
+            $response = $deliveryNote->toArray();
+
+            // Loop over items to flatten measurement_unit_name
+            foreach ($response['items'] as &$item) {
+                if (isset($item['product']['measurement_unit'])) {
+                    $item['product']['measurement_unit_name'] = $item['product']['measurement_unit']['name'];
+                } else {
+                    $item['product']['measurement_unit_name'] = null;
+                }
+                unset($item['product']['measurement_unit']); // remove nested object
+            }
+
             return response()->json($response, 200);
 
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 
     /**
      * Update the specified resource in storage.
