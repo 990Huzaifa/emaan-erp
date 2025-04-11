@@ -305,15 +305,15 @@ class SalaryVoucherController extends Controller
             if($data->status == 1){
                 // transaction
                 $acc = $data->acc_id;
-                $employee_acc = Employee::where('id', $data->employee_id)->first()->value('acc_id');
+                $employee = Employee::where('id', $data->employee_id)->first();
                 $total_billed = $data->voucher_amount;
                 $a_cb = calculateBalance($acc, $total_billed, false);
-                $e_cb = calculateBalance($employee_acc, $total_billed, false);
+                $e_cb = calculateBalance($employee->acc_id, $total_billed, false);
                 
                 // Debit the employee account (money recorded as an employee)
                 Transaction::create([
                     'business_id' => $data->business_id,
-                    'acc_id' => $employee_acc,
+                    'acc_id' => $employee->acc_id,
                     'transaction_type' => 2, // 2 -> Expense
                     'description' => 'Amount is recorded as an employee.',
                     'debit' => $total_billed, // Money recorded as an employee
