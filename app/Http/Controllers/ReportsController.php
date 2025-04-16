@@ -13,6 +13,7 @@ use App\Models\GoodsReceiveNoteItem;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\Product;
+use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
@@ -223,6 +224,69 @@ class ReportsController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function purchaseReport(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Permission check
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'purchase summary')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Input filters
+            $start_date = $request->input('start_date', PurchaseVoucher::min('voucher_date'));
+            $end_date = $request->input('end_date', Carbon::now()->toDateString());
+            $vendorId = $request->input('vendor_id');
+            $cityId = $request->input('city_id');
+
+            // Get vendors from city if city_id provided
+            $vendorIds = [];
+            if (!empty($cityId)) {
+                $vendorIds = Vendor::where('city_id', $cityId)->pluck('id')->toArray();
+            }
+
+            // Build query
+            $query = PurchaseInvoice::query()
+                ->select('purchase_invoices.*')
+                ->join('purchase_invoice_items', 'purchase_invoice_items.purchase_invoices_id', '=', 'purchase_invoices.id')
+                ->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
+
+            if (!empty($businessId)) {
+                $query->where('purchase_invoices.business_id', $businessId);
+            }
+
+            if (!empty($vendorId)) {
+                $query->where('purchase_invoices.vendor_id', $vendorId);
+            }
+
+            if (!empty($vendorIds)) {
+                $query->whereIn('purchase_invoices.vendor_id', $vendorIds);
+            }
+
+            // Order and fetch
+            $purchaseData = $query->orderBy('purchase_invoices.created_at', 'desc')->get();
+
+            // Calculate total price (optional if needed)
+            $totalPrice = $purchaseData->sum(function ($invoice) {
+                return $invoice->items->sum('price'); // assuming relationship: PurchaseInvoice hasMany items
+            });
+
+            return response()->json(['data' => $purchaseData,'total_price' => $totalPrice],200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
 
 
     public function salesSummary(Request $request): JsonResponse

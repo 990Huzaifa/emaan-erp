@@ -94,7 +94,7 @@
             <thead>
                 <tr>
                     <th>Assets</th>
-                    <th class="text-end">Amount ($)</th>
+                    <th class="text-end">Amount (PKR)</th>
                 </tr>
             </thead>
             <tbody>
@@ -125,7 +125,7 @@
             <thead>
                 <tr>
                     <th>Liabilities and Equity</th>
-                    <th class="text-end">Amount ($)</th>
+                    <th class="text-end">Amount (PKR)</th>
                 </tr>
             </thead>
             <tbody>
