@@ -17,6 +17,7 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
+use App\Models\SaleReceipt;
 use App\Models\SaleVoucher;
 use App\Models\Vendor;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -225,7 +226,7 @@ class ReportsController extends Controller
         }
     }
 
-    public function purchaseReport(Request $request)
+    public function purchaseReport(Request $request): JsonResponse
     {
         try {
             $user = Auth::user();
@@ -241,7 +242,7 @@ class ReportsController extends Controller
             }
 
             // Input filters
-            $start_date = $request->input('start_date', PurchaseVoucher::min('voucher_date'));
+            $start_date = $request->input('start_date', PurchaseInvoice::min('created_at'));
             $end_date = $request->input('end_date', Carbon::now()->toDateString());
             $vendorId = $request->input('vendor_id');
             $cityId = $request->input('city_id');
@@ -300,7 +301,7 @@ class ReportsController extends Controller
             }
 
 
-            $start_date = $request->input('start_date', SaleVoucher::min('voucher_date')); // Default: earliest transaction date
+            $start_date = $request->input('start_date', SaleVoucher::min('created_at')); // Default: earliest transaction date
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
 
             // Ensure valid date format
@@ -427,6 +428,65 @@ class ReportsController extends Controller
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function saleReport(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Permission check
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'sale summary')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Input filters
+            $start_date = $request->input('start_date', SaleReceipt::min('voucher_date'));
+            $end_date = $request->input('end_date', Carbon::now()->toDateString());
+            $customerId = $request->input('customer_id');
+            $cityId = $request->input('city_id');
+
+            // Get vendors from city if city_id provided
+            $customerIds = [];
+            if (!empty($cityId)) {
+                $customerIds = Customer::where('city_id', $cityId)->pluck('id')->toArray();
+            }
+
+            // Build query
+            $query = SaleReceipt::whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
+
+            if (!empty($businessId)) {
+                $query->where('sale_receipts.business_id', $businessId);
+            }
+
+            if (!empty($customerId)) {
+                $query->where('sale_receipts.customer_id', $customerId);
+            }
+
+            if (!empty($customerIds)) {
+                $query->whereIn('sale_receipts.customer_id', $customerIds);
+            }
+
+            // Order and fetch
+            $saleData = $query->orderBy('sale_receipts.created_at', 'desc')->get();
+
+            // Calculate total price (optional if needed)
+            $totalPrice = $saleData->sum(function ($invoice) {
+                return $invoice->sum('total'); // assuming relationship: PurchaseInvoice hasMany items
+            });
+
+            return response()->json(['data' => $saleData,'total_price' => $totalPrice],200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
