@@ -254,7 +254,11 @@ class ReportsController extends Controller
             }
 
             // Build query
-            $query = PurchaseInvoice::whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
+            $query = PurchaseInvoice::
+            select('purchase_invoices.*','vendors.name','cities.name')
+            ->join('vendors','purchase_invoices.vendor_id','vendors.id')
+            ->join('cities','vendors.city_id','cities.id')
+            ->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
 
             if (!empty($businessId)) {
                 $query->where('purchase_invoices.business_id', $businessId);
@@ -460,7 +464,11 @@ class ReportsController extends Controller
             }
 
             // Build query
-            $query = SaleReceipt::whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
+            $query = SaleReceipt::
+            select('sale_receipts.*','customers.name','cities.name')
+            ->join('customers','sale_receipts.customer_id','customers.id')
+            ->join('cities','customers.city_id','cities.id')
+            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
 
             if (!empty($businessId)) {
                 $query->where('sale_receipts.business_id', $businessId);
