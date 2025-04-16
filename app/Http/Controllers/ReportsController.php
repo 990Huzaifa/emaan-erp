@@ -465,7 +465,7 @@ class ReportsController extends Controller
 
             // Build query
             $query = SaleReceipt::
-            select('sale_receipts.*','customers.name customer','cities.name as city')
+            select('sale_receipts.*','customers.name as customer','cities.name as city')
             ->join('customers','sale_receipts.customer_id','customers.id')
             ->join('cities','customers.city_id','cities.id')
             ->whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
