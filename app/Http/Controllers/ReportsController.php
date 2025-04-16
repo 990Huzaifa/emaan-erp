@@ -234,7 +234,7 @@ class ReportsController extends Controller
 
             // Permission check
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'purchase summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'purchase report')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -444,7 +444,7 @@ class ReportsController extends Controller
 
             // Permission check
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'sale summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'sales report')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);

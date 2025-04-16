@@ -212,7 +212,9 @@ class PermissionsTableSeeder extends Seeder
             'approve loan voucher',
 
             'sales summary',
+            'sales report',
             'purchase summary',
+            'purchase report',
             'party sales summary',
             'party purchase summary',
             'invenoty report',
