@@ -253,10 +253,7 @@ class ReportsController extends Controller
             }
 
             // Build query
-            $query = PurchaseInvoice::query()
-                ->select('purchase_invoices.*')
-                ->join('purchase_invoice_items', 'purchase_invoice_items.purchase_invoice_id', '=', 'purchase_invoices.id')
-                ->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
+            $query = PurchaseInvoice::whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
 
             if (!empty($businessId)) {
                 $query->where('purchase_invoices.business_id', $businessId);
@@ -275,7 +272,7 @@ class ReportsController extends Controller
 
             // Calculate total price (optional if needed)
             $totalPrice = $purchaseData->sum(function ($invoice) {
-                return $invoice->items->sum('price'); // assuming relationship: PurchaseInvoice hasMany items
+                return $invoice->sum('total'); // assuming relationship: PurchaseInvoice hasMany items
             });
 
             return response()->json(['data' => $purchaseData,'total_price' => $totalPrice],200);
