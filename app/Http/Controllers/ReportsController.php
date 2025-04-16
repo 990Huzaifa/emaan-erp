@@ -255,7 +255,7 @@ class ReportsController extends Controller
             // Build query
             $query = PurchaseInvoice::query()
                 ->select('purchase_invoices.*')
-                ->join('purchase_invoice_items', 'purchase_invoice_items.purchase_invoices_id', '=', 'purchase_invoices.id')
+                ->join('purchase_invoice_items', 'purchase_invoice_items.purchase_invoice_id', '=', 'purchase_invoices.id')
                 ->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
 
             if (!empty($businessId)) {
