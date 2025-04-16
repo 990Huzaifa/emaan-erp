@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('acc_id');
             $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
-            $table->decimal('amount',15,2)->default(0.00);
+            $table->decimal('amount',35,2)->default(0.00);
             $table->timestamps();
         });
     }

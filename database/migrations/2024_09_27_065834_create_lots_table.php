@@ -23,9 +23,9 @@ return new class extends Migration
             $table->foreign('vendor_id')->references('id')->on('vendors')->onUpdate('cascade')->onDelete('cascade');
             $table->string('lot_code');
             $table->bigInteger('quantity');
-            $table->decimal('purchase_unit_price',10,2)->default(0.00);
-            $table->decimal('sale_unit_price',10,2)->default(0.00);
-            $table->decimal('total_price', 8, 2)->default(0.00);
+            $table->decimal('purchase_unit_price',20,2)->default(0.00);
+            $table->decimal('sale_unit_price',20,2)->default(0.00);
+            $table->decimal('total_price', 28, 2)->default(0.00);
             $table->boolean('status')->default(1)->comment('1 = Available, 0 = Sold');
             $table->timestamps();
         });

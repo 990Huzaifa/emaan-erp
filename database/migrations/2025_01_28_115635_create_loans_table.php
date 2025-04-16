@@ -18,11 +18,11 @@ return new class extends Migration
             $table->unsignedBigInteger('business_id');
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
             $table->bigInteger('loan_code');
-            $table->decimal('loan_amount', 10, 2);
+            $table->decimal('loan_amount', 30, 2);
             $table->date('loan_date');
-            $table->decimal('remaining_amount', 10, 2)->default(0.00);
+            $table->decimal('remaining_amount', 30, 2)->default(0.00);
             $table->integer('installments');
-            $table->decimal('installment_amount', 10, 2)->default(0.00);
+            $table->decimal('installment_amount', 30, 2)->default(0.00);
             $table->string('status')->default(0);
             $table->timestamps();
         });
