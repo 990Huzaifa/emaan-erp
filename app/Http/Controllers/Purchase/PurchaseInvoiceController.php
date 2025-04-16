@@ -105,8 +105,10 @@ class PurchaseInvoiceController extends Controller
                 'status' => $request->status ?? 0
             ]);
 
+            $invoiceTotal = 0;
             // Map GRN items to PI items
             foreach ($GRN->items as $item) {
+                $invoiceTotal += $item->total_price;
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $purchaseInvoice->id,
                     'product_id' => $item->product_id,
@@ -116,6 +118,9 @@ class PurchaseInvoiceController extends Controller
                     'tax' => $item->tax,
                 ]);
             }
+            $purchaseInvoice->update([
+                'total'=> $invoiceTotal
+            ]);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Purchase Invoice created successfully code: '. $purchaseInvoice->invoice_no,
@@ -331,9 +336,10 @@ class PurchaseInvoiceController extends Controller
                 'grn_id' => $id,
                 'terms_of_payment' => $PO->terms_of_payment,
             ]);
-
+            $invoiceTotal = 0;
             // Map GRN items to PI items
             foreach ($GRN->items as $item) {
+                $invoiceTotal += $item->total_price;
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $purchaseInvoice->id,
                     'product_id' => $item->product_id,
@@ -343,6 +349,10 @@ class PurchaseInvoiceController extends Controller
                     'tax' => $item->tax,
                 ]);
             }
+
+            $purchaseInvoice->update([
+                'total'=>$invoiceTotal
+            ]);
 
             DB::commit();
             return true;

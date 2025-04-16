@@ -17,6 +17,7 @@ class PurchaseInvoice extends Model
         'vendor_id',
         'po_no',
         'terms_of_payment',
+        'total',
         'status',
     ];
 
