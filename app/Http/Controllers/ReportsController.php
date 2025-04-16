@@ -452,7 +452,7 @@ class ReportsController extends Controller
             }
 
             // Input filters
-            $start_date = $request->input('start_date', SaleReceipt::min('voucher_date'));
+            $start_date = $request->input('start_date', SaleReceipt::min('created_at'));
             $end_date = $request->input('end_date', Carbon::now()->toDateString());
             $customerId = $request->input('customer_id');
             $cityId = $request->input('city_id');
