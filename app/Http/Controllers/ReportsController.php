@@ -902,7 +902,7 @@ class ReportsController extends Controller
                 ->get()
                 ->groupBy('product_id')
                 ->map(function ($items, $productId) {
-                    $productName = optional($items->first()->product)->name;
+                    $productName = optional($items->first()->product)->title;
 
                     $totalQuantity = $items->sum('quantity');
                     $totalSale = $items->sum(function ($item) {
