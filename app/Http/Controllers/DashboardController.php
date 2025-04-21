@@ -482,7 +482,7 @@ class DashboardController extends Controller
             ->join('goods_receive_notes', 'purchase_orders.id', '=', 'goods_receive_notes.purchase_order_id')
             ->where('goods_receive_notes.status', 1);
             if($start_date && $end_date){
-                $approved->whereBetween('created_at', [$start_date, $end_date]);
+                $approved->whereBetween('purchase_orders.created_at', [$start_date, $end_date]);
             }
             $approvedCount = $approved->count();
 
@@ -547,7 +547,7 @@ class DashboardController extends Controller
             ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
             ->where('delivery_notes.status', 1);
             if($start_date && $end_date){
-                $approved->whereBetween('created_at', [$start_date, $end_date]);
+                $approved->whereBetween('sale_orders.created_at', [$start_date, $end_date]);
             }
             $approvedCount = $approved->count();
 
