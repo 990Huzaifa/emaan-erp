@@ -897,7 +897,7 @@ class ReportsController extends Controller
 
             $pnlData = DeliveryNoteItem::with(['lot', 'product', 'deliveryNote'])
                 ->whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
-                    $q->whereBetween('date', [$start_date, $end_date]);
+                    $q->whereBetween('dn_date', [$start_date, $end_date]);
                 })
                 ->get()
                 ->groupBy('product_id')
