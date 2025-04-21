@@ -503,9 +503,9 @@ class DashboardController extends Controller
 
             // Return the response with the percentages
             return response()->json([
-                'pending_percentage' => $pendingPercentage,
-                'approved_percentage' => $approvedPercentage,
-                'rejected_percentage' => $rejectedPercentage,
+                'pending_percentage' => round($pendingPercentage,2),
+                'approved_percentage' => round($approvedPercentage,2),
+                'rejected_percentage' => round($rejectedPercentage,2),
             ]);
 
 
@@ -568,9 +568,9 @@ class DashboardController extends Controller
 
             // Return the response with the percentages
             return response()->json([
-                'pending_percentage' => $pendingPercentage,
-                'approved_percentage' => $approvedPercentage,
-                'rejected_percentage' => $rejectedPercentage,
+                'pending_percentage' => round($pendingPercentage, 2),
+                'approved_percentage' => round($approvedPercentage, 2),
+                'rejected_percentage' => round($rejectedPercentage, 2),
             ]);
 
 
