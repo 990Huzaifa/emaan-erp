@@ -590,6 +590,9 @@ class DashboardController extends Controller
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
 
+            $start_date = Carbon::parse($start_date);
+            $end_date = Carbon::parse($end_date);
+
             // today hightest amount order
             $todayHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
