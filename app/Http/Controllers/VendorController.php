@@ -541,7 +541,7 @@ class VendorController extends Controller
             // Check user permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list vendor')) {
+                if (!$user->hasBusinessPermission($businessId, 'list vendors')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
