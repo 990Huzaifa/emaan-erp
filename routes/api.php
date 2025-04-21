@@ -183,6 +183,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/vendor/',[VendorController::class,'list']);
     Route::get('/csv/vendor', [VendorController::class, 'csvVendor']);
     Route::post('/csv/vendor/upload', [VendorController::class, 'importVendor']);
+    Route::get('vendor-analytics',[VendorController::class,'vendorAnalytics']);
     
     Route::apiResource('department',DepartmentController::class)->only('index','store','show','update');
     Route::get('list/department',[DepartmentController::class,'list']);
