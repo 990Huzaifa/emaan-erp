@@ -621,13 +621,18 @@ class DashboardController extends Controller
             ->first();
 
             // graph of orders
-            $orders = SaleReceipt::where('business_id', $businessId)
-            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
-            ->where('sale_receipts.status', 1)
-            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date])
-            ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
-            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
-            ->get();
+            $orders = SaleReceipt::where('sale_receipts.business_id', $businessId)
+    ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
+    ->where('sale_receipts.status', 1)
+    ->whereBetween('sale_receipts.created_at', [$start_date, $end_date])
+    ->selectRaw("
+        DATE_FORMAT(sale_receipts.created_at, '%b') as month,
+        DATE_FORMAT(sale_receipts.created_at, '%m') as month_number,
+        SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) / COUNT(DISTINCT sale_receipts.id) as average_order_value
+    ")
+    ->groupBy('month', 'month_number')
+    ->orderBy('month_number')
+    ->get();
 
             return response()->json([
                 'today_highest_amount_order' => $todayHighestAmountOrder,
