@@ -878,14 +878,7 @@ class ReportsController extends Controller
     {
         try{
             $user = Auth::user();
-            // if ($user->role != 'admin') {
-            //     $businessId = $user->login_business;
-            //     if (!$user->hasBusinessPermission($businessId, 'pnl report list')) {
-            //         return response()->json([
-            //             'error' => 'User does not have the required permission.'
-            //         ], 403);
-            //     }
-            // }
+            
 
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
@@ -895,7 +888,7 @@ class ReportsController extends Controller
 
             // here is the logic code comes
 
-            $pnlData = DeliveryNoteItem::with(['lot', 'product', 'deliveryNote'])
+            $pnlData = DeliveryNoteItem::with('product', 'deliveryNote')
                 ->whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
                     $q->whereBetween('dn_date', [$start_date, $end_date]);
                 })
@@ -905,22 +898,34 @@ class ReportsController extends Controller
                     $productName = optional($items->first()->product)->title;
 
                     $totalQuantity = $items->sum('quantity');
+
+                    // Get average purchase price from lots table
+                    $lots = Lot::where('product_id', $productId)->get();
+                    $totalLotQty = $lots->sum('quantity');
+                    $totalLotCost = $lots->sum(function ($lot) {
+                        return $lot->purchase_unit_price * $lot->quantity;
+                    });
+
+                    $averagePurchasePrice = $totalLotQty > 0 ? $totalLotCost / $totalLotQty : 0;
+
+                    // Sale calculation
                     $totalSale = $items->sum(function ($item) {
                         return $item->unit_price * $item->quantity;
                     });
-                    $totalPurchase = $items->sum(function ($item) {
-                        return optional($item->lot)->purchase_unit_price * $item->quantity;
-                    });
+
+                    $totalPurchase = $averagePurchasePrice * $totalQuantity;
 
                     return [
                         'product_id' => $productId,
                         'product_name' => $productName,
                         'quantity_sold' => $totalQuantity,
+                        'avg_purchase_price' => round($averagePurchasePrice, 2),
                         'total_sale' => round($totalSale, 2),
                         'total_purchase' => round($totalPurchase, 2),
                         'profit' => round($totalSale - $totalPurchase, 2),
                     ];
                 })->values();
+
 
             return response()->json($pnlData);
 
