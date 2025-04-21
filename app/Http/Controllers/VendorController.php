@@ -549,10 +549,9 @@ class VendorController extends Controller
             }
 
             // Get total customers registered this month
-            $total_vednor = Vendor::where('business_id', $businessId)->count();
+            $total_vednor = Vendor::count();
             // Get total customers before this month
-            $total_vednor_before = Vendor::where('business_id', $businessId)
-                ->where('created_at', '<', Carbon::now()->startOfMonth())
+            $total_vednor_before = Vendor::where('created_at', '<', Carbon::now()->startOfMonth())
                 ->count();
 
             // Calculate percentage increase safely
@@ -560,13 +559,11 @@ class VendorController extends Controller
                 ? (($total_vednor - $total_vednor_before) / $total_vednor_before) * 100 
                 : ($total_vednor > 0 ? 100 : 0); // Handle division by zero
 
-            $total_city_count = Vendor::where('business_id', $businessId)
-                ->distinct('city_id')
+            $total_city_count = Vendor::distinct('city_id')
                 ->count('city_id');
     
             // Count cities before this month
-            $total_city_before_count = Vendor::where('business_id', $businessId)
-                ->where('created_at', '<', Carbon::now()->startOfMonth())
+            $total_city_before_count = Vendor::where('created_at', '<', Carbon::now()->startOfMonth())
                 ->distinct('city_id')
                 ->count('city_id');
     
