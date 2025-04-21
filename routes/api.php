@@ -319,6 +319,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
     Route::get('sales-chart',[ReportsController::class,'salesChart']);
+    Route::get('sales-chart-by-item-and-month',[ReportsController::class,'salesChartByItemAndMonth']);
     Route::get('party-sale-summary',[ReportsController::class,'partySalesSummary']);
     Route::get('party-purchase-summary',[ReportsController::class,'partyPurchaseSummary']);
     Route::get('purchase-report',[ReportsController::class,'purchaseReport']);
