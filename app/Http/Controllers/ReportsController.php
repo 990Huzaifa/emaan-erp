@@ -878,7 +878,14 @@ class ReportsController extends Controller
     {
         try{
             $user = Auth::user();
-            
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'pnl report')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
 
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');

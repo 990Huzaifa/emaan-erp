@@ -225,7 +225,8 @@ class PermissionController extends Controller
                     'party purchase summary',
                     'inventory report',
                     'financial report',
-                    'balance sheet',                    
+                    'balance sheet',
+                    'pnl report',                    
                 ],
                 "Balances" =>[
                     'customer balance',
