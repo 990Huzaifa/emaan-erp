@@ -621,18 +621,38 @@ class DashboardController extends Controller
             ->first();
 
             // graph of orders
-            $orders = SaleReceipt::where('sale_receipts.business_id', $businessId)
-    ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
-    ->where('sale_receipts.status', 1)
-    ->whereBetween('sale_receipts.created_at', [$start_date, $end_date])
-    ->selectRaw("
-        DATE_FORMAT(sale_receipts.created_at, '%b') as month,
-        DATE_FORMAT(sale_receipts.created_at, '%m') as month_number,
-        SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) / COUNT(DISTINCT sale_receipts.id) as average_order_value
-    ")
-    ->groupBy('month', 'month_number')
-    ->orderBy('month_number')
-    ->get();
+            $query = SaleReceipt::where('sale_receipts.business_id', $businessId)
+            ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
+            ->where('sale_receipts.status', 1)
+            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
+        
+            $daysDiff = $start_date->diffInDays($end_date);
+            $groupBy = $daysDiff > 31 ? 'month' : 'date';
+            if ($groupBy === 'month') {
+                $query->selectRaw("
+                        DATE_FORMAT(sale_receipts.created_at, '%b') as label,
+                        DATE_FORMAT(sale_receipts.created_at, '%m') as group_key,
+                        SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) / COUNT(DISTINCT sale_receipts.id) as average_order_value
+                    ")
+                    ->groupBy('label', 'group_key')
+                    ->orderBy('group_key');
+            } else {
+                $query->selectRaw("
+                        DATE(sale_receipts.created_at) as label,
+                        DATE(sale_receipts.created_at) as group_key,
+                        SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) / COUNT(DISTINCT sale_receipts.id) as average_order_value
+                    ")
+                    ->groupBy('label', 'group_key')
+                    ->orderBy('group_key');
+            }
+            
+            $orders = $query->get()->map(function ($row) {
+                return [
+                    'label' => $row->label,
+                    'group_key' => $row->group_key,
+                    'average_order_value' => number_format((float) $row->average_order_value, 6, '.', '')
+                ];
+            });
 
             return response()->json([
                 'today_highest_amount_order' => $todayHighestAmountOrder,
