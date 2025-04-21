@@ -386,7 +386,7 @@ class DashboardController extends Controller
             ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc');
 
             if ($start_date && $end_date) {
-                $query->whereBetween('sale_receipts.voucher_date', [$start_date, $end_date]);
+                $query->whereBetween('sale_receipts.receipt_date', [$start_date, $end_date]);
             }
 
             $query = $query->get();
