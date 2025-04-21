@@ -24,4 +24,13 @@ class DeliveryNoteItem extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
+    public function lot()
+    {
+        return $this->belongsTo(Lot::class, 'lot_id');
+    }
+
+    public function deliveryNote()
+    {
+        return $this->belongsTo(DeliveryNote::class, 'delivery_note_id');
+    }
 }

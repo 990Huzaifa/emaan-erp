@@ -869,6 +869,67 @@ class ReportsController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+
+
+    // profit n lose
+
+    public function pnl(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            // if ($user->role != 'admin') {
+            //     $businessId = $user->login_business;
+            //     if (!$user->hasBusinessPermission($businessId, 'pnl report list')) {
+            //         return response()->json([
+            //             'error' => 'User does not have the required permission.'
+            //         ], 403);
+            //     }
+            // }
+
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            $start_date = Carbon::parse($start_date);
+            $end_date = Carbon::parse($end_date);
+
+            // here is the logic code comes
+
+            $pnlData = DeliveryNoteItem::with(['lot', 'product', 'deliveryNote'])
+                ->whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
+                    $q->whereBetween('date', [$start_date, $end_date]);
+                })
+                ->get()
+                ->groupBy('product_id')
+                ->map(function ($items, $productId) {
+                    $productName = optional($items->first()->product)->name;
+
+                    $totalQuantity = $items->sum('quantity');
+                    $totalSale = $items->sum(function ($item) {
+                        return $item->unit_price * $item->quantity;
+                    });
+                    $totalPurchase = $items->sum(function ($item) {
+                        return optional($item->lot)->purchase_unit_price * $item->quantity;
+                    });
+
+                    return [
+                        'product_id' => $productId,
+                        'product_name' => $productName,
+                        'quantity_sold' => $totalQuantity,
+                        'total_sale' => round($totalSale, 2),
+                        'total_purchase' => round($totalPurchase, 2),
+                        'profit' => round($totalSale - $totalPurchase, 2),
+                    ];
+                })->values();
+
+            return response()->json($pnlData);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
     
 
 }

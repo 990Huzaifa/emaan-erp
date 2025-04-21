@@ -331,6 +331,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('cnb-balances',[ReportsController::class,'cnbBalances']);
 
 
+
+    Route::get('pnl-report',[ReportsController::class,'pnl']);
+
+
     // Dashboard
 
     Route::get('dashboard/customer',[DashboardController::class,'nonPaidCustomer']);
