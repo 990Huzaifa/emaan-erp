@@ -926,8 +926,12 @@ class ReportsController extends Controller
                     ];
                 })->values();
 
-
-            return response()->json($pnlData);
+                $overall = [
+                    'total_sale' => $pnlData->sum('total_sale'),
+                    'total_purchase' => $pnlData->sum('total_purchase'),
+                    'total_profit' => $pnlData->sum('profit'),
+                ];
+            return response()->json(['data' => $pnlData,'summary' => $overall,],200);
 
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
