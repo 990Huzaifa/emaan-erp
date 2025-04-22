@@ -615,7 +615,9 @@ class ProductController extends Controller
     public function list():JsonResponse
     {
         try{
-            $product = Product::select('id','title','p_code as code')->where('is_active',1)->get();
+            $product = Product::select('products.id','products.title','products.p_code as code','measurement_units.name as unit')
+            ->join('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id')
+            ->where('is_active',1)->get();
             return response()->json($product);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
