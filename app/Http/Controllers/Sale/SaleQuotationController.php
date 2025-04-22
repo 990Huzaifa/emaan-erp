@@ -81,12 +81,14 @@ class SaleQuotationController extends Controller
                 'due_date'=> 'required|date',
                 'products.*.product_id' => 'required',
                 'products.*.quantity' => 'required',
+                'products.*.measurement_unit' => 'required',
             ],[
                 'customer_id.required' => 'Customer is required.',
                 'customer_id.exists' => 'Customer does not exist.',
                 'order_date.required' => 'Order date is required.',
                 'due_date.required' => 'Due date is required.',
                 'products.*.product_id.required' => 'Product is required.',
+                'products.*.measurement_unit.required' => 'Measurement unit is required.',
                 'products.*.quantity.required' => 'Quantity is required.',
             ]);
 
@@ -114,6 +116,7 @@ class SaleQuotationController extends Controller
                 SaleQuotationItem::create([
                     'sale_quotation_id' => $saleQuotation->id,
                     'product_id' => $product['product_id'],
+                    'measurement_unit' => $product['measurement_unit'],
                     'quantity' => $product['quantity'],
                 ]);
             }
@@ -196,6 +199,7 @@ class SaleQuotationController extends Controller
                     'remarks' => 'nullable|string',
                     'products.*.product_id' => 'required',
                     'products.*.quantity' => 'required',    
+                    'products.*.measurement_unit' => 'required',
 
             ],[
                 'customer_id.required' => 'Customer is required.',
@@ -206,6 +210,7 @@ class SaleQuotationController extends Controller
 
                 'products.*.product_id.required' => 'Product is required.',
                 'products.*.quantity.required' => 'Quantity is required.',
+                'products.*.measurement_unit.required' => 'Measurement unit is required.',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -232,6 +237,7 @@ class SaleQuotationController extends Controller
                     SaleQuotationItem::create([
                         'sale_quotation_id' => $id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity']
                     ]);
                 }

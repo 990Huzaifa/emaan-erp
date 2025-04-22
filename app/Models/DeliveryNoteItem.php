@@ -12,11 +12,14 @@ class DeliveryNoteItem extends Model
     protected $fillable = [
         'delivery_note_id',
         'product_id',
+        'measurement_unit',
         'quantity',
         'delivered',
         'charged',
         'unit_price',
         'total_price',
+        'discount',
+        'discount_in_percentage',
         'tax'
     ];
 

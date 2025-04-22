@@ -12,6 +12,7 @@ class SaleReceiptItem extends Model
     protected $fillable = [
         'sale_receipt_id',
         'product_id',
+        'measurement_unit',
         'quantity',
         'unit_price',
         'tax',
