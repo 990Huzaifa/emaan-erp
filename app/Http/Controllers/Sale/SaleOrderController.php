@@ -111,6 +111,7 @@ class SaleOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
+                'total_discount' => $request->total_discount ?? 0,
                 'terms_of_payment' => $request->terms_of_payment ?? null,
                 'remarks' => $request->remarks ?? null,
                 'special' => $request->special ?? 0,
@@ -122,6 +123,8 @@ class SaleOrderController extends Controller
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'] ?? 0,
                     'total_price' => $item['total_price'],
                     'tax' => $item['tax'],
                 ]); 

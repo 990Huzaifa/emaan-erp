@@ -16,6 +16,8 @@ class SaleOrderItem extends Model
         'unit_price',
         'total_price',
         'tax',
+        'discount',
+        'discount_in_percentage',
     ];
 
     public function product()

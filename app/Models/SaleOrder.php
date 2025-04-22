@@ -20,7 +20,9 @@ class SaleOrder extends Model
         'user_id',
         'business_id',
         'total_tax',
-        'special'
+        'special',
+        'delivery_cost',
+        'total_discount',
     ];
 
     public function items()
