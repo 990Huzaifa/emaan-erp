@@ -187,31 +187,15 @@ class DeliveryNoteController extends Controller
                 }
             }
 
-            $deliveryNote = DeliveryNote::with([
-                'items.product.measurementUnit' // eager load nested relations
-            ])
-            ->where('id', $id)
-            ->first();
-
-            if (!$deliveryNote) {
-                return response()->json(['error' => 'Delivery note not found.'], 404);
-            }
-
-            // Convert to array for transformation
-            $response = $deliveryNote->toArray();
-
-            // Loop over items to flatten measurement_unit_name
-            foreach ($response['items'] as &$item) {
-                if (isset($item['product']['measurement_unit'])) {
-                    $item['product']['measurement_unit_name'] = $item['product']['measurement_unit']['name'];
-                } else {
-                    $item['product']['measurement_unit_name'] = null;
-                }
-                unset($item['product']['measurement_unit']); // remove nested object
-            }
-
-            return response()->json($response, 200);
-
+            $data = DeliveryNote::with(['items' => function ($query) {
+                $query->with('product:id,title')->leftJoin('inventory_details', 'delivery_note_items.product_id', '=', 'inventory_details.product_id')
+                ->addSelect('delivery_note_items.*', 'inventory_details.stock as max_quantity');
+            }])
+            ->join('customers', 'delivery_notes.customer_id', '=', 'customers.id') // Join with the customer table
+            ->select('delivery_notes.*', 'customers.name as customer_name') // Select fields including customer name
+            ->find($id);
+            if (empty($data)) throw new Exception('No DN found', 404);
+            return response()->json($data,200);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
