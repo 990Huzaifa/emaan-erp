@@ -87,11 +87,18 @@ class DeliveryNoteController extends Controller
                     'sale_order_id' => 'required|exists:sale_orders,id',
                     'dn_date'=>'required|date',
                     'remarks' => 'nullable|string',
+                    'total' => 'required|numeric',
+                    'total_tax' => 'required|numeric',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.quantity' => 'required|numeric',
                     'items.*.delivered' => 'required|numeric',
                     'items.*.charged' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.discount_in_percentage' => 'required|in:0,1',
                     'items.*.total_price' => 'required|numeric',
                     'items.*.tax' => 'required|numeric',
                 ],[
@@ -101,10 +108,22 @@ class DeliveryNoteController extends Controller
                     'dn_date.required' => 'Delivery Note Date is required.',
                     'dn_date.date' => 'Delivery Note Date must be a valid date.',
 
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
+
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
+
+                    'delivery_cost.required' => 'Delivery Cost is required.',
+                    'delivery_cost.numeric' => 'Delivery Cost must be a number.',
+
                     'remarks.string' => 'Remarks must be a string.',
 
                     'items.*.product_id.required' => 'Product is required.',
                     'items.*.product_id.exists' => 'Product does not exist.',
+
+                    'items.*.measurement_unit.required' => 'Measurement Unit is required.',
+                    'items.*.measurement_unit.string' => 'Measurement Unit must be a string.',
                     
                     'items.*.quantity.required' => 'Quantity is required.',
                     'items.*.quantity.numeric' => 'Quantity must be a number.',
@@ -137,18 +156,25 @@ class DeliveryNoteController extends Controller
                 'dn_date' => $request->dn_date,
                 'received_by' => $user->id, //need to know
                 'remarks' => $request->remarks,
+                'total_tax' => $request->total_tax,
+                'delivery_cost' => $request->delivery_cost,
+                'total_discount' => $request->total_discount,
+                'total' => $request->total,
             ]);
 
             foreach($request->items as $item){
                 DeliveryNoteItem::create([
                     'delivery_note_id' => $deliveryNote->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'delivered' => $item['delivered'],
                     'charged' => $item['charged'],
                     'unit_price' => $item['unit_price'],
-                    'total_price' => $item['total_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
+                    'total_price' => $item['total_price'],
                 ]);
             }
             $n_url ='view-delivery-notes/'.$deliveryNote->id;
@@ -227,11 +253,18 @@ class DeliveryNoteController extends Controller
                     'sale_order_id' => 'required|exists:sale_orders,id',
                     'dn_date'=>'required|date',
                     'remarks' => 'nullable|string',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
+                    'total_tax' => 'required|numeric',
+                    'total' => 'required|numeric',
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.quantity' => 'required|numeric',
                     'items.*.delivered' => 'required|numeric',
                     'items.*.charged' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
                     'items.*.total_price' => 'required|numeric',
                     'items.*.tax' => 'required|numeric',
                 ],[
@@ -241,10 +274,25 @@ class DeliveryNoteController extends Controller
                     'dn_date.required' => 'Delivery Note Date is required.',
                     'dn_date.date' => 'Delivery Note Date must be a valid date.',
 
+                    'delivery_cost.required' => 'Delivery Cost is required.',
+                    'delivery_cost.numeric' => 'Delivery Cost must be a number.',
+
+                    'total_discount.required' => 'Total Discount is required.',
+                    'total_discount.numeric' => 'Total Discount must be a number.',
+
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
+
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
+
                     'remarks.string' => 'Remarks must be a string.',
 
                     'items.*.product_id.required' => 'Product is required.',
                     'items.*.product_id.exists' => 'Product does not exist.',
+
+                    'items.*.measurement_unit.required' => 'Measurement Unit is required.',
+                    'items.*.measurement_unit.string' => 'Measurement Unit must be a string.',
 
                     'items.*.quantity.required' => 'Quantity is required.',
                     'items.*.quantity.numeric' => 'Quantity must be a number.',
@@ -257,6 +305,13 @@ class DeliveryNoteController extends Controller
 
                     'items.*.unit_price.required' => 'Unit Price is required.',
                     'items.*.unit_price.numeric' => 'Unit Price must be a number.',
+
+                    'items.*.discount.required' => 'Discount is required.',
+                    'items.*.discount.numeric' => 'Discount must be a number.',
+
+                    'items.*.discount_in_percentage.required' => 'Discount in Percentage is required.',
+                    'items.*.discount_in_percentage.numeric' => 'Discount in Percentage must be a number.',
+                    'items.*.discount_in_percentage.in' => 'Discount in Percentage must be 0 or 1.',
 
                     'items.*.total_price.required' => 'Total Price is required.',
                     'items.*.total_price.numeric' => 'Total Price must be a number.',
@@ -274,6 +329,10 @@ class DeliveryNoteController extends Controller
                 'dn_date' => $request->dn_date,
                 'received_by' => $user->id, //need to know
                 'remarks' => $request->remarks,
+                'delivery_cost' => $request->delivery_cost,
+                'total_discount' => $request->total_discount,
+                'total_tax' => $request->total_tax,
+                'total' => $request->total,
                 'status' => 0,
             ]);
 
@@ -282,11 +341,14 @@ class DeliveryNoteController extends Controller
                     $deliveryNoteItem = DeliveryNoteItem::find($item['id']);
                     $deliveryNoteItem->update([
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'delivered' => $item['delivered'],
                         'charged' => $item['charged'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'tax' => $item['tax'],
                     ]);
 
@@ -294,10 +356,13 @@ class DeliveryNoteController extends Controller
                     DeliveryNoteItem::create([
                         'delivery_note_id' => $deliveryNote->id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'delivered' => $item['delivered'],
                         'charged' => $item['charged'],
                         'unit_price' => $item['unit_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'total_price' => $item['total_price'],
                         'tax' => $item['tax'],
                     ]);
