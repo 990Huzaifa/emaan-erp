@@ -200,7 +200,8 @@ class SaleOrderController extends Controller
                 }
             }
             $data = SaleOrder::with(['items' => function ($query) {
-                $query->with('product:id,title');
+                $query->with('product:id,title')->leftJoin('inventory_details', 'sale_order_items.product_id', '=', 'inventory_details.product_id')
+                ->addSelect('sale_order_items.*', 'inventory_details.stock');
             }])
             ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
             ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
