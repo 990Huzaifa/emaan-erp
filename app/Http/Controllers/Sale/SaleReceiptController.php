@@ -108,6 +108,7 @@ class SaleReceiptController extends Controller
                 'business_id' => $businessId,
                 'receipt_no' => $receipt_no,
                 'receipt_date' => $request->receipt_date,
+                'delivery_cost' => $DN->delivery_cost
             ]);
             $receiptTotal = 0;
             // Map DN items to PI items
@@ -118,6 +119,8 @@ class SaleReceiptController extends Controller
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
+                    'discount' => $item->discount,
+                    'discount_in_percentage' => $item->discount_in_percentage,
                     'total' => $item->total_price,
                     'tax' => $item->tax,
                 ]);
