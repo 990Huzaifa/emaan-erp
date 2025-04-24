@@ -86,6 +86,51 @@ class DashboardController extends Controller
         }
     }
 
+    public function lowPayCustomers(Request $request): JsonResponse
+    {
+        try {
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            $dateCondition = '';
+            if ($start_date && $end_date) {
+                $dateCondition = "WHERE t1.created_at BETWEEN '$start_date' AND '$end_date'";
+            }
+
+            $customers = Customer::select(
+                    'customers.id',
+                    'customers.name',
+                    'customers.acc_id',
+                    'cities.name as city_name',
+                    DB::raw('COALESCE(t.current_balance, ob.amount) as balance'),
+                    DB::raw('t.credit as payment')
+                )
+                ->leftJoin('cities', 'customers.city_id', '=', 'cities.id')
+                ->leftJoin(DB::raw("
+                    (
+                        SELECT t1.*
+                        FROM transactions t1
+                        INNER JOIN (
+                            SELECT acc_id, MAX(id) as max_id
+                            FROM transactions
+                            " . ($dateCondition ? $dateCondition : '') . "
+                            GROUP BY acc_id
+                        ) t2 ON t1.acc_id = t2.acc_id AND t1.id = t2.max_id
+                    ) as t
+                "), 'customers.acc_id', '=', 't.acc_id')
+                ->leftJoin('opening_balances as ob', 'customers.acc_id', '=', 'ob.acc_id')
+                ->get();
+
+            return response()->json($customers, 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
     public function inventoryProducts(): JsonResponse
     {
         try{
