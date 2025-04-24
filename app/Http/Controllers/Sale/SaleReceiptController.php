@@ -304,6 +304,10 @@ class SaleReceiptController extends Controller
                 'dn_id' => $id,
                 'business_id' => $businessId,
                 'receipt_no' => $receipt_no,
+                'delivery_cost'=> $DN->delivery_cost,
+                'total_discount'=> $DN->total_discount,
+                'total_tax'=> $DN->total_tax,
+                'total'=> $DN->total,
                 'receipt_date' => date('Y-m-d'),
             ]);
 
@@ -314,15 +318,15 @@ class SaleReceiptController extends Controller
                 SaleReceiptItem::create([
                     'sale_receipt_id' => $saleReceipt->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
-                    'total' => $item->total_price,
+                    'discount_in_percentage' => $item->discount_in_percentage,
+                    'discount' => $item->discount,
                     'tax' => $item->tax,
+                    'total' => $item->total_price,
                 ]);
             }
-            $saleReceipt->update([
-                'total'=> $receiptTotal
-            ]);
 
             DB::commit();
             return true;

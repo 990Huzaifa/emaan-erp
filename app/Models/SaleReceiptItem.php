@@ -15,6 +15,8 @@ class SaleReceiptItem extends Model
         'measurement_unit',
         'quantity',
         'unit_price',
+        'discount',
+        'discount_in_percentage',
         'tax',
         'total',
     ];

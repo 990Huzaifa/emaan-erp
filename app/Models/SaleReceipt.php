@@ -17,6 +17,9 @@ class SaleReceipt extends Model
         'customer_id',
         'so_no',
         'terms_of_payment',
+        'delivery_cost',
+        'total_discount',
+        'total_tax',
         'total',
         'status',
     ];
