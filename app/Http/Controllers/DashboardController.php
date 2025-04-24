@@ -102,7 +102,14 @@ class DashboardController extends Controller
                     'customers.name',
                     'customers.acc_id',
                     'cities.name as city_name',
-                    DB::raw('COALESCE(t.current_balance, ob.amount) as balance'),
+                    DB::raw("
+                        CASE
+                            WHEN t.debit IS NOT NULL AND ob.amount IS NOT NULL THEN (t.debit + ob.amount)
+                            WHEN t.debit IS NOT NULL THEN t.debit
+                            WHEN ob.amount IS NOT NULL THEN ob.amount
+                            ELSE 0
+                        END as balance
+                    "),
                     DB::raw('t.debit as payment')
                 )
                 ->leftJoin('cities', 'customers.city_id', '=', 'cities.id')
@@ -129,6 +136,7 @@ class DashboardController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 
 
     public function inventoryProducts(): JsonResponse
