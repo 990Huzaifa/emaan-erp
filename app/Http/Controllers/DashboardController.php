@@ -91,12 +91,12 @@ class DashboardController extends Controller
         try {
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
-
+    
             $dateCondition = '';
             if ($start_date && $end_date) {
                 $dateCondition = "WHERE t1.created_at BETWEEN '$start_date' AND '$end_date'";
             }
-
+    
             $customers = Customer::select(
                     'customers.id',
                     'customers.name',
@@ -104,16 +104,14 @@ class DashboardController extends Controller
                     'cities.name as city_name',
                     DB::raw("
                         CASE
-                            WHEN t.debit IS NOT NULL AND ob.amount IS NOT NULL THEN (t.debit + ob.amount)
-                            WHEN t.debit IS NOT NULL THEN t.debit
-                            WHEN ob.amount IS NOT NULL THEN ob.amount
-                            ELSE 0
+                            WHEN ob.amount IS NOT NULL THEN (t.debit + ob.amount)
+                            ELSE t.debit
                         END as balance
                     "),
                     DB::raw('t.debit as payment')
                 )
                 ->leftJoin('cities', 'customers.city_id', '=', 'cities.id')
-                ->leftJoin(DB::raw("
+                ->join(DB::raw("
                     (
                         SELECT t1.*
                         FROM transactions t1
@@ -124,20 +122,18 @@ class DashboardController extends Controller
                             GROUP BY acc_id
                         ) t2 ON t1.acc_id = t2.acc_id AND t1.id = t2.max_id
                     ) as t
-                "), 'customers.acc_id', '=', 't.acc_id')
+                "), 'customers.acc_id', '=', 't.acc_id') // changed to INNER JOIN to ensure only customers with transactions
                 ->leftJoin('opening_balances as ob', 'customers.acc_id', '=', 'ob.acc_id')
                 ->get();
-
+    
             return response()->json($customers, 200);
-
+    
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
-    }
-
-
+    }  
 
     public function inventoryProducts(): JsonResponse
     {
