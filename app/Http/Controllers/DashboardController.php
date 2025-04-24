@@ -103,7 +103,7 @@ class DashboardController extends Controller
                     'customers.acc_id',
                     'cities.name as city_name',
                     DB::raw('COALESCE(t.current_balance, ob.amount) as balance'),
-                    DB::raw('t.credit as payment')
+                    DB::raw('t.debit as payment')
                 )
                 ->leftJoin('cities', 'customers.city_id', '=', 'cities.id')
                 ->leftJoin(DB::raw("
