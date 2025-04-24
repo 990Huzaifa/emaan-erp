@@ -108,12 +108,13 @@ class SaleReceiptController extends Controller
                 'business_id' => $businessId,
                 'receipt_no' => $receipt_no,
                 'receipt_date' => $request->receipt_date,
-                'delivery_cost' => $DN->delivery_cost
+                'delivery_cost'=> $DN->delivery_cost,
+                'total_discount'=> $DN->total_discount,
+                'total_tax'=> $DN->total_tax,
+                'total'=> $DN->total,
             ]);
-            $receiptTotal = 0;
             // Map DN items to PI items
             foreach ($DN->items as $item) {
-                $receiptTotal += $item->total_price;
                 SaleReceiptItem::create([
                     'sale_receipt_id' => $saleReceipt->id,
                     'product_id' => $item->product_id,
@@ -126,9 +127,6 @@ class SaleReceiptController extends Controller
                 ]);
             }
 
-            $saleReceipt->update([
-                'total'=> $receiptTotal
-            ]);
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Create Sale Receipt. Code:'. $receipt_no,
@@ -311,10 +309,8 @@ class SaleReceiptController extends Controller
                 'receipt_date' => date('Y-m-d'),
             ]);
 
-            $receiptTotal = 0;
             // Map DN items to PI items
             foreach ($DN->items as $item) {
-                $receiptTotal += $item->total_price;
                 SaleReceiptItem::create([
                     'sale_receipt_id' => $saleReceipt->id,
                     'product_id' => $item->product_id,
