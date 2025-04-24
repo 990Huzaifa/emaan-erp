@@ -23,6 +23,8 @@ class SaleOrder extends Model
         'special',
         'delivery_cost',
         'total_discount',
+        'remarks',
+        'terms_of_payments'
     ];
 
     public function items()
