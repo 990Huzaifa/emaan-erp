@@ -217,7 +217,8 @@ class DeliveryNoteController extends Controller
                 $query->with('product:id,title')->leftJoin('inventory_details', 'delivery_note_items.product_id', '=', 'inventory_details.product_id')
                 ->addSelect('delivery_note_items.*', 'inventory_details.stock as max_quantity');
             }])
-            ->join('customers', 'delivery_notes.customer_id', '=', 'customers.id') // Join with the customer table
+            ->join('sale_orders', 'delivery_notes.sale_order_id', '=', 'sale_orders.id') // Join with the customer table
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
             ->select('delivery_notes.*', 'customers.name as customer_name') // Select fields including customer name
             ->find($id);
             if (empty($data)) throw new Exception('No DN found', 404);
