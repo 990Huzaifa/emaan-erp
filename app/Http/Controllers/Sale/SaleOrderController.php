@@ -119,6 +119,7 @@ class SaleOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
+                'delivery_cost' => $request->delivery_cost,
                 'total_discount' => $request->total_discount ?? 0,
                 'terms_of_payment' => $request->terms_of_payment ?? null,
                 'remarks' => $request->remarks ?? null,
