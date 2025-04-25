@@ -95,6 +95,7 @@ class PurchaseQuotationController extends Controller
                 PurchaseQuotationItem::create([
                     'purchase_quotation_id' => $quotation->id,
                     'product_id' => $product['product_id'],
+                    'measurement_unit' => $product['measurement_unit'],
                     'quantity' => $product['quantity'],
                 ]);
             }
@@ -204,6 +205,7 @@ class PurchaseQuotationController extends Controller
                     PurchaseQuotationItem::create([
                         'purchase_quotation_id' => $id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity']
                     ]);
                 }

@@ -114,6 +114,7 @@ class GRNController extends Controller
                 GoodsReceiveNoteItem::create([
                     'goods_receive_note_id' => $GRN->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'receive' => $item['receive'],
                     'billed' => $item['billed'],
@@ -241,6 +242,7 @@ class GRNController extends Controller
                     GoodsReceiveNoteItem::create([
                         'goods_receive_note_id' => $GRN->id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'receive' => $item['receive'],
                         'billed' => $item['billed'],

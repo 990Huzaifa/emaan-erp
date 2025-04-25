@@ -112,6 +112,7 @@ class PurchaseInvoiceController extends Controller
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $purchaseInvoice->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->purchase_unit_price,
                     'total' => $item->total_price,
@@ -343,6 +344,7 @@ class PurchaseInvoiceController extends Controller
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $purchaseInvoice->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->purchase_unit_price,
                     'total' => $item->total_price,

@@ -114,6 +114,7 @@ class PurchaseReturnController extends Controller
             foreach ($request->items as $item) {
                 $data->items()->create([
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'lot_id' => $item['lot_id'],
                     'unit_price' => $item['unit_price'],
                     'quantity' => $item['quantity'],

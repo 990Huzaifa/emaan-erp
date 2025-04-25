@@ -12,6 +12,7 @@ class PurchaseReturnItem extends Model
     protected $fillable = [
         'purchase_return_id',
         'product_id',
+        'measurement_unit',
         'lot_id',
         'quantity',
         'unit_price',
