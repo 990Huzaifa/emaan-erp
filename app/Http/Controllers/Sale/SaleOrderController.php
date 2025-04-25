@@ -157,7 +157,7 @@ class SaleOrderController extends Controller
                 ]); 
             }
             if (round($request->total_discount) != $total_discount) {
-                throw new Exception('Total discount does not match calculated item discounts.', 400);
+                throw new Exception('Total discount does not match calculated item discounts.'.$total_discount, 400);
             }
             $n_url ='view-sale-order/'.$data->id;
             $data->update([
