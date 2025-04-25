@@ -11,6 +11,7 @@ class PurchaseQuotationItem extends Model
 
     protected $fillable = [
         'purchase_quotation_id',
+        'measurement_unit',
         'product_id',
         'quantity'
     ];
