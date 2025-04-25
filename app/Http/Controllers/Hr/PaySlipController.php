@@ -309,14 +309,14 @@ class PaySlipController extends Controller
                 $e_cb = calculateBalance($employee->acc_id, $data->net_pay, true);
                 
 
-                // Debit the employee account (money is increased)
+                // Credit the employee account (money is increased)
                 Transaction::create([
                     'business_id' => $data->business_id,
                     'acc_id' => $employee->acc_id,
                     'transaction_type' => 2, // 2 -> Expense
-                    'description' => 'Salary of employee debit to his account. Slip no: ' . $data->slip_no,
-                    'debit' => $data->net_pay, // Money added to the employee account
-                    'credit' => 0.00, // No money credit to the employee account
+                    'description' => "The employee's salary is credited to his account. Slip no:" . $data->slip_no,
+                    'credit' => $data->net_pay, // Money added to the employee account
+                    'debit' => 0.00, // No money credit to the employee account
                     'current_balance' => $e_cb // Updated balance for the asset account
                 ]);
             }
