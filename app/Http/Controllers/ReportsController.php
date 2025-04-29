@@ -930,7 +930,7 @@ class ReportsController extends Controller
 
     public function pnl(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -940,42 +940,47 @@ class ReportsController extends Controller
                     ], 403);
                 }
             }
-
+    
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
-
-            $start_date = Carbon::parse($start_date);
-            $end_date = Carbon::parse($end_date);
-
-            // here is the logic code comes
-
-            $pnlData = DeliveryNoteItem::with('product', 'deliveryNote')
-                ->whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
+    
+            $start_date = $start_date ? Carbon::parse($start_date) : null;
+            $end_date = $end_date ? Carbon::parse($end_date) : null;
+    
+            // here is the logic code
+    
+            $pnlQuery = DeliveryNoteItem::with('product', 'deliveryNote');
+    
+            // If start_date and end_date are provided, apply the date filter
+            if ($start_date && $end_date) {
+                $pnlQuery->whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
                     $q->whereBetween('dn_date', [$start_date, $end_date]);
-                })
-                ->get()
+                });
+            }
+    
+            $pnlData = $pnlQuery->get()
                 ->groupBy('product_id')
                 ->map(function ($items, $productId) {
                     $productName = optional($items->first()->product)->title;
-
+    
                     $totalQuantity = $items->sum('quantity');
-
+    
                     // Get average purchase price from lots table
                     $lots = Lot::where('product_id', $productId)->get();
                     $totalLotQty = $lots->sum('quantity');
                     $totalLotCost = $lots->sum(function ($lot) {
                         return $lot->purchase_unit_price * $lot->quantity;
                     });
-
+    
                     $averagePurchasePrice = $totalLotQty > 0 ? $totalLotCost / $totalLotQty : 0;
-
+    
                     // Sale calculation
                     $totalSale = $items->sum(function ($item) {
                         return $item->unit_price * $item->quantity;
                     });
-
+    
                     $totalPurchase = $averagePurchasePrice * $totalQuantity;
-
+    
                     return [
                         'product_id' => $productId,
                         'product_name' => $productName,
@@ -986,20 +991,21 @@ class ReportsController extends Controller
                         'profit' => round($totalSale - $totalPurchase, 2),
                     ];
                 })->values();
-
-                $overall = [
-                    'total_sale' => $pnlData->sum('total_sale'),
-                    'total_purchase' => $pnlData->sum('total_purchase'),
-                    'total_profit' => $pnlData->sum('profit'),
-                ];
-            return response()->json(['data' => $pnlData,'summary' => $overall,],200);
-
-        }catch(QueryException $e){
+    
+            $overall = [
+                'total_sale' => $pnlData->sum('total_sale'),
+                'total_purchase' => $pnlData->sum('total_purchase'),
+                'total_profit' => $pnlData->sum('profit'),
+            ];
+    
+            return response()->json(['data' => $pnlData, 'summary' => $overall], 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
     
 
 }

@@ -12,6 +12,7 @@ class GoodsReceiveNoteItem extends Model
     protected $fillable = [
         'goods_receive_note_id',
         'product_id',
+        'measurement_unit',
         'quantity',
         'receive',
         'billed',

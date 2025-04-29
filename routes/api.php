@@ -338,8 +338,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     // Dashboard
 
-    Route::get('dashboard/customer',[DashboardController::class,'nonPaidCustomer']);
-    Route::get('dashboard/low-pay-customer',[DashboardController::class,'lowPayCustomers']);
+    Route::get('dashboard/low-pay-customer',[DashboardController::class,'nonPaidCustomer']);
+    Route::get('dashboard/customer',[DashboardController::class,'lowPayCustomers']);
     Route::get('dashboard/inventory',[DashboardController::class,'inventoryProducts']);
     Route::get('dashboard/sale-analysis',[DashboardController::class,'salesAnalysis']);
     Route::get('dashboard/statistics',[DashboardController::class,'statistics']);
