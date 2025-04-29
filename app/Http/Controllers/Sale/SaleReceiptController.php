@@ -253,28 +253,30 @@ class SaleReceiptController extends Controller
             ->where('sale_receipts.id', $id)->first();
             
             if (!$data) throw new Exception('Sale Receipt not found', 404);
+
+            return response()->json($data);
             
-            // Use the Blade file to generate the PDF
-            $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
+            // // Use the Blade file to generate the PDF
+            // $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
     
-            $fileName = 'sale-receipt-' . $id . '.pdf';
-            $directory = public_path('storage/receipts');
-            $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+            // $fileName = 'sale-receipt-' . $id . '.pdf';
+            // $directory = public_path('storage/receipts');
+            // $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
 
-            // Create the directory if it doesn't exist
-            if (!file_exists($directory)) {
-                mkdir($directory, 0777, true);
-            }
+            // // Create the directory if it doesn't exist
+            // if (!file_exists($directory)) {
+            //     mkdir($directory, 0777, true);
+            // }
 
-            // Save the PDF file
-            $pdf->save($filePath);
+            // // Save the PDF file
+            // $pdf->save($filePath);
 
-            // Return the PDF file so it opens in the browser for printing.
-            return response()->file($filePath);
+            // // Return the PDF file so it opens in the browser for printing.
+            // return response()->file($filePath);
         } catch (QueryException $e) {
-            return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
+            return response()->json( 'DB error: ' ,400);
         } catch (Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return response()->json('error' ,400);
         }
     }
 

@@ -282,34 +282,35 @@ class PurchaseInvoiceController extends Controller
             ->where('purchase_invoices.id', $id)->first();
     
             if (!$data) throw new Exception('Purchase Invoice not found', 404);
+            return response()->json($data);
     
             // // Use the Blade file to generate the PDF
-            $pdf = PDF::loadView('invoice.purchase-invoice', compact('data'));
+            // $pdf = PDF::loadView('invoice.purchase-invoice', compact('data'));
     
             // // Return the generated PDF for download
             // return $pdf->download('purchase-invoice-' . $id . '.pdf');
 
             // new code
 
-            $fileName = 'purchase-invoice-' . $id . '.pdf';
-            $directory = public_path('storage/invoices');
-            $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+            // $fileName = 'purchase-invoice-' . $id . '.pdf';
+            // $directory = public_path('storage/invoices');
+            // $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
 
             // Create the directory if it doesn't exist
-            if (!file_exists($directory)) {
-                mkdir($directory, 0777, true);
-            }
+            // if (!file_exists($directory)) {
+            //     mkdir($directory, 0777, true);
+            // }
 
             // Save the PDF file
-            $pdf->save($filePath);
+            // $pdf->save($filePath);
 
             // Return the PDF file so it opens in the browser for printing.
             // The browser can then handle printing via its built-in PDF viewer.
-            return response()->file($filePath);
+            // return response()->file($filePath);
         } catch (QueryException $e) {
-            return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
+            return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
