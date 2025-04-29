@@ -279,9 +279,7 @@ class ReportsController extends Controller
             $purchaseData = $query->orderBy('purchase_invoices.created_at', 'desc')->get();
 
             // Calculate total price (optional if needed)
-            $totalPrice = $purchaseData->sum(function ($invoice) {
-                return $invoice->sum('total'); // assuming relationship: PurchaseInvoice hasMany items
-            });
+            $totalPrice = $query->sum('purchase_invoices.total');
 
             return response()->json(['data' => $purchaseData,'total_price' => $totalPrice],200);
 
