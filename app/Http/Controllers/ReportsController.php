@@ -507,8 +507,8 @@ class ReportsController extends Controller
             }
 
             // Input filters
-            $start_date = $request->input('start_date', SaleReceipt::min('created_at'));
-            $end_date = $request->input('end_date', Carbon::now()->toDateString());
+            $start_date = $request->input('start_date') ?? null;
+            $end_date = $request->input('end_date') ?? null;
             $customerId = $request->input('customer_id');
             $cityId = $request->input('city_id');
 
@@ -522,8 +522,11 @@ class ReportsController extends Controller
             $query = SaleReceipt::
             select('sale_receipts.*','customers.name as customer','cities.name as city')
             ->join('customers','sale_receipts.customer_id','customers.id')
-            ->join('cities','customers.city_id','cities.id')
-            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
+            ->join('cities','customers.city_id','cities.id');
+
+            if(!empty($start_date) && !empty($end_date)){
+                $query->whereBetween('sale_receipts.receipt_date', [$start_date, $end_date]);
+            }            
 
             if (!empty($businessId)) {
                 $query->where('sale_receipts.business_id', $businessId);
@@ -541,9 +544,7 @@ class ReportsController extends Controller
             $saleData = $query->orderBy('sale_receipts.created_at', 'desc')->get();
 
             // Calculate total price (optional if needed)
-            $totalPrice = $saleData->sum(function ($invoice) {
-                return $invoice->sum('total'); // assuming relationship: PurchaseInvoice hasMany items
-            });
+            $totalPrice = $saleData->sum('total');
 
             return response()->json(['data' => $saleData,'total_price' => $totalPrice],200);
 
