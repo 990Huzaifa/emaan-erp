@@ -1,367 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eman Traders - Invoice</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-        rel="stylesheet">
+    <title>Purchase Invoice</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Reset and base styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Inter", sans-serif;
-        }
+    .container {
+        max-width: 48rem;
+        margin: 0 auto;
+        font-family: Arial, sans-serif;
+        background-color: white;
+        overflow: hidden;
+    }
+    .invoice-content {
+        padding: 2rem 1.5rem;
+    }
+    .flex {
+        display: flex;
+    }
+    .justify-between {
+        justify-content: space-between;
+    }
+    .items-start {
+        align-items: flex-start;
+    }
+    .mb-8 {
+        margin-bottom: 2rem;
+    }
+    .text-right {
+        text-align: right;
+    }
+    h1, h2, h3, p {
+        margin: 0;
+        padding: 0;
+    }
+    h1 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #1f2937;
+    }
+    h2 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+    p {
+        font-size: 0.875rem;
+        color: #4b5563;
+    }
+    .mt-1 {
+        margin-top: 0.25rem;
+    }
+    .mb-2 {
+        margin-bottom: 0.5rem;
+    }
+    .whitespace-pre-line {
+        white-space: pre-line;
+    }
+    .icon {
+        color: #6b7280;
+        margin-right: 0.5rem;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 2rem;
+    }
+    th, td {
+        padding: 1rem 0;
+        text-align: left;
+        vertical-align: top;
+    }
+    th {
+        font-weight: 600;
+        color: #1f2937;
+        border-bottom: 1px solid #e5e7eb;
+        font-family: Arial, sans-serif;
+    }
+    td {
+        color: #4b5563;
+        border-bottom: 1px solid #f3f4f6;
+        font-family: Arial, sans-serif;
+    }
+    .text-right {
+        text-align: right;
+    }
+    .font-semibold {
+        font-weight: 600;
+    }
+    .text-lg {
+        font-size: 1.125rem;
+    }
+    .border-t {
+        border-top: 1px solid #e5e7eb;
+    }
+    .pt-8 {
+        padding-top: 2rem;
+    }
+    .button {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: white;
+        background-color: #3b82f6;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+    }
+    .button:hover {
+        background-color: #2563eb;
+    }
+    .button i {
+        margin-right: 0.5rem;
+    }
 
+    /* Print specific styles */
+    @media print {
         body {
-            background-color: #f5f5f5;
-            padding: 0px;
-            color: #333;
+            color: #000;
+            background: #fff;
+            font-family: Arial, sans-serif;
         }
-
-        hr {
-            border: none;
-            border-top: 1px solid #ddd;
-            margin: 10px 0;
+        .container {
+            width: 100%;
+            max-width: 100%;
+        }
+        .flex, .button {
+            display: block;
             width: 100%;
         }
-
-        .invoice-container {
-            max-width: 1024px;
-            margin: 0 auto;
-            background-color: white
-        }
-
-        /* Header styles */
-        .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            padding: 0px 20px;
-        }
-
-        .company-logo {
-            display: flex;
-            align-items: flex-end;
-        }
-
-        .logo-container {
-            margin-right: 10px;
-        }
-
-        .logo-container img {
-            width: 150px;
-            height: auto;
-            border-radius: 5px;
-        }
-
-        .company-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .company-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-
-        .company-name .e {
-            color: #1e88e5;
-        }
-
-        .company-details {
-            font-size: 10px;
-            line-height: 1.5;
-            color: #555;
-        }
-
-        .company-address {
-            display: flex;
-            align-items: flex-end;
-            text-align: right;
-            font-size: 10px;
-            line-height: 1.5;
-            color: #555;
-        }
-
-        .invoice-body {
-            padding: 20px;
-            border: 2.08px solid #D7DAE0;
-            border-radius: 20px;
-        }
-
-        /* Invoice info styles */
-        .invoice-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-
-        .info-column {
-            display: flex;
-            flex-direction: column;
-            width: 23%;
-        }
-
-        .info-title {
-            font-weight: normal;
-            color: #555;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 12px;
-        }
-
-        .invoice-amount {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e88e5;
-        }
-
-        /* Table styles */
-        .invoice-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-        }
-
-        .invoice-table th {
-            padding: 8px;
+        .text-right {
             text-align: left;
-            font-size: 10px;
-            border-top: 1px solid #ddd;
-            border-bottom: none;
-            color: #555;
-            font-weight: normal;
-            background-color: transparent;
         }
-
-        .invoice-table td {
-            padding: 8px;
-            border: none;
-            font-size: 12px;
+        .justify-between {
+            justify-content: flex-start;
         }
-
-        .invoice-table .text-right {
-            text-align: right;
+        .icon {
+            display: none;
         }
-
-        .invoice-table .text-center {
-            text-align: center;
+        .button {
+            display: none;
         }
-
-        .invoice-table tr.total-row td {
-            border-top: 1px solid #ddd;
-        }
-
-        /* Summary styles */
-        .invoice-summary {
+    }
+    @media screen, print {
+        .flex {
             display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            padding: 10px 0px;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
+            width: 100%;
         }
-
-        .amount-words {
-            width: 60%;
-            font-size: 12px;
-            padding: 0;
-        }
-
-        .amount-calculations {
-            width: 35%;
-        }
-
-        .calc-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            padding: 5px 0;
-        }
-
-        .calc-row.total {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        /* Footer styles */
-        .invoice-footer {
-            margin-top: 50px;
-            display: flex;
+        .justify-between {
             justify-content: space-between;
         }
-
-        .signature-section {
-            display: flex;
-            gap: 10px;
-            align-items: center;
+        .items-start {
+            align-items: flex-start;
         }
-
-        .signature-text {
-            margin-bottom: 5px;
-            font-weight: bold;
+        .invoice-header, .bill-to {
+            width: 50%; /* Adjust width as needed */
         }
-
-        .signature-line {
-            width: 250px;
-            border-top: 1px solid #777;
+        .invoice-header > div, .bill-to > div {
+            flex-basis: 100%; /* Adjust this to control space allocation */
         }
-
-        .terms-container {
-            margin-top: 20px;
-            color: #555;
+        img {
+            max-width: 200px; /* Adjust this value based on your needs */
+            height: auto;
+            display: block;
         }
+    }
 
-        .terms-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
+    /* Specific print styles */
+    @media print {
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
         }
-
-        .terms-text {
-            font-size: 12px;
+        .invoice-header, .bill-to {
+            width: 50%; /* Ensure each section uses half of the container */
         }
-
-        /* Print styles */
-        @media print {
-            body {
-                background-color: white;
-                padding: 0;
-                font-size: 10px;
-            }
-
-            .invoice-container {
-                box-shadow: none;
-                padding: 15px;
-            }
-
-            .invoice-header {
-                padding: 0px;
-                margin-bottom: 20px;
-            }
-
-            .company-logo img {
-                width: 120px;
-            }
-
-            .company-info .company-name {
-                font-size: 16px;
-            }
-
-            .invoice-table th {
-                font-size: 10px;
-                padding: 5px;
-            }
-
-            .invoice-table td {
-                font-size: 10px;
-                padding: 5px;
-            }
-
-            .signature-text {
-                font-size: 10px;
-            }
-
-            .terms-title {
-                font-size: 10px;
-            }
-
-            .terms-text {
-                font-size: 10px;
-            }
+        .invoice-header > div, .bill-to > div {
+            text-align: left; /* Ensures text is aligned left on print */
         }
-    </style>
+        .text-right {
+            text-align: left; /* Override text alignment for print */
+        }
+        td{
+            font-family: Arial, sans-serif;
+        }
+        th{
+            font-family: Arial, sans-serif;
+        }
+        img {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+    
+</style>
+
 </head>
-
 <body>
-    <div class="invoice-container">
-        <!-- Invoice Header -->
-        <div class="invoice-header">
-            <div class="company-logo">
-                <div class="logo-container">
-                    <!-- <img src="./assets/images/Logo.png" alt="emaan"> -->
-                    {{$data->business_name}}
+    <div class="container">
+        <div class="invoice-content">
+            <div class="flex justify-between items-start mb-8">
+                <div>
+                    <h1>Invoice</h1>
+                    <p class="mt-1">Invoice Number: {{$data->invoice_no}}</p>
                 </div>
-                <div class="company-info">f.invoice-container
-                    <div class="company-details">
-                        www.emantraders.com<br>
-                        +92 00000 00000
+                <div class="text-right" style="margin-top:-45px !important;">
+                    
+                    <h1>{{$data->business_name}}</h1>
+                </div>
+            </div>
+
+            <div class="flex justify-between mb-8">
+                <div>
+                    <h3>Bill To:</h3>
+                    <p>{{$data->vendor_name}}</p>
+                    <p class="whitespace-pre-line" style="width:200px;">{{$data->vendor_address}}, {{$data->vendor_city}}</p>
+                </div>
+                <div class="text-right">
+                    <div class="" style="margin-top:-45px !important;">
+                        <i class="fas fa-calendar icon"></i>
+                        <span>Date: {{$data->invoice_date}}</span>
                     </div>
                 </div>
             </div>
-            <div class="company-address">
-                Shop#2, Memon Chalets Plaza, near JS Bank,<br>
-                Citizen Colony, Qasimabad, Hyderabad
-            </div>
-        </div>
 
-        <div class="invoice-body">
-            <!-- Invoice Info -->
-            <div class="invoice-info">
-                <div class="info-column">
-                    <div class="info-title">Billed to</div>
-                    <div class="info-value">M/s {{$data->vendor_name}} E/S</div>
-                    <div class="info-value"><strong>Address:</strong> {{$data->vendor_address}}, {{$data->vendor_city}}</div>
-                    <div class="info-value"><strong>Telephone:</strong> {{$data->vendor_phone}}</div>
-                </div>
-
-                <div class="info-column">
-                    <div class="info-title">Invoice no.</div>
-                    <div class="info-value">#{{$data->invoice_no}}</div>
-                </div>
-
-                <div class="info-column">
-                    <div class="info-title">Invoice date</div>
-                    <div class="info-value">{{$data->invoice_date}}</div>
-                </div>
-
-                <div class="info-column">
-                    <div class="info-title">Invoice of</div>
-                    <div class="invoice-amount">Rs {{number_format($data->total)}}</div>
-                </div>
-            </div>
-
-            <!-- Invoice Table -->
-            <table class="invoice-table">
+            <table>
                 <thead>
                     <tr>
-                        <th>S NO.</th>
-                        <th>ITEM DETAIL</th>
-                        <th class="text-center">QTY</th>
-                        <th class="text-right">RATE</th>
-                        <th class="text-right">GROSS AMOUNT</th>
-                        <!-- <th class="text-right">DISCOUNT</th> -->
-                        <th class="text-right">NET AMOUNT</th>
+                        <th>Description</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Amount</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Ceiling Fans AC/DC 56</td>
-                        <td class="text-center">20</td>
-                        <td class="text-right">5000.00</td>
-                        <td class="text-right">100,000.00</td>
-                        <td class="text-right">0.00</td>
-                        <td class="text-right">100,000.00</td>
-                    </tr>
+                    @php
+                    $subtotal = 0;
+                    $tax = 0;
+                    @endphp
                     @foreach ($data->items as $item )
                     <tr>
                         <td>{{$item['product']['title']}}</td>
-                        <td class="text-right">{{$item->quantity}} {{$item->measurement_unit}}</td>
+                        <td class="text-right">{{$item->quantity}}</td>
                         <td class="text-right">{{number_format($item->unit_price)}} Rs</td>
                         <td class="text-right">{{number_format($item->total)}} Rs</td>
 
@@ -374,46 +262,29 @@
                 </tbody>
             </table>
 
-            <!-- Invoice Summary -->
-            <div class="invoice-summary">
-                <div class="amount-words">
-                    <strong>Amount in Words:</strong><br>
-                    Rupees one hundred thirty thousand, five hundred and 00/100 only.
-                </div>
-                <div class="amount-calculations">
-                    <div class="calc-row">
-                        <div>Subtotal</div>
-                        <div>Rs. 130,500.00</div>
+            <div class="flex justify-between mb-8">
+                <div></div>
+                <div class="text-right">
+                    <div class="flex justify-between mb-2">
+                        <span class="font-semibold mr-8">Subtotal:</span>
+                        <span>{{number_format($subtotal)}} PKR</span>
                     </div>
-                    <div class="calc-row">
-                        <div>Amount Received</div>
-                        <div>0.00</div>
+                    <div class="flex justify-between mb-2">
+                        <span class="font-semibold mr-8">Tax:</span>
+                        <span>{{number_format($tax)}} PKR</span>
                     </div>
-                    <hr>
-                    <div class="calc-row total">
-                        <div>Balanced</div>
-                        <div>Rs. 130,550.00</div>
+                    <div class="flex justify-between text-lg font-semibold">
+                        <span class="mr-8">Total:</span>
+                        <span>{{number_format($subtotal + $tax)}} PKR</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Invoice Footer -->
-            <div class="invoice-footer">
-                <div class="signature-section">
-                    <div class="signature-text">Authorized Signatures</div>
-                    <div class="signature-line"></div>
-                </div>
-                <div class="signature-section">
-                    <div class="signature-text">Prepared by Administrated</div>
-                </div>
+            <div class="border-t pt-8 mb-8">
+                <h3>Notes:</h3>
+                <p>Thank you for your business. Please make payment within 30 days.</p>
             </div>
-        </div>
-
-        <div class="terms-container">
-            <div class="terms-title">Terms & Conditions</div>
-            <div class="terms-text">Please pay within 15 days of receiving this invoice.</div>
         </div>
     </div>
 </body>
-
 </html>

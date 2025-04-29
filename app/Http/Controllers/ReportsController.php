@@ -242,8 +242,8 @@ class ReportsController extends Controller
             }
 
             // Input filters
-            $start_date = $request->input('start_date', PurchaseInvoice::min('created_at'));
-            $end_date = $request->input('end_date', Carbon::now()->toDateString());
+            $start_date = $request->input('start_date') ?? null;
+            $end_date = $request->input('end_date')?? null;
             $vendorId = $request->input('vendor_id');
             $cityId = $request->input('city_id');
 
@@ -257,8 +257,11 @@ class ReportsController extends Controller
             $query = PurchaseInvoice::
             select('purchase_invoices.*','vendors.name as vendor','cities.name as city')
             ->join('vendors','purchase_invoices.vendor_id','vendors.id')
-            ->join('cities','vendors.city_id','cities.id')
-            ->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
+            ->join('cities','vendors.city_id','cities.id');
+            
+            if (!empty($start_date) && !empty($end_date)) {
+                $query->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
+            }
 
             if (!empty($businessId)) {
                 $query->where('purchase_invoices.business_id', $businessId);
