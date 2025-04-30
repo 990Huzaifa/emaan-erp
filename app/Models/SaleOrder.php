@@ -24,7 +24,7 @@ class SaleOrder extends Model
         'delivery_cost',
         'total_discount',
         'remarks',
-        'terms_of_payments'
+        'terms_of_payment'
     ];
 
     public function items()
