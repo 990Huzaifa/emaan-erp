@@ -121,7 +121,7 @@ class SaleOrderController extends Controller
                 'total_tax' => $request->total_tax,
                 'delivery_cost' => $request->delivery_cost,
                 'total_discount' => $request->total_discount ?? 0,
-                'terms_of_payment' => $request->terms_of_payment ?? null,
+                'terms_of_payment' => $request->terms_conditions ?? null,
                 'remarks' => $request->remarks ?? null,
                 'special' => $request->special ?? 0,
                 'status' => $request->status ?? 0
@@ -239,7 +239,7 @@ class SaleOrderController extends Controller
                     'total_tax' => 'required|numeric',
                     'delivery_cost' => 'required|numeric',
                     'total_discount' => 'required|numeric',
-                    'terms_of_payment' => 'nullable|string',
+                    'terms_conditions' => 'nullable|string',
                     'remarks' => 'nullable|string',
                     'items' => 'required|array',
 
@@ -275,7 +275,7 @@ class SaleOrderController extends Controller
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
                 'delivery_cost' => $request->delivery_cost,
-                'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
+                'terms_of_payment' => $request->terms_conditions ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
                 'status' => 0,
             ]);
