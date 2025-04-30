@@ -137,6 +137,12 @@ class DeliveryNoteController extends Controller
                     'items.*.unit_price.required' => 'Unit Price is required.',
                     'items.*.unit_price.numeric' => 'Unit Price must be a number.',
 
+                    'items.*.discount.required' => 'Discount is required.',
+                    'items.*.discount.numeric' => 'Discount must be a number.',
+
+                    'items.*.discount_in_percentage.required' => 'Discount in Percentage is required.',
+                    'items.*.discount_in_percentage.in' => 'Discount in Percentage must be 0 or 1.',
+
                     'items.*.total_price.required' => 'Total Price is required.',
                     'items.*.total_price.numeric' => 'Total Price must be a number.',
 
