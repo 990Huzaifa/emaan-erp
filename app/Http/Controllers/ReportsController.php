@@ -449,16 +449,19 @@ class ReportsController extends Controller
                 ], 403);
             }
 
-            $startDate = $request->start_date ?? '1970-01-01';
-            $endDate = $request->end_date ?? now()->format('Y-m-d');
+            $startDate = $request->start_date ?? null;
+            $endDate = $request->end_date ?? null;
 
             $rawData = DB::table('sale_receipts AS sr')
                 ->join('sale_receipt_items AS sri', 'sr.id', '=', 'sri.sale_receipt_id')
                 ->join('products AS p', 'sri.product_id', '=', 'p.id')
-                ->where('sr.business_id', $businessId)
-                ->whereBetween('sr.receipt_date', [$startDate, $endDate])
-                ->where('sr.status', 1)
-                ->select(
+                ->where('sr.business_id', $businessId);
+
+            if ($startDate && $endDate) {
+                $rawData->whereBetween('sr.receipt_date', [$startDate, $endDate]);
+            }
+                
+            $rawData->select(
                     DB::raw("DATE_FORMAT(sr.receipt_date, '%b') as month"),
                     'p.title as item_name',
                     DB::raw('SUM(sri.total) as total_sales')
