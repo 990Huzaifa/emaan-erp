@@ -274,6 +274,7 @@ class SaleOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
+                'total_discount' => $request->total_discount,
                 'delivery_cost' => $request->delivery_cost,
                 'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
@@ -281,13 +282,29 @@ class SaleOrderController extends Controller
             ]);
             $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
             $requestItemIds = [];
+            $total_discount = 0;
             foreach ($request->items as $item) {
+                $discount = 0;
+
+                // Calculate discount amount
+                if (!empty($item['discount_in_percentage']) && $item['discount_in_percentage']) {
+                    $discount = round(($item['unit_price'] * $item['quantity']) * ($item['discount'] / 100));
+                } else {
+                    $discount = round($item['discount']); // Flat value
+                }
+
+                $subtotal = round(($item['unit_price'] * $item['quantity']) - $discount);
+                $total_discount += $discount;
+
+
                 if (empty($item['id']) && isset($item['id']) && isset($existingItems[$item['id']])) {
                     // Update existing item
                     $existingItems[$item['id']]->update([
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'tax' => $item['tax'],
                     ]);
                     $requestItemIds[] = $item['id'];  // Keep track of updated items
@@ -300,9 +317,14 @@ class SaleOrderController extends Controller
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'tax' => $item['tax'],
                     ]);
                 }
+            }
+            if (round($request->total_discount) != $total_discount) {
+                throw new Exception('Total discount does not match calculated item discounts.'.$total_discount, 400);
             }
             $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
             SaleOrderItem::destroy($itemsToDelete);
