@@ -442,16 +442,20 @@ class ReportsController extends Controller
         try {
             $user = Auth::user();
             $businessId = $user->login_business;
-
+    
             if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'sales chart')) {
                 return response()->json([
                     'error' => 'User does not have the required permission.'
                 ], 403);
             }
-
-            $startDate = $request->start_date ?? '1970-01-01';
-            $endDate = $request->end_date ?? now()->addDay()->format('Y-m-d');
-
+    
+            // Get the year from the request, or use the current year if not provided
+            $year = $request->year ?? now()->year;
+    
+            $startDate = Carbon::createFromFormat('Y', $year)->startOfYear()->format('Y-m-d');
+            $endDate = Carbon::createFromFormat('Y', $year)->endOfYear()->addDay()->format('Y-m-d'); // add one day to include the entire year
+    
+            // Query the sales data
             $rawData = DB::table('sale_receipts AS sr')
                 ->join('sale_receipt_items AS sri', 'sr.id', '=', 'sri.sale_receipt_id')
                 ->join('products AS p', 'sri.product_id', '=', 'p.id')
@@ -466,22 +470,37 @@ class ReportsController extends Controller
                 ->groupBy('month', 'p.title')
                 ->orderByRaw("STR_TO_DATE(month, '%b')")
                 ->get();
-
-            // Restructure the data
-            $structuredData = [];
+    
+            // Initialize the structured data array with empty arrays for each month
+            $structuredData = [
+                'Jan' => [],
+                'Feb' => [],
+                'Mar' => [],
+                'Apr' => [],
+                'May' => [],
+                'Jun' => [],
+                'Jul' => [],
+                'Aug' => [],
+                'Sep' => [],
+                'Oct' => [],
+                'Nov' => [],
+                'Dec' => []
+            ];
+    
+            // Populate the structuredData with sales data
             foreach ($rawData as $entry) {
                 $month = $entry->month;
-                if (!isset($structuredData[$month])) {
-                    $structuredData[$month] = [];
+                if (isset($structuredData[$month])) {
+                    $structuredData[$month][] = [
+                        'item_name' => $entry->item_name,
+                        'total_sales' => number_format($entry->total_sales, 2),
+                    ];
                 }
-                $structuredData[$month][] = [
-                    'item_name' => $entry->item_name,
-                    'total_sales' => number_format($entry->total_sales, 2),
-                ];
             }
-
+    
+            // Return the response with structured sales data
             return response()->json(['sales_data' => $structuredData], 200);
-
+    
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
