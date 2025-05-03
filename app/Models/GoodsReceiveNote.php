@@ -15,6 +15,11 @@ class GoodsReceiveNote extends Model
         'grn_code',
         'grn_date',
         'received_by',
+        'terms_of_payment',
+        'delivery_cost',
+        'total_tax',
+        'total_discount',
+        'total',
         'remarks',
         'status',
     ];

@@ -82,8 +82,21 @@ class GRNController extends Controller
                 $request->all(),[
                     'grn_date'=>'required',
                     'purchase_order_id' => 'required|numeric|exists:purchase_orders,id',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
+                    'total_tax' => 'required|numeric',
+                    'total' => 'required|numeric',
+                    'terms_of_payment' => 'nullable|string',
                     'remarks' => 'nullable|string',
                     'items' => 'required|array',
+
+                    'items.*.product_id' => 'required|exists:products,id',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.quantity' => 'required|numeric',
+                    'items.*.unit_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
+                    'items.*.tax' => 'required|numeric',
 
             ],[
                 'grn_date.required' => 'GRN date is required.',
@@ -91,9 +104,46 @@ class GRNController extends Controller
                 'purchase_order_id.required' => 'Purchase order is required.',
                 'purchase_order_id.exists' => 'Purchase order does not exist.',
 
+                'delivery_cost.required' => 'Delivery cost is required.',
+                'delivery_cost.numeric' => 'Delivery cost must be a number.',
+
+                'total_discount.required' => 'Total discount is required.',
+                'total_discount.numeric' => 'Total discount must be a number.',
+
+                'total_tax.required' => 'Total tax is required.',
+                'total_tax.numeric' => 'Total tax must be a number.',
+
+                'total.required' => 'Total is required.',
+                'total.numeric' => 'Total must be a number.',
+
+                'terms_of_payment.string' => 'Terms of payment must be a string.',
+
                 'remarks.string' => 'Remarks must be a string.',
 
+                'items.array' => 'Items must be an array.',
+
                 'items.required' => 'Items are required.',
+
+                'items.*.product_id.required' => 'Product is required.',
+                'items.*.product_id.exists' => 'Product does not exist.',
+
+                'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                'items.*.quantity.required' => 'Quantity is required.',
+                'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                'items.*.unit_price.required' => 'Unit price is required.',
+                'items.*.unit_price.numeric' => 'Unit price must be a number.',
+
+                'items.*.discount.required' => 'Discount is required.',
+                'items.*.discount.numeric' => 'Discount must be a number.',
+
+                'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+
+                'items.*.tax.required' => 'Tax is required.',
+                'items.*.tax.numeric' => 'Tax must be a number.',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
@@ -107,19 +157,27 @@ class GRNController extends Controller
                 'grn_code' => $grn_code,
                 'grn_date' => $request->grn_date,
                 'received_by' => $user->id,
-                'remarks' => $request->remarks
+                'remarks' => $request->remarks,
+                'terms_of_payment' => $request->terms_of_payment,
+                'delivery_cost' => $request->delivery_cost,
+                'total_discount' => $request->total_discount,
+                'total_tax' => $request->total_tax,
+                'total' => $request->total
             ]);
 
             foreach ($request->items as $item) {
                 GoodsReceiveNoteItem::create([
                     'goods_receive_note_id' => $GRN->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'receive' => $item['receive'],
                     'billed' => $item['billed'],
                     'purchase_unit_price' => $item['purchase_unit_price'],
                     'sale_unit_price' => $item['sale_unit_price'],
                     'total_price' => $item['total_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
                 ]);
             }
@@ -202,7 +260,25 @@ class GRNController extends Controller
                     'grn_date'=>'required',
                     'purchase_order_id' => 'required|numeric|exists:purchase_orders,id',
                     'remarks' => 'nullable|string',
+                    'terms_of_payment' => 'nullable|string',
+                    'total' => 'required|numeric',
+                    'total_tax' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
+                    'delivery_cost' => 'required|numeric',
+
                     'items' => 'required|array',
+                    'items.*.product_id' => 'required|exists:products,id',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.quantity' => 'required|numeric',
+                    'items.*.sale_unit_price' => 'required|numeric',
+                    'items.*.purchase_unit_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.discount_in_percentage' => 'required|numeric',
+                    'items.*.tax' => 'required|numeric',
+                    'items.*.total_price' => 'required|numeric',
+                    'items.*.receive' => 'required|numeric',
+                    'items.*.billed' => 'required|numeric',
+
 
             ],[
                 'grn_date.required' => 'GRN date is required.',
@@ -212,7 +288,46 @@ class GRNController extends Controller
 
                 'remarks.string' => 'Remarks must be a string.',
 
+                'terms_of_payment.string' => 'Terms of payment must be a string.',
+
+                'total.required' => 'Total is required.',
+                'total.numeric' => 'Total must be a number.',
+
+                'total_tax.required' => 'Total tax is required.',
+                'total_tax.numeric' => 'Total tax must be a number.',
+
+                'total_discount.required' => 'Total discount is required.',
+                'total_discount.numeric' => 'Total discount must be a number.',
+
+                'delivery_cost.required' => 'Delivery cost is required.',
+                'delivery_cost.numeric' => 'Delivery cost must be a number.',
+
+
                 'items.required' => 'Items are required.',
+
+                'items.*.product_id.required' => 'Product is required.',
+                'items.*.product_id.exists' => 'Product does not exist.',
+
+                'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                'items.*.quantity.required' => 'Quantity is required.',
+                'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                'items.*.sale_unit_price.required' => 'Sale Unit price is required.',
+                'items.*.sale_unit_price.numeric' => 'Sale Unit price must be a number.',
+
+                'items.*.purchase_unit_price.required' => 'Purchase Unit price is required.',
+                'items.*.purchase_unit_price.numeric' => 'Purchase Unit price must be a number.',
+
+                'items.*.discount.required' => 'Discount is required.',
+                'items.*.discount.numeric' => 'Discount must be a number.',
+
+                'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+
+                'items.*.tax.required' => 'Tax is required.',
+                'items.*.tax.numeric' => 'Tax must be a number.',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
@@ -221,6 +336,11 @@ class GRNController extends Controller
             $GRN->update([
                 'grn_date' => $request->grn_date,
                 'remarks' => $request->remarks,
+                'terms_of_payment' => $request->terms_of_payment,
+                'total' => $request->total,
+                'total_tax' => $request->total_tax,
+                'total_discount' => $request->total_discount,
+                'delivery_cost' => $request->delivery_cost,
                 'status' => 0,
             ]);
 

@@ -76,9 +76,20 @@ class PurchaseOrderController extends Controller
                     'vendor_id'=>'required|exists:vendors,id',
                     'order_date'=>'required',
                     'due_date' => 'required',
+                    'delivery_cost' => 'required|numeric',
                     'total' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
                     'total_tax' => 'required|numeric',
+
                     'items' => 'required|array',
+                    'items.*.product_id' => 'required|exists:products,id',
+                    'items.*.quantity' => 'required|numeric',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.unit_price' => 'required|numeric',
+                    'items.*.total_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
+                    'items.*.tax' => 'required|numeric',
 
             ],[
 
@@ -91,11 +102,43 @@ class PurchaseOrderController extends Controller
 
                 'total.required' => 'Total is required.',
                 'total.numeric' => 'Total must be a number.',
+
+                'total_discount.required' => 'Total Discount is required.',
+                'total_discount.numeric' => 'Total Discount must be a number.',
+
+                'delivery_cost.required' => 'Delivery cost is required.',
+                'delivery_cost.numeric' => 'Delivery cost must be a number.',
                 
                 'total_tax.required' => 'Total Tax is required.',
                 'total_tax.numeric' => 'Total Tax must be a number.',
                 
                 'items.required' => 'Items are required.',
+                'items.array' => 'Items must be an array.',
+
+                'items.*.product_id.required' => 'Product is required.',
+                'items.*.product_id.exists' => 'Product does not exist.',
+
+                'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                'items.*.quantity.required' => 'Quantity is required.',
+                'items.*.quantity.numeric' => 'Quantity must be a number.',
+                
+                'items.*.unit_price.required' => 'Unit price is required.',
+                'items.*.unit_price.numeric' => 'Unit price must be a number.',
+                
+                'items.*.total_price.required' => 'Total price is required.',
+                'items.*.total_price.numeric' => 'Total price must be a number.',
+                
+                'items.*.discount.required' => 'Discount is required.',
+                'items.*.discount.numeric' => 'Discount must be a number.',
+                
+                'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+                'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
+                
+                'items.*.tax.required' => 'Tax is required.',
+                'items.*.tax.numeric' => 'Tax must be a number.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             do {
@@ -107,7 +150,9 @@ class PurchaseOrderController extends Controller
                 'business_id' => $user->login_business,
                 'order_date' => $request->order_date,
                 'due_date' => $request->due_date,
+                'delivery_cost' => $request->delivery_cost,
                 'total' => $request->total,
+                'total_discount' => $request->total_discount,
                 'total_tax' => $request->total_tax,
                 'terms_of_payment' => $request->terms_conditions ?? null,
                 'remarks' => $request->remarks ?? null,
@@ -117,9 +162,12 @@ class PurchaseOrderController extends Controller
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $data->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['total_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
                 ]); 
             }
@@ -195,11 +243,22 @@ class PurchaseOrderController extends Controller
                     'vendor_id'=>'required|exists:vendors,id',
                     'order_date'=>'required',
                     'due_date' => 'required',
+                    'delivery_cost' => 'required|numeric',
                     'total' => 'required|numeric',
                     'total_tax' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
                     'terms_of_payment' => 'nullable|string',
                     'remarks' => 'nullable|string',
+
                     'items' => 'required|array',
+                    'items.*.product_id' => 'required|exists:products,id',
+                    'items.*.quantity' => 'required|numeric',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.unit_price' => 'required|numeric',
+                    'items.*.total_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
+                    'items.*.tax' => 'required|numeric',
 
             ],[
                 'vendor_id.required' => 'Vendor is required.',
@@ -211,11 +270,42 @@ class PurchaseOrderController extends Controller
 
                 'total.required' => 'Total is required.',
                 'total.numeric' => 'Total must be a number.',
+
+                'total_discount.required' => 'Total Discount is required.',
+                'total_discount.numeric' => 'Total Discount must be a number.',
+
+                'delivery_cost.required' => 'Delivery cost is required.',
+                'delivery_cost.numeric' => 'Delivery cost must be a number.',
                 
                 'total_tax.required' => 'Total Tax is required.',
                 'total_tax.numeric' => 'Total Tax must be a number.',
                 
                 'items.required' => 'Items are required.',
+
+                'items.*.product_id.required' => 'Product is required.',
+                'items.*.product_id.exists' => 'Product does not exist.',
+
+                'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                'items.*.quantity.required' => 'Quantity is required.',
+                'items.*.quantity.numeric' => 'Quantity must be a number.',
+                
+                'items.*.unit_price.required' => 'Unit price is required.',
+                'items.*.unit_price.numeric' => 'Unit price must be a number.',
+                
+                'items.*.total_price.required' => 'Total price is required.',
+                'items.*.total_price.numeric' => 'Total price must be a number.',
+                
+                'items.*.discount.required' => 'Discount is required.',
+                'items.*.discount.numeric' => 'Discount must be a number.',
+                
+                'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+                'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
+                
+                'items.*.tax.required' => 'Tax is required.',
+                'items.*.tax.numeric' => 'Tax must be a number.',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             $data = PurchaseOrder::find($id);

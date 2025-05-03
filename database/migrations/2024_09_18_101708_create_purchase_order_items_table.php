@@ -18,9 +18,11 @@ return new class extends Migration
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->integer('quantity');
-            $table->decimal('unit_price', 8, 2);
-            $table->decimal('total_price', 8, 2);
-            $table->decimal('tax', 10, 2)->default(0.00);
+            $table->decimal('unit_price', 20, 2);
+            $table->boolean('discount_in_percentage')->default(0);
+            $table->decimal('discount', 20, 2);
+            $table->decimal('total_price', 20, 2);
+            $table->decimal('tax', 20, 2)->default(0.00);
             $table->timestamps();
         });
     }

@@ -101,7 +101,12 @@ class PurchaseInvoiceController extends Controller
                 'grn_id' => $request->grn_id,
                 'vendor_id' => $PO->vendor_id,
                 'po_no' => $PO->order_code,
-                'terms_of_payment' => $PO->terms_of_payment,
+                'terms_of_payment' => $GRN->terms_of_payment,
+                'remarks' => $GRN->remarks,
+                'total' => $GRN->total,
+                'total_discount' => $GRN->total_discount,
+                'total_tax' => $GRN->total_tax,
+                'delivery_cost' => $GRN->delivery_cost,
                 'status' => $request->status ?? 0
             ]);
 
@@ -110,9 +115,12 @@ class PurchaseInvoiceController extends Controller
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $purchaseInvoice->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->purchase_unit_price,
                     'total' => $item->total_price,
+                    'discount_in_percentage' => $item->discount_in_percentage,
+                    'discount' => $item->discount,
                     'tax' => $item->tax,
                 ]);
             }
@@ -322,11 +330,17 @@ class PurchaseInvoiceController extends Controller
             $purchaseInvoice = PurchaseInvoice::create([
                 'vendor_id' => $PO->vendor_id,
                 'po_no' => $PO->order_code,
+                'delivery_cost' => $GRN->delivery_cost,
                 'invoice_no' => $invoice_no,
                 'invoice_date' => date('Y-m-d'),
                 'business_id' => $businessId,
                 'grn_id' => $id,
-                'terms_of_payment' => $PO->terms_of_payment,
+                'terms_of_payment' => $GRN->terms_of_payment,
+                'remarks' => $GRN->remarks,
+                'total' => $GRN->total,
+                'total_discount' => $GRN->total_discount,
+                'total_tax' => $GRN->total_tax
+
             ]);
 
             // Map GRN items to PI items
@@ -334,9 +348,12 @@ class PurchaseInvoiceController extends Controller
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $purchaseInvoice->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->purchase_unit_price,
                     'total' => $item->total_price,
+                    'discount_in_percentage' => $item->discount_in_percentage,
+                    'discount' => $item->discount,
                     'tax' => $item->tax,
                 ]);
             }

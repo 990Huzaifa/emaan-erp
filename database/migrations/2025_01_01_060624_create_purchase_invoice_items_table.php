@@ -20,6 +20,8 @@ return new class extends Migration
             $table->integer('quantity');
             $table->decimal('unit_price', 20, 2);
             $table->decimal('tax', 20, 2);
+            $table->boolean('discount_in_percentage')->default(0);
+            $table->decimal('discount', 20, 2);
             $table->decimal('total', 20, 2);
             $table->timestamps();
         });

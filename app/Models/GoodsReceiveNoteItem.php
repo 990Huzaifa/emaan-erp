@@ -12,12 +12,15 @@ class GoodsReceiveNoteItem extends Model
     protected $fillable = [
         'goods_receive_note_id',
         'product_id',
+        'measurement_unit',
         'quantity',
         'receive',
         'billed',
         'purchase_unit_price',
         'sale_unit_price',
         'total_price',
+        'discount_in_percentage',
+        'discount',
         'tax',
     ];
 

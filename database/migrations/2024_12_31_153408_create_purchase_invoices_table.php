@@ -23,6 +23,11 @@ return new class extends Migration
             $table->foreign('grn_id')->references('id')->on('goods_receive_notes')->onDelete('cascade');
             $table->string('po_no');
             $table->string('terms_of_payment')->nullable();
+            $table->string('remarks')->nullable();
+            $table->decimal('delivery_cost', 25, 2)->default(0.00);
+            $table->decimal('total_tax', 25, 2)->default(0.00);
+            $table->decimal('total_discount', 25, 2)->default(0.00);
+            $table->decimal('total', 25, 2)->default(0.00);
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected, 4 = Paid');
             $table->timestamps();
         });

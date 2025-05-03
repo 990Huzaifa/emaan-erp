@@ -12,8 +12,11 @@ class PurchaseInvoiceItem extends Model
     protected $fillable = [
         'purchase_invoice_id',
         'product_id',
+        'measurement_unit',
         'quantity',
         'unit_price',
+        'discount_in_percentage',
+        'discount',
         'tax',
         'total',
     ];

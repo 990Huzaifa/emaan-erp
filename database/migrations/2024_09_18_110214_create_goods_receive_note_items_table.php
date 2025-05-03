@@ -20,10 +20,12 @@ return new class extends Migration
             $table->integer('quantity');
             $table->integer('receive');
             $table->decimal('billed', 8, 2);
-            $table->decimal('purchase_unit_price', 10, 2);
-            $table->decimal('sale_unit_price', 10, 2);
-            $table->decimal('total_price', 10, 2);
-            $table->decimal('tax', 10, 2)->default(0.00);
+            $table->decimal('purchase_unit_price', 25, 2);
+            $table->decimal('sale_unit_price', 25, 2);
+            $table->decimal('discount', 25, 2);
+            $table->boolean('discount_in_percentage')->default(0);
+            $table->decimal('total_price', 25, 2);
+            $table->decimal('tax', 25, 2)->default(0.00);
             $table->timestamps();
         });
     }

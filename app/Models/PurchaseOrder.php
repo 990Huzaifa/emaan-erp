@@ -20,9 +20,12 @@ class PurchaseOrder extends Model
         'note',
         'user_id',
         'business_id',
-        'total_tax',
         'terms_of_payment',
         'remarks',
+        'delivery_cost',
+        'total_discount',
+        'total_tax',
+        'total',
         'reference'
     ];
 
