@@ -62,7 +62,8 @@ class PermissionController extends Controller
                     'view goods received notes',
                     'create goods received notes',
                     'edit goods received notes',
-                    'approve goods received notes'
+                    'approve goods received notes',
+                    'reverse goods received notes'
                 ],
                 "Purchase Invoice" => [
                     'create purchase invoice',
@@ -107,7 +108,8 @@ class PermissionController extends Controller
                     'view delivery notes',
                     'create delivery notes',
                     'edit delivery notes',
-                    'approve delivery notes'
+                    'approve delivery notes',
+                    'reverse delivery notes'
                 ],
                 "Sale Receipt" => [
                     'list sale receipt',
@@ -215,11 +217,22 @@ class PermissionController extends Controller
                 ],
                 "Reports" => [
                     'sales summary',
+                    'sales report',
+                    'sales chart',
+                    'party sales summary',
                     'purchase summary',
+                    'purchase report',
+                    'party purchase summary',
                     'inventory report',
                     'financial report',
-                    'sales chart',
                     'balance sheet',
+                    'pnl report',                    
+                ],
+                "Balances" =>[
+                    'customer balance',
+                    'vendor balance',
+                    'cashnbank balance',
+                    'employee balance',
                 ]
             ];
 

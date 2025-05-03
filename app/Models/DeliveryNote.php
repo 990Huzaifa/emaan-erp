@@ -17,6 +17,10 @@ class DeliveryNote extends Model
         'received_by',
         'remarks',
         'status',
+        'delivery_cost',
+        'total_discount',
+        'total',
+        'total_tax',
     ];
 
     public function items()

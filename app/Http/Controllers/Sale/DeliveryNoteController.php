@@ -87,11 +87,18 @@ class DeliveryNoteController extends Controller
                     'sale_order_id' => 'required|exists:sale_orders,id',
                     'dn_date'=>'required|date',
                     'remarks' => 'nullable|string',
+                    'total' => 'required|numeric',
+                    'total_tax' => 'required|numeric',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.quantity' => 'required|numeric',
                     'items.*.delivered' => 'required|numeric',
                     'items.*.charged' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.discount_in_percentage' => 'required|in:0,1',
                     'items.*.total_price' => 'required|numeric',
                     'items.*.tax' => 'required|numeric',
                 ],[
@@ -101,10 +108,22 @@ class DeliveryNoteController extends Controller
                     'dn_date.required' => 'Delivery Note Date is required.',
                     'dn_date.date' => 'Delivery Note Date must be a valid date.',
 
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
+
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
+
+                    'delivery_cost.required' => 'Delivery Cost is required.',
+                    'delivery_cost.numeric' => 'Delivery Cost must be a number.',
+
                     'remarks.string' => 'Remarks must be a string.',
 
                     'items.*.product_id.required' => 'Product is required.',
                     'items.*.product_id.exists' => 'Product does not exist.',
+
+                    'items.*.measurement_unit.required' => 'Measurement Unit is required.',
+                    'items.*.measurement_unit.string' => 'Measurement Unit must be a string.',
                     
                     'items.*.quantity.required' => 'Quantity is required.',
                     'items.*.quantity.numeric' => 'Quantity must be a number.',
@@ -117,6 +136,12 @@ class DeliveryNoteController extends Controller
 
                     'items.*.unit_price.required' => 'Unit Price is required.',
                     'items.*.unit_price.numeric' => 'Unit Price must be a number.',
+
+                    'items.*.discount.required' => 'Discount is required.',
+                    'items.*.discount.numeric' => 'Discount must be a number.',
+
+                    'items.*.discount_in_percentage.required' => 'Discount in Percentage is required.',
+                    'items.*.discount_in_percentage.in' => 'Discount in Percentage must be 0 or 1.',
 
                     'items.*.total_price.required' => 'Total Price is required.',
                     'items.*.total_price.numeric' => 'Total Price must be a number.',
@@ -137,25 +162,32 @@ class DeliveryNoteController extends Controller
                 'dn_date' => $request->dn_date,
                 'received_by' => $user->id, //need to know
                 'remarks' => $request->remarks,
+                'total_tax' => $request->total_tax,
+                'delivery_cost' => $request->delivery_cost,
+                'total_discount' => $request->total_discount,
+                'total' => $request->total,
             ]);
 
             foreach($request->items as $item){
                 DeliveryNoteItem::create([
                     'delivery_note_id' => $deliveryNote->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'delivered' => $item['delivered'],
                     'charged' => $item['charged'],
                     'unit_price' => $item['unit_price'],
-                    'total_price' => $item['total_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
+                    'total_price' => $item['total_price'],
                 ]);
             }
-            $n_url ='/view-delivery-notes/'.$deliveryNote->id;
+            $n_url ='view-delivery-notes/'.$deliveryNote->id;
             notifyUser($user->id, $businessId,'approve delivery notes', 'New Delivery note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Delivery Note',
+                'description' => 'Create Delivery Note. Code: '.$dn_code,
             ]);
             DB::commit();
             return response()->json($deliveryNote,200);
@@ -174,9 +206,9 @@ class DeliveryNoteController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -186,20 +218,24 @@ class DeliveryNoteController extends Controller
                     ], 403);
                 }
             }
-            $deliveryNote = DeliveryNote::with(['items' => function ($query) {
-                $query->with('product:id,title'); // Include product and lot details
-            }])
-            ->where('id', $id) // Filter by the specific purchase order ID
-            ->first();
-            $response = $deliveryNote->toArray();    
-            return response()->json($response, 200);
 
-        }catch(QueryException $e){
+            $data = DeliveryNote::with(['items' => function ($query) {
+                $query->with('product:id,title')->leftJoin('inventory_details', 'delivery_note_items.product_id', '=', 'inventory_details.product_id')
+                ->addSelect('delivery_note_items.*', 'inventory_details.stock as max_quantity');
+            }])
+            ->join('sale_orders', 'delivery_notes.sale_order_id', '=', 'sale_orders.id') // Join with the customer table
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
+            ->select('delivery_notes.*', 'customers.name as customer_name') // Select fields including customer name
+            ->find($id);
+            if (empty($data)) throw new Exception('No DN found', 404);
+            return response()->json($data,200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
 
     /**
      * Update the specified resource in storage.
@@ -224,11 +260,18 @@ class DeliveryNoteController extends Controller
                     'sale_order_id' => 'required|exists:sale_orders,id',
                     'dn_date'=>'required|date',
                     'remarks' => 'nullable|string',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
+                    'total_tax' => 'required|numeric',
+                    'total' => 'required|numeric',
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.quantity' => 'required|numeric',
                     'items.*.delivered' => 'required|numeric',
                     'items.*.charged' => 'required|numeric',
                     'items.*.unit_price' => 'required|numeric',
+                    'items.*.discount' => 'required|numeric',
+                    'items.*.measurement_unit' => 'required|string',
+                    'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
                     'items.*.total_price' => 'required|numeric',
                     'items.*.tax' => 'required|numeric',
                 ],[
@@ -238,10 +281,25 @@ class DeliveryNoteController extends Controller
                     'dn_date.required' => 'Delivery Note Date is required.',
                     'dn_date.date' => 'Delivery Note Date must be a valid date.',
 
+                    'delivery_cost.required' => 'Delivery Cost is required.',
+                    'delivery_cost.numeric' => 'Delivery Cost must be a number.',
+
+                    'total_discount.required' => 'Total Discount is required.',
+                    'total_discount.numeric' => 'Total Discount must be a number.',
+
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
+
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
+
                     'remarks.string' => 'Remarks must be a string.',
 
                     'items.*.product_id.required' => 'Product is required.',
                     'items.*.product_id.exists' => 'Product does not exist.',
+
+                    'items.*.measurement_unit.required' => 'Measurement Unit is required.',
+                    'items.*.measurement_unit.string' => 'Measurement Unit must be a string.',
 
                     'items.*.quantity.required' => 'Quantity is required.',
                     'items.*.quantity.numeric' => 'Quantity must be a number.',
@@ -254,6 +312,13 @@ class DeliveryNoteController extends Controller
 
                     'items.*.unit_price.required' => 'Unit Price is required.',
                     'items.*.unit_price.numeric' => 'Unit Price must be a number.',
+
+                    'items.*.discount.required' => 'Discount is required.',
+                    'items.*.discount.numeric' => 'Discount must be a number.',
+
+                    'items.*.discount_in_percentage.required' => 'Discount in Percentage is required.',
+                    'items.*.discount_in_percentage.numeric' => 'Discount in Percentage must be a number.',
+                    'items.*.discount_in_percentage.in' => 'Discount in Percentage must be 0 or 1.',
 
                     'items.*.total_price.required' => 'Total Price is required.',
                     'items.*.total_price.numeric' => 'Total Price must be a number.',
@@ -271,6 +336,10 @@ class DeliveryNoteController extends Controller
                 'dn_date' => $request->dn_date,
                 'received_by' => $user->id, //need to know
                 'remarks' => $request->remarks,
+                'delivery_cost' => $request->delivery_cost,
+                'total_discount' => $request->total_discount,
+                'total_tax' => $request->total_tax,
+                'total' => $request->total,
                 'status' => 0,
             ]);
 
@@ -279,11 +348,14 @@ class DeliveryNoteController extends Controller
                     $deliveryNoteItem = DeliveryNoteItem::find($item['id']);
                     $deliveryNoteItem->update([
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'delivered' => $item['delivered'],
                         'charged' => $item['charged'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'tax' => $item['tax'],
                     ]);
 
@@ -291,10 +363,13 @@ class DeliveryNoteController extends Controller
                     DeliveryNoteItem::create([
                         'delivery_note_id' => $deliveryNote->id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'delivered' => $item['delivered'],
                         'charged' => $item['charged'],
                         'unit_price' => $item['unit_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'total_price' => $item['total_price'],
                         'tax' => $item['tax'],
                     ]);
@@ -303,7 +378,7 @@ class DeliveryNoteController extends Controller
             }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Delivery Note',
+                'description' => 'Updated Delivery Note. Code'. $deliveryNote->dn_code,
             ]);
             DB::commit();
             return response()->json($deliveryNote,200);
@@ -343,6 +418,7 @@ class DeliveryNoteController extends Controller
             $customer = Customer::find($data->sale_order->customer_id);
             $total_amount_dn = 0;
             if($request->status == 1){
+                // Loop through each item in the delivery note
                 foreach ($data->items as $item) {
                     // Fetch available lots in FIFO order
                     $lots = Lot::where('product_id', $item->product_id)
@@ -350,12 +426,14 @@ class DeliveryNoteController extends Controller
                     ->orderBy('created_at', 'asc')
                     ->get();
     
-                    $remainingQty = $item->quantity;
+                    $remainingQty = $item->quantity; // Total quantity to deduct from lots
                     
+                    // Deduct item quantity from lots one by one (FIFO)
                     foreach ($lots as $lot) {
-                        if ($remainingQty <= 0) break;
+                        if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
 
-                        $deductQty = min($lot->quantity, $remainingQty);
+                        $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
+                        // Update lot: reduce quantity and total_price based on unit price
                         $lot->update([
                             'quantity' => $lot->quantity - $deductQty,
                             'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
@@ -363,7 +441,7 @@ class DeliveryNoteController extends Controller
                         $remainingQty -= $deductQty;
                     }
 
-                    // Update Inventory stock
+                    // Update overall inventory stock for the product
                     $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
                     if ($inventory_details) {
                         $inventory_details->update([
@@ -373,6 +451,7 @@ class DeliveryNoteController extends Controller
 
                     $total_amount_dn += $item->charged;
                 }
+
                 $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
                 $link =$data->sale_order_id;
                 // Debit amount to customer's account
@@ -394,16 +473,16 @@ class DeliveryNoteController extends Controller
 
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update Delivery Note Status to approved',   
+                    'description' => 'update Delivery Note Status to approved. Code: '. $data->dn_code,   
                 ]);
-                $n_url ='/view-delivery-notes/'.$id;
+                $n_url ='view-delivery-notes/'.$id;
                 notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note Approved successfully',$n_url);
             }else{
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update Delivery Note Status to rejected',   
+                    'description' => 'update Delivery Note Status to rejected. Code: '. $data->dn_code,   
                 ]);
-                $n_url ='/view-delivery-notes/'.$id;
+                $n_url ='view-delivery-notes/'.$id;
                 notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note Rejected',$n_url);
             }
             
@@ -449,7 +528,7 @@ class DeliveryNoteController extends Controller
 
                 $lot->update([
                     'quantity' => $lot->quantity + $item->quantity,
-                    'total_price' => $lot->total_price + $item->charged
+                    'total_price' => $lot->total_price + ($lot->sale_unit_price * $item->quantity)
                 ]);
                 
 
@@ -487,9 +566,9 @@ class DeliveryNoteController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update Delivery Note Status to reversed',   
+                'description' => 'update Delivery Note Status to reversed. Code: '. $data->dn_code,  
             ]);
-            $n_url ='/view-delivery-notes/'.$id;
+            $n_url ='view-delivery-notes/'.$id;
             notifyUser($user->id, $businessId,'view delivery notes', 'Delivery note reversed successfully',$n_url);
             DB::commit();
             return response()->json($data);

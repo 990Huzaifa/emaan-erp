@@ -95,11 +95,12 @@ class PurchaseQuotationController extends Controller
                 PurchaseQuotationItem::create([
                     'purchase_quotation_id' => $quotation->id,
                     'product_id' => $product['product_id'],
+                    'measurement_unit' => $product['measurement_unit'],
                     'quantity' => $product['quantity'],
                 ]);
             }
             $quotation->refresh();
-            $n_url ='/view-purchase-quotation/'.$quotation->id;
+            $n_url ='view-purchase-quotation/'.$quotation->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create purchase orders', 'New purchase quotation created and approved',$n_url);
             }else{
@@ -107,7 +108,7 @@ class PurchaseQuotationController extends Controller
             }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User create purchase quotation',
+                'description' => 'User create purchase quotation. code: '. $quotation->quotation_code,
             ]);
             return response()->json($quotation);
         }catch(QueryException $e){
@@ -204,6 +205,7 @@ class PurchaseQuotationController extends Controller
                     PurchaseQuotationItem::create([
                         'purchase_quotation_id' => $id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity']
                     ]);
                 }
@@ -212,9 +214,9 @@ class PurchaseQuotationController extends Controller
             PurchaseQuotationItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Quotation',   
+                'description' => 'Update Purchase Quotation. code: '. $data->quotation_code,   
             ]);
-            $n_url ='/view-purchase-quotation/'.$id;
+            $n_url ='view-purchase-quotation/'.$id;
             notifyUser($user->id, $businessId,'view purchase quotations', 'purchase quotation has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
@@ -245,9 +247,9 @@ class PurchaseQuotationController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Quotation Status',   
+                'description' => 'Update Purchase Quotation Status. code: '.$data->quotation_code,   
             ]);
-            $n_url ='/view-purchase-quotation/'.$id;
+            $n_url ='view-purchase-quotation/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create purchase orders', 'purchase quotation approved successfully',$n_url);
             }elseif($request->status == 2){

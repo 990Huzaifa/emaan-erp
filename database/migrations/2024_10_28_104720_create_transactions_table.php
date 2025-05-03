@@ -20,9 +20,9 @@ return new class extends Migration
             $table->string('transaction_type')->comment('0->purchase, 1->sale, 2->expense, 3->income');
             $table->longText('description')->nullable();
             $table->longText('link')->nullable();
-            $table->decimal('debit', 10, 2)->default(0.00);
-            $table->decimal('credit', 10, 2)->default(0.00);
-            $table->decimal('current_balance', 10, 2)->default(0.00);
+            $table->decimal('debit', 30, 2)->default(0.00);
+            $table->decimal('credit', 30, 2)->default(0.00);
+            $table->decimal('current_balance', 60, 2)->default(0.00);
             $table->timestamps();
         });
     }

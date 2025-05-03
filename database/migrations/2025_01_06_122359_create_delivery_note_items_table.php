@@ -21,10 +21,10 @@ return new class extends Migration
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->integer('quantity');
             $table->integer('delivered');
-            $table->decimal('charged', 8, 2);
-            $table->decimal('unit_price', 10, 2);
-            $table->decimal('total_price', 10, 2);
-            $table->decimal('tax', 10, 2)->default(0.00);
+            $table->decimal('charged', 38, 2);
+            $table->decimal('unit_price', 20, 2);
+            $table->decimal('total_price', 40, 2);
+            $table->decimal('tax', 20, 2)->default(0.00);
             $table->timestamps();
         });
     }

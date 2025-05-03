@@ -216,8 +216,8 @@ class SaleReturnVoucherController extends Controller
                 // for products
                 $total_billed = $data->voucher_amount;
 
-                $c_cb = calculateBalance($customer_acc, $total_billed, false); // Credit customer's account
-                $b_cb = calculateBalance($data->acc_id, $total_billed, true);  // Debit business's account
+                $c_cb = calculateBalance($customer_acc, $total_billed, true); // Debit customer's account
+                $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
                 
                 // Debit amount to customer's account
                 Transaction::create([
@@ -225,8 +225,8 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => $customer_acc,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'Payment made by customer: ' . $customer->name,
-                    'credit' => $total_billed, // No money deducted from customer's side
-                    'debit' => 0.00, // Money credited to customer
+                    'credit' => 0.00, // Money credited to customer
+                    'debit' => $total_billed, // No money deducted from customer's side
                     'current_balance' => $c_cb // Updated balance for customer account
                 ]);
 
@@ -236,8 +236,8 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'Payment received from customer: ' . $customer->name,
-                    'credit' => 0.00, // Money debited from business account
-                    'debit' => $total_billed, // No money credited to business account
+                    'debit' => 0.00, // Money debited from business account
+                    'credit' => $total_billed, // No money credited to business account
                     'current_balance' => $b_cb
                 ]);
             }

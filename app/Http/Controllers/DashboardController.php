@@ -28,6 +28,11 @@ class DashboardController extends Controller
             $month = $request->input('month');
             $filter = $request->input('filter'); // 'non-paid' or 'overdue'
 
+            // Subquery to get latest voucher per customer
+            $latestVouchers = DB::table('sale_vouchers as sv1')
+            ->select('sv1.customer_id', DB::raw('MAX(sv1.voucher_date) as latest_voucher_date'))
+            ->groupBy('sv1.customer_id');
+
             // Base Query
             $query = SaleVoucher::select(
                 'sale_vouchers.customer_id',
@@ -44,14 +49,21 @@ class DashboardController extends Controller
                 DB::raw('(SELECT acc_id, current_balance FROM transactions WHERE id IN (SELECT MAX(id) FROM transactions GROUP BY acc_id)) as transactions'),
                 'chart_of_accounts.id', '=', 'transactions.acc_id'
             )
-            ->join('cities', 'customers.city_id', '=', 'cities.id');
-
+            ->where('transactions.current_balance', '>', 0)
+            ->join('cities', 'customers.city_id', '=', 'cities.id')
+            ->joinSub($latestVouchers, 'lv', function($join) {
+                $join->on('sale_vouchers.customer_id', '=', 'lv.customer_id')
+                     ->on('sale_vouchers.voucher_date', '=', 'lv.latest_voucher_date');
+            });
+            
+            if(Auth::user()->role != 'admin'){
+                $query->where('customers.business_id', Auth::user()->login_business);
+            }
             // Apply filters
             if ($filter === 'non-paid') {
                 $query->where('sale_vouchers.status', 0); // Unpaid vouchers
             } elseif ($filter === 'overdue') {
-                $query->where('sale_vouchers.status', 0)
-                  ->having('no_of_days', '>', 30);
+                $query->where('sale_vouchers.days', '>', 30);
             }
 
             // Filter by month if provided
@@ -73,6 +85,53 @@ class DashboardController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function lowPayCustomers(Request $request): JsonResponse
+    {
+        try {
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+
+            $dateCondition = '';
+            if ($start_date && $end_date) {
+                $dateCondition = "WHERE t1.created_at BETWEEN '$start_date' AND '$end_date'";
+            }
+
+            $customers = Customer::select(
+                    'customers.id',
+                    'customers.name',
+                    'customers.acc_id',
+                    'cities.name as city_name',
+                    DB::raw("
+                        COALESCE(t.current_balance, ob.amount) as balance
+                    "),
+                    DB::raw('t.debit as payment')
+                )
+                ->leftJoin('cities', 'customers.city_id', '=', 'cities.id')
+                ->join(DB::raw("
+                    (
+                        SELECT t1.*
+                        FROM transactions t1
+                        INNER JOIN (
+                            SELECT acc_id, MAX(id) as max_id
+                            FROM transactions
+                            " . ($dateCondition ? $dateCondition : '') . "
+                            GROUP BY acc_id
+                        ) t2 ON t1.acc_id = t2.acc_id AND t1.id = t2.max_id
+                    ) as t
+                "), 'customers.acc_id', '=', 't.acc_id') // Inner join ensures only customers with transactions
+                ->leftJoin('opening_balances as ob', 'customers.acc_id', '=', 'ob.acc_id')
+                ->get();
+
+            return response()->json($customers, 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+ 
 
     public function inventoryProducts(): JsonResponse
     {
@@ -105,6 +164,9 @@ class DashboardController extends Controller
     public function salesAnalysis(Request $request): JsonResponse
     {
         try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
             $date = $request->input('date') ?? Carbon::now()->format('Y-m');
             $year = substr($date, 0, 4); // Extract year
             $month = substr($date, 5); // Extract month
@@ -112,6 +174,7 @@ class DashboardController extends Controller
 
             // Sales Graph: Filtered by Year and Month
             $query = SaleVoucher::where('status', 1)
+                ->where('business_id', $businessId)
                 ->whereYear('voucher_date', $year)
                 ->whereMonth('voucher_date', $month);
 
@@ -157,18 +220,21 @@ class DashboardController extends Controller
 
             // Sales Data: Grouped by Month & Year (Pending, Approved, Delivered)
             $totalSaleOrderPending = SaleOrder::whereYear('order_date', $year)
+                ->where('business_id', $businessId)
                 ->where('status', 0)
                 ->selectRaw('MONTH(order_date) as month, YEAR(order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
             $totalSaleOrderApproved = SaleOrder::whereYear('order_date', $year)
+                ->where('business_id', $businessId)
                 ->where('status', 1)
                 ->selectRaw('MONTH(order_date) as month, YEAR(order_date) as year, COUNT(*) as count')
                 ->groupBy('month', 'year')
                 ->get();
 
             $totalSaleOrderDelivered = SaleOrder::whereYear('sale_orders.order_date', $year)
+                ->where('sale_orders.business_id', $businessId)
                 ->where('delivery_notes.status', 1)
                 ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
                 ->selectRaw('MONTH(sale_orders.order_date) as month, YEAR(sale_orders.order_date) as year, COUNT(*) as count')
@@ -177,17 +243,20 @@ class DashboardController extends Controller
 
             // Get the latest month from sales data in the given year
             $latestMonth = SaleVoucher::where('status', 1)
+            ->where('business_id', $businessId)
             ->whereYear('voucher_date', $year)
             ->selectRaw('MAX(MONTH(voucher_date)) as latestMonth')
             ->value('latestMonth');
 
             // Get total sales for the entire year (up to the latest month)
             $totalYearSale = SaleVoucher::where('status', 1)
+            ->where('business_id', $businessId)
             ->whereYear('voucher_date', $year)
             ->sum('voucher_amount');
 
             // Get total sales for the previous month (if available)
             $previousMonthTotalSale = SaleVoucher::where('status', 1)
+            ->where('business_id', $businessId)
             ->whereYear('voucher_date', $year)
             ->whereMonth('voucher_date', $latestMonth - 1) // Previous month
             ->sum('voucher_amount');
@@ -198,19 +267,19 @@ class DashboardController extends Controller
             : 0;
 
             // total of sales, current month sales, today sale, last month sales increase percentage
-            $totalSale = SaleVoucher::where('status', 1)->sum('voucher_amount');
+            $totalSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->sum('voucher_amount');
 
             // Current month sales
             $currentMonth = Carbon::now()->month;
             $currentYear = Carbon::now()->year;
-            $currentMonthSale = SaleVoucher::where('status', 1)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $currentMonth)->sum('voucher_amount');
+            $currentMonthSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $currentMonth)->sum('voucher_amount');
 
             // Today's sales
-            $todaySale = SaleVoucher::where('status', 1)->whereDate('voucher_date', Carbon::now()->toDateString())->sum('voucher_amount');
+            $todaySale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereDate('voucher_date', Carbon::now()->toDateString())->sum('voucher_amount');
 
             // Last month's sales
             $lastMonth = Carbon::now()->subMonth()->month;
-            $lastMonthSale = SaleVoucher::where('status', 1)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $lastMonth)->sum('voucher_amount');
+            $lastMonthSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $lastMonth)->sum('voucher_amount');
 
             // Calculate percentage increase from last month
             $percentageInc = ($lastMonthSale > 0)
@@ -364,7 +433,7 @@ class DashboardController extends Controller
             ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc');
 
             if ($start_date && $end_date) {
-                $query->whereBetween('sale_receipts.voucher_date', [$start_date, $end_date]);
+                $query->whereBetween('sale_receipts.receipt_date', [$start_date, $end_date]);
             }
 
             $query = $query->get();
@@ -460,7 +529,7 @@ class DashboardController extends Controller
             ->join('goods_receive_notes', 'purchase_orders.id', '=', 'goods_receive_notes.purchase_order_id')
             ->where('goods_receive_notes.status', 1);
             if($start_date && $end_date){
-                $approved->whereBetween('created_at', [$start_date, $end_date]);
+                $approved->whereBetween('purchase_orders.created_at', [$start_date, $end_date]);
             }
             $approvedCount = $approved->count();
 
@@ -481,9 +550,9 @@ class DashboardController extends Controller
 
             // Return the response with the percentages
             return response()->json([
-                'pending_percentage' => $pendingPercentage,
-                'approved_percentage' => $approvedPercentage,
-                'rejected_percentage' => $rejectedPercentage,
+                'pending_percentage' => round($pendingPercentage,2),
+                'approved_percentage' => round($approvedPercentage,2),
+                'rejected_percentage' => round($rejectedPercentage,2),
             ]);
 
 
@@ -525,7 +594,7 @@ class DashboardController extends Controller
             ->join('delivery_notes', 'sale_orders.id', '=', 'delivery_notes.sale_order_id')
             ->where('delivery_notes.status', 1);
             if($start_date && $end_date){
-                $approved->whereBetween('created_at', [$start_date, $end_date]);
+                $approved->whereBetween('sale_orders.created_at', [$start_date, $end_date]);
             }
             $approvedCount = $approved->count();
 
@@ -546,9 +615,9 @@ class DashboardController extends Controller
 
             // Return the response with the percentages
             return response()->json([
-                'pending_percentage' => $pendingPercentage,
-                'approved_percentage' => $approvedPercentage,
-                'rejected_percentage' => $rejectedPercentage,
+                'pending_percentage' => round($pendingPercentage, 2),
+                'approved_percentage' => round($approvedPercentage, 2),
+                'rejected_percentage' => round($rejectedPercentage, 2),
             ]);
 
 
@@ -567,6 +636,9 @@ class DashboardController extends Controller
 
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
+
+            $start_date = Carbon::parse($start_date);
+            $end_date = Carbon::parse($end_date);
 
             // today hightest amount order
             $todayHighestAmountOrder = SaleReceipt::where('business_id', $businessId)
@@ -599,13 +671,38 @@ class DashboardController extends Controller
             ->first();
 
             // graph of orders
-            $orders = SaleReceipt::where('business_id', $businessId)
+            $query = SaleReceipt::where('sale_receipts.business_id', $businessId)
             ->join('sale_receipt_items', 'sale_receipts.id', '=', 'sale_receipt_items.sale_receipt_id')
             ->where('sale_receipts.status', 1)
-            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date])
-            ->select(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) as total_amount'))
-            ->orderBy(DB::raw('SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price)'), 'desc')
-            ->get();
+            ->whereBetween('sale_receipts.created_at', [$start_date, $end_date]);
+        
+            $daysDiff = $start_date->diffInDays($end_date);
+            $groupBy = $daysDiff > 31 ? 'month' : 'date';
+            if ($groupBy === 'month') {
+                $query->selectRaw("
+                        DATE_FORMAT(sale_receipts.created_at, '%b') as label,
+                        DATE_FORMAT(sale_receipts.created_at, '%m') as group_key,
+                        SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) / COUNT(DISTINCT sale_receipts.id) as average_order_value
+                    ")
+                    ->groupBy('label', 'group_key')
+                    ->orderBy('group_key');
+            } else {
+                $query->selectRaw("
+                        DATE(sale_receipts.created_at) as label,
+                        DATE(sale_receipts.created_at) as group_key,
+                        SUM(sale_receipt_items.quantity * sale_receipt_items.unit_price) / COUNT(DISTINCT sale_receipts.id) as average_order_value
+                    ")
+                    ->groupBy('label', 'group_key')
+                    ->orderBy('group_key');
+            }
+            
+            $orders = $query->get()->map(function ($row) {
+                return [
+                    'label' => $row->label,
+                    'group_key' => $row->group_key,
+                    'average_order_value' => number_format((float) $row->average_order_value, 6, '.', '')
+                ];
+            });
 
             return response()->json([
                 'today_highest_amount_order' => $todayHighestAmountOrder,

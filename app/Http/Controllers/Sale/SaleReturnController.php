@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Sale;
 
+use App\Models\Customer;
 use App\Models\DeliveryNote;
 use App\Models\InventoryDetail;
 use App\Models\Log;
 use App\Models\Lot;
 use App\Models\SaleOrder;
 use App\Models\SaleReturn;
+use App\Models\Transaction;
 use Exception;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -104,7 +106,7 @@ class SaleReturnController extends Controller
 
             DB::beginTransaction();
             do {
-                $sr_code = 'PR-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $sr_code = 'SR-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (SaleReturn::where('sr_code', $sr_code)->exists());
 
             $so_id = DeliveryNote::where('id', $request->dn_id)->value('sale_order_id');
@@ -212,12 +214,13 @@ class SaleReturnController extends Controller
                 }
             }
             $data = SaleReturn::find($id);
-            
+            $customer = Customer::find($data->customer_id);
             DB::beginTransaction();
             $data->update([
                 'status' => $request->status
             ]);
             if($request->status == 1){
+                $total_amount_sr = 0;
                 foreach ($data->items as $item) {
                     $inventory_detail = InventoryDetail::where('product_id',$item->product_id)->first();
                     $lot = Lot::where('product_id',$item->product_id)->orderBy('created_at', 'desc')->first();
@@ -226,8 +229,24 @@ class SaleReturnController extends Controller
                     ]);
                     $lot->update([
                         'quantity' => $lot->quantity + $item->quantity,
+                        'total_price' => $lot->total_price + $lot->sale_unit_price * ($lot->quantity + $item->quantity),
                     ]);
+                    $total_amount_sr += $item->total_price;
                 }
+
+                $c_cb = calculateBalance($customer->acc_id, $total_amount_sr,false);
+                $link =$data->_id;
+                // Debit amount to customer's account
+                Transaction::create([
+                    'business_id' => $businessId,
+                    'acc_id' => $customer->acc_id,
+                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'Credit amount to customer account by Sr with the SO is '.$data->sr_code,
+                    'link' => $link,
+                    'credit' => $total_amount_sr, // FIXED
+                    'debit' => 0.00, // FIXED
+                    'current_balance' => $c_cb
+                ]);
             }
             
             Log::create([

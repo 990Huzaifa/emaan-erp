@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('email')->nullable();
             $table->string('cnic');
             $table->enum('class', ['A', 'B', 'C'])->default('A');
-            $table->decimal('credit_limit', 10, 2)->default(0.00);
+            $table->decimal('credit_limit', 30, 2)->default(0.00);
             $table->string('logo')->nullable();
             $table->longText('address')->nullable();
             $table->boolean('is_active')->default(1);

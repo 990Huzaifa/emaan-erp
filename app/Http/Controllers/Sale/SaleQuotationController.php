@@ -81,12 +81,14 @@ class SaleQuotationController extends Controller
                 'due_date'=> 'required|date',
                 'products.*.product_id' => 'required',
                 'products.*.quantity' => 'required',
+                'products.*.measurement_unit' => 'required',
             ],[
                 'customer_id.required' => 'Customer is required.',
                 'customer_id.exists' => 'Customer does not exist.',
                 'order_date.required' => 'Order date is required.',
                 'due_date.required' => 'Due date is required.',
                 'products.*.product_id.required' => 'Product is required.',
+                'products.*.measurement_unit.required' => 'Measurement unit is required.',
                 'products.*.quantity.required' => 'Quantity is required.',
             ]);
 
@@ -104,7 +106,7 @@ class SaleQuotationController extends Controller
                 'business_id' => $businessId,
                 'status' => $request->status ?? 0
             ]);
-            $n_url ='/view-sale-quotation/'.$saleQuotation->id;
+            $n_url ='view-sale-quotation/'.$saleQuotation->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create sale orders', 'New sale quotation created and approved',$n_url);
             }else{
@@ -114,13 +116,14 @@ class SaleQuotationController extends Controller
                 SaleQuotationItem::create([
                     'sale_quotation_id' => $saleQuotation->id,
                     'product_id' => $product['product_id'],
+                    'measurement_unit' => $product['measurement_unit'],
                     'quantity' => $product['quantity'],
                 ]);
             }
 
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'User saved sale quotation',
+                'description' => 'User saved sale quotation. Code:'. $quotation_code,
             ]);
 
             DB::commit();
@@ -196,6 +199,7 @@ class SaleQuotationController extends Controller
                     'remarks' => 'nullable|string',
                     'products.*.product_id' => 'required',
                     'products.*.quantity' => 'required',    
+                    'products.*.measurement_unit' => 'required',
 
             ],[
                 'customer_id.required' => 'Customer is required.',
@@ -206,6 +210,7 @@ class SaleQuotationController extends Controller
 
                 'products.*.product_id.required' => 'Product is required.',
                 'products.*.quantity.required' => 'Quantity is required.',
+                'products.*.measurement_unit.required' => 'Measurement unit is required.',
             ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
@@ -232,6 +237,7 @@ class SaleQuotationController extends Controller
                     SaleQuotationItem::create([
                         'sale_quotation_id' => $id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity']
                     ]);
                 }
@@ -240,9 +246,9 @@ class SaleQuotationController extends Controller
             SaleQuotationItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Quotation',   
+                'description' => 'Update Sale Quotation. Code:'. $data->quotation_code,
             ]);
-            $n_url ='/view-sale-quotation/'.$id;
+            $n_url ='view-sale-quotation/'.$id;
             notifyUser($user->id, $businessId,'view sale quotations', 'sale quotation has been updated',$n_url);
             DB::commit();
             return response()->json($data);
@@ -277,9 +283,9 @@ class SaleQuotationController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Quotation Status',   
+                'description' => 'Update Sale Quotation Status. Code:'. $data->quotation_code,
             ]);
-            $n_url ='/view-sale-quotation/'.$id;
+            $n_url ='view-sale-quotation/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create sale orders', 'sale quotation approved successfully',$n_url);
             }elseif($request->status == 2){

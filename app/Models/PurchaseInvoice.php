@@ -17,10 +17,13 @@ class PurchaseInvoice extends Model
         'vendor_id',
         'po_no',
         'terms_of_payment',
+<<<<<<< HEAD
         'remarks',
         'delivery_cost',
         'total_tax',
         'total_discount',
+=======
+>>>>>>> 803cd829cb9ef0bee955b0a1747a61b6d788ce57
         'total',
         'status',
     ];

@@ -141,6 +141,10 @@ class SaleVoucherController extends Controller
                 ];
             }
             SaleVoucher::insert($data);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Sale Vouchers created successfully',   
+            ]);
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -228,10 +232,10 @@ class SaleVoucherController extends Controller
                 // for products
                 $total_billed = $data->voucher_amount;
 
-                $c_cb = calculateBalance($customer_acc, $total_billed, false); // Debit customer's account
-                $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
+                $c_cb = calculateBalance($customer_acc, $total_billed, false); // Credit customer's account
+                $b_cb = calculateBalance($data->acc_id, $total_billed, true);  // Debit business's account
                 
-                // Debit amount to customer's account
+                // Credit amount to customer's account
                 Transaction::create([
                     'business_id' => $data->business_id,
                     'acc_id' => $customer_acc,
@@ -242,22 +246,22 @@ class SaleVoucherController extends Controller
                     'current_balance' => $c_cb // Updated balance for customer account
                 ]);
 
-                // Credit amount from business's account
+                // Debit amount from business's account
                 Transaction::create([
                     'business_id' => $data->business_id,
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'Payment received from customer: ' . $customer->name,
-                    'debit' => 0.00, // Money debited from business account
-                    'credit' => $total_billed, // No money credited to business account
+                    'credit' => 0.00, // No money credited to business account
+                    'debit' => $total_billed, // Money debited from business account
                     'current_balance' => $b_cb
+                ]);
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Voucher status change to PAID and trnsaction done successfully. Code: ' . $data->voucher_code,   
                 ]);
             }
             
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
-            ]);
 
             DB::commit();
             return response()->json($data, 200);
@@ -333,6 +337,11 @@ class SaleVoucherController extends Controller
                 'voucher_date' => $request->voucher_date,
                 'voucher_amount' => $request->voucher_amount,
                 'status' => 0, // 0 un paid, 1 paid
+            ]);
+
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Voucher updated successfully. Code: ' . $data->voucher_code,   
             ]);
             DB::commit();
             return response()->json($data, 200);

@@ -15,11 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('policy_code');
-            $table->decimal('basic_pay', 20, 2)->default(0.00);
-            $table->decimal('loan_limit', 20, 2)->default(0.00);
+            $table->decimal('basic_pay', 30, 2)->default(0.00);
+            $table->decimal('loan_limit', 30, 2)->default(0.00);
             $table->integer('bonus_percentage')->default(0.00);
-            $table->decimal('allowance',20, 2)->default(0.00);
-            $table->decimal('deductions',20, 2)->default(0.00);
+            $table->decimal('allowance',30, 2)->default(0.00);
+            $table->decimal('deductions',30, 2)->default(0.00);
             $table->integer('tax_rate')->default(0.00);
             $table->boolean('status')->default(1)->comment('1 = Active, 0 = Inactive');
             $table->timestamps();

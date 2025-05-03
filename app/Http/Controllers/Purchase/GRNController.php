@@ -181,11 +181,11 @@ class GRNController extends Controller
                     'tax' => $item['tax'],
                 ]);
             }
-            $n_url ='/view-goods-received-note/'.$GRN->id;
+            $n_url ='view-goods-received-note/'.$GRN->id;
             notifyUser($user->id, $businessId,'approve goods received notes', 'New Goods received note created',$n_url);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'user created GRN',
+                'description' => 'user created GRN code:'.$grn_code,
             ]);
             DB::commit();
             return response()->json($GRN,200);
@@ -361,6 +361,7 @@ class GRNController extends Controller
                     GoodsReceiveNoteItem::create([
                         'goods_receive_note_id' => $GRN->id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'receive' => $item['receive'],
                         'billed' => $item['billed'],
@@ -373,7 +374,7 @@ class GRNController extends Controller
             }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update GRN',   
+                'description' => 'Update GRN code: '. $GRN->grn_code,   
             ]);
             DB::commit();
             return response()->json($GRN,200);
@@ -450,7 +451,8 @@ class GRNController extends Controller
                     }
                     
                 }
-                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+                // entry is credit but amount will be debited(sum)
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
                 // Credit amount to Vendor's account
                 $link = $data->purhcase_order_id;
                 Transaction::create([
@@ -459,8 +461,8 @@ class GRNController extends Controller
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
                     'link' => $link,
-                    'debit' => 0.00, // No money debited from business account
                     'credit' => $total_amount_grn, // Money credited to business account
+                    'debit' => 0.00, // No money debited from business account
                     'current_balance' => $v_cb
                 ]);
 
@@ -473,18 +475,18 @@ class GRNController extends Controller
 
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update GRN Status to approved',   
+                    'description' => 'update GRN Status to approved code: '. $data->grn_code,   
                 ]);
 
-                $n_url ='/view-goods-received-note/'.$id;
+                $n_url ='view-goods-received-note/'.$id;
                 notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Approved successfully',$n_url);
             }else{
                 Log::create([
                     'user_id' => $user->id,
-                    'description' => 'update GRN Status to rejected',   
+                    'description' => 'update GRN Status to rejected code: '. $data->grn_code,   
                 ]);
 
-                $n_url ='/view-goods-received-note/'.$id;
+                $n_url ='view-goods-received-note/'.$id;
                 notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Rejected',$n_url);
             }
             
@@ -525,11 +527,12 @@ class GRNController extends Controller
             $total_amount_grn = 0;
             foreach ($data->items as $item) {
                 $lot = Lot::where('product_id', $item->product_id)
+                ->where('vendor_id', $vendor->id)
                 ->where('grn_id', $id)->first();
 
                 $lot->update([
                     'quantity' => $lot->quantity + $item->quantity,
-                    'total_price' => $lot->total_price + ($item->billed * $item->quantity),
+                    'total_price' => $lot->total_price + ($item->quantity * $lot->sale_unit_price),
                 ]);
                 $check = InventoryDetail::where('product_id', $item->product_id)->first();
                 
@@ -540,8 +543,9 @@ class GRNController extends Controller
             }
 
             // reveresd transaction
-            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
-            // Credit amount to Vendor's account
+            // entry is debit but amount will be credit
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+            // Debit amount to Vendor's account
             $link = $data->purhcase_order_id;
             Transaction::create([
                 'business_id' => $businessId,
@@ -563,9 +567,9 @@ class GRNController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update GRN Status to reversed',   
+                'description' => 'update GRN Status to reversed code: '. $data->grn_code,
             ]);
-            $n_url ='/view-goods-received-note/'.$id;
+            $n_url ='view-goods-received-note/'.$id;
             notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note reversed successfully',$n_url);
             DB::commit();
             return response()->json($data);

@@ -31,6 +31,8 @@ return new class extends Migration
             $table->string('role')->default('user');
             $table->integer('max_business_create')->nullable();
             $table->string('login_business')->nullable();
+            $table->string('ip', 225)->nullable();
+            $table->string('last_login', 225)->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

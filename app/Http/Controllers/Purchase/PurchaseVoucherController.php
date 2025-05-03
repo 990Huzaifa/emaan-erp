@@ -284,7 +284,7 @@ class PurchaseVoucherController extends Controller
             DB::beginTransaction();
             $data->update([
                 'approved_by' => $user->id,
-                'approved_date' => Carbon::now(),
+                'approve_date' => Carbon::now(),
                 'status'=> $request->status
                 ]);
             
@@ -296,7 +296,7 @@ class PurchaseVoucherController extends Controller
                     $total_billed = $data->voucher_amount;
 
                     // Calculate Cash/Bank Account Current Balance (Post-Credit)
-                    $b_cb = calculateBalance($data->acc_id, $total_billed, true); // Cash account is credited (reduced)
+                    $b_cb = calculateBalance($data->acc_id, $total_billed, false); // Cash account is credited (reduced)
 
                     // Calculate Vendor Account Current Balance (Post-Debit)
                     $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
@@ -322,12 +322,13 @@ class PurchaseVoucherController extends Controller
                         'credit' => $total_billed, // Money credited from business account
                         'current_balance' => $b_cb
                     ]);
+                    Log::create([
+                        'user_id' => $user->id,
+                        'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->code,   
+                    ]);
                 }
             
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher status change to PAID and trnsaction done successfully.',   
-            ]);
+            
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){

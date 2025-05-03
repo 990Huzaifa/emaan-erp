@@ -171,7 +171,7 @@ class PurchaseOrderController extends Controller
                     'tax' => $item['tax'],
                 ]); 
             }
-            $n_url ='/view-purchase-order/'.$data->id;
+            $n_url ='view-purchase-order/'.$data->id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create goods received notes', 'New purchase order created and approved',$n_url);
             }else{
@@ -179,7 +179,7 @@ class PurchaseOrderController extends Controller
             }         
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Purchase Order',   
+                'description' => 'Create Purchase Order code: '.$data->order_code,   
             ]);
             return response()->json($data);
         }catch(QueryException $e){
@@ -337,6 +337,7 @@ class PurchaseOrderController extends Controller
                     PurchaseOrderItem::create([
                         'purchase_order_id' => $id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
@@ -348,9 +349,9 @@ class PurchaseOrderController extends Controller
             PurchaseOrderItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order',   
+                'description' => 'Update Purchase Order. code: '.$data->order_code,   
             ]);
-            $n_url ='/view-purchase-order/'.$id;
+            $n_url ='view-purchase-order/'.$id;
             notifyUser($user->id, $businessId,'view purchase orders', 'purchase order has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
@@ -382,9 +383,9 @@ class PurchaseOrderController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order Status',   
+                'description' => 'Update Purchase Order Status. code: '.$data->order_code,   
             ]);
-            $n_url ='/view-purchase-order/'.$id;
+            $n_url ='view-purchase-order/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create goods received notes', 'purchase order approved successfully',$n_url);
             }elseif($request->status == 2){

@@ -7,14 +7,17 @@ use App\Models\BusinessHasAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\DeliveryNoteItem;
+use App\Models\Employee;
 use App\Models\GoodsReceiveNote;
 use App\Models\GoodsReceiveNoteItem;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\Product;
+use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
+use App\Models\SaleReceipt;
 use App\Models\SaleVoucher;
 use App\Models\Vendor;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -62,7 +65,11 @@ class ReportsController extends Controller
             $inventoryReport = Product::
                 leftJoinSub($purchaseItems, 'purchased', 'products.id', '=', 'purchased.product_id')
                 ->leftJoinSub($soldItems, 'sold', 'products.id', '=', 'sold.product_id')
-                ->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]) // Ensure date comparison
+                ->where(function($query) {
+                    $query->whereNotNull('purchased.total_in')
+                        ->orWhereNotNull('sold.total_out');
+                })
+                ->whereBetween(DB::raw('DATE(products.created_at)'), [$startDate, $endDate])
                 ->select(
                     'products.id as product_id',
                     'products.title',
@@ -180,7 +187,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'purchase summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'party purchase summary')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -219,6 +226,71 @@ class ReportsController extends Controller
         }
     }
 
+    public function purchaseReport(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Permission check
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'purchase report')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Input filters
+            $start_date = $request->input('start_date') ?? null;
+            $end_date = $request->input('end_date')?? null;
+            $vendorId = $request->input('vendor_id');
+            $cityId = $request->input('city_id');
+
+            // Get vendors from city if city_id provided
+            $vendorIds = [];
+            if (!empty($cityId)) {
+                $vendorIds = Vendor::where('city_id', $cityId)->pluck('id')->toArray();
+            }
+
+            // Build query
+            $query = PurchaseInvoice::
+            select('purchase_invoices.*','vendors.name as vendor','cities.name as city')
+            ->join('vendors','purchase_invoices.vendor_id','vendors.id')
+            ->join('cities','vendors.city_id','cities.id');
+            
+            if (!empty($start_date) && !empty($end_date)) {
+                $query->whereBetween('purchase_invoices.created_at', [$start_date, $end_date]);
+            }
+
+            if (!empty($businessId)) {
+                $query->where('purchase_invoices.business_id', $businessId);
+            }
+
+            if (!empty($vendorId)) {
+                $query->where('purchase_invoices.vendor_id', $vendorId);
+            }
+
+            if (!empty($vendorIds)) {
+                $query->whereIn('purchase_invoices.vendor_id', $vendorIds);
+            }
+
+            // Order and fetch
+            $purchaseData = $query->orderBy('purchase_invoices.created_at', 'desc')->get();
+
+            // Calculate total price (optional if needed)
+            $totalPrice = $query->sum('purchase_invoices.total');
+
+            return response()->json(['data' => $purchaseData,'total_price' => $totalPrice],200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
 
     public function salesSummary(Request $request): JsonResponse
     {
@@ -234,7 +306,7 @@ class ReportsController extends Controller
             }
 
 
-            $start_date = $request->input('start_date', SaleVoucher::min('voucher_date')); // Default: earliest transaction date
+            $start_date = $request->input('start_date', SaleVoucher::min('created_at')); // Default: earliest transaction date
             $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
 
             // Ensure valid date format
@@ -269,7 +341,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'sales summary')) {
+                if (!$user->hasBusinessPermission($businessId, 'party sales summary')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -361,6 +433,143 @@ class ReportsController extends Controller
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function salesChartByItemAndMonth(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+    
+            if ($user->role != 'admin' && !$user->hasBusinessPermission($businessId, 'sales chart')) {
+                return response()->json([
+                    'error' => 'User does not have the required permission.'
+                ], 403);
+            }
+    
+            // Get the year from the request, or use the current year if not provided
+            $year = $request->year ?? now()->year;
+    
+            $startDate = Carbon::createFromFormat('Y', $year)->startOfYear()->format('Y-m-d');
+            $endDate = Carbon::createFromFormat('Y', $year)->endOfYear()->addDay()->format('Y-m-d'); // add one day to include the entire year
+    
+            // Query the sales data
+            $rawData = DB::table('sale_receipts AS sr')
+                ->join('sale_receipt_items AS sri', 'sr.id', '=', 'sri.sale_receipt_id')
+                ->join('products AS p', 'sri.product_id', '=', 'p.id')
+                ->where('sr.business_id', $businessId)
+                ->whereBetween('sr.receipt_date', [$startDate, $endDate])
+                ->where('sr.status', 1)
+                ->select(
+                    DB::raw("DATE_FORMAT(sr.receipt_date, '%b') as month"),
+                    'p.title as item_name',
+                    DB::raw('SUM(sri.total) as total_sales')
+                )
+                ->groupBy('month', 'p.title')
+                ->orderByRaw("STR_TO_DATE(month, '%b')")
+                ->get();
+    
+            // Initialize the structured data array with empty arrays for each month
+            $structuredData = [
+                'Jan' => [],
+                'Feb' => [],
+                'Mar' => [],
+                'Apr' => [],
+                'May' => [],
+                'Jun' => [],
+                'Jul' => [],
+                'Aug' => [],
+                'Sep' => [],
+                'Oct' => [],
+                'Nov' => [],
+                'Dec' => []
+            ];
+    
+            // Populate the structuredData with sales data
+            foreach ($rawData as $entry) {
+                $month = $entry->month;
+                if (isset($structuredData[$month])) {
+                    $structuredData[$month][] = [
+                        'item_name' => $entry->item_name,
+                        'total_sales' => number_format($entry->total_sales, 2),
+                    ];
+                }
+            }
+    
+            // Return the response with structured sales data
+            return response()->json(['sales_data' => $structuredData], 200);
+    
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+
+    public function saleReport(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Permission check
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'sales report')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Input filters
+            $start_date = $request->input('start_date') ?? null;
+            $end_date = $request->input('end_date') ?? null;
+            $customerId = $request->input('customer_id');
+            $cityId = $request->input('city_id');
+
+            // Get vendors from city if city_id provided
+            $customerIds = [];
+            if (!empty($cityId)) {
+                $customerIds = Customer::where('city_id', $cityId)->pluck('id')->toArray();
+            }
+
+            // Build query
+            $query = SaleReceipt::
+            select('sale_receipts.*','customers.name as customer','cities.name as city')
+            ->join('customers','sale_receipts.customer_id','customers.id')
+            ->join('cities','customers.city_id','cities.id');
+
+            if(!empty($start_date) && !empty($end_date)){
+                $query->whereBetween('sale_receipts.receipt_date', [$start_date, $end_date]);
+            }            
+
+            if (!empty($businessId)) {
+                $query->where('sale_receipts.business_id', $businessId);
+            }
+
+            if (!empty($customerId)) {
+                $query->where('sale_receipts.customer_id', $customerId);
+            }
+
+            if (!empty($customerIds)) {
+                $query->whereIn('sale_receipts.customer_id', $customerIds);
+            }
+
+            // Order and fetch
+            $saleData = $query->orderBy('sale_receipts.created_at', 'desc')->get();
+
+            // Calculate total price (optional if needed)
+            $totalPrice = $saleData->sum('total');
+
+            return response()->json(['data' => $saleData,'total_price' => $totalPrice],200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -551,7 +760,7 @@ class ReportsController extends Controller
             $businessId = null;
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                if (!$user->hasBusinessPermission($businessId, 'customer balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -563,13 +772,29 @@ class ReportsController extends Controller
 
             $perpage = $request->input('perpage', 10);
 
-            $customers = Customer::select('customers.id','customers.name','customers.acc_id','customers.c_code','customers.address','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            $customers = Customer::select(
+                'customers.id',
+                'customers.name',
+                'customers.acc_id',
+                'customers.c_code',
+                'customers.address',
+                'opening_balances.amount as opening_balance',
+                'transactions.current_balance'
+            )
             ->when($businessId, function ($query) use ($businessId) {
                 return $query->where('customers.business_id', $businessId);
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
-            ->join('transactions', 'customers.acc_id', '=', 'transactions.acc_id')
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
+                             INNER JOIN (
+                                 SELECT acc_id, MAX(id) as max_id 
+                                 FROM transactions 
+                                 GROUP BY acc_id
+                             ) t2 ON t1.id = t2.max_id
+                         ) as transactions'), 'customers.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.id', 'desc')
             ->paginate($perpage);
+
 
             return response()->json($customers);
 
@@ -587,7 +812,7 @@ class ReportsController extends Controller
             $businessId = null;
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                if (!$user->hasBusinessPermission($businessId, 'cashnbank balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -638,7 +863,7 @@ class ReportsController extends Controller
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'balance sheet')) {
+                if (!$user->hasBusinessPermission($businessId, 'vendor balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -646,10 +871,26 @@ class ReportsController extends Controller
             }
             $perpage = $request->input('perpage', 10);
 
-            $vendors = Vendor::select('vendors.id','vendors.name','vendors.acc_id','vendors.v_code','vendors.address','opening_balances.amount as opening_balance', 'transactions.current_balance')
+            $vendors = Vendor::select(
+                'vendors.id',
+                'vendors.name',
+                'vendors.acc_id',
+                'vendors.v_code',
+                'vendors.address',
+                'opening_balances.amount as opening_balance',
+                'transactions.current_balance'
+            )
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-            ->join('transactions', 'vendors.acc_id', '=', 'transactions.acc_id')
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
+                             INNER JOIN (
+                                 SELECT acc_id, MAX(id) as max_id 
+                                 FROM transactions 
+                                 GROUP BY acc_id
+                             ) t2 ON t1.id = t2.max_id
+                         ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.id', 'desc')
             ->paginate($perpage);
+
 
             return response()->json($vendors);
 
@@ -659,6 +900,133 @@ class ReportsController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function employeeBalances(Request $request): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'employee balance')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            $perpage = $request->input('perpage', 10);
+
+            $employees = Employee::select(
+                'employees.id',
+                'employees.name',
+                'employees.acc_id',
+                'employees.e_code',
+                'employees.address',
+                'opening_balances.amount as opening_balance',
+                'transactions.current_balance'
+            )
+            ->join('opening_balances', 'employees.acc_id', '=', 'opening_balances.acc_id')
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
+                             INNER JOIN (
+                                 SELECT acc_id, MAX(id) as max_id 
+                                 FROM transactions 
+                                 GROUP BY acc_id
+                             ) t2 ON t1.id = t2.max_id
+                         ) as transactions'), 'employees.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.id', 'desc')
+            ->paginate($perpage);
+
+
+            return response()->json($employees);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+
+    // profit n lose
+
+    public function pnl(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'pnl report')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+    
+            $start_date = $request->input('start_date');
+            $end_date = $request->input('end_date');
+    
+            $start_date = $start_date ? Carbon::parse($start_date) : null;
+            $end_date = $end_date ? Carbon::parse($end_date) : null;
+    
+            // here is the logic code
+    
+            $pnlQuery = DeliveryNoteItem::with('product', 'deliveryNote');
+    
+            // If start_date and end_date are provided, apply the date filter
+            if ($start_date && $end_date) {
+                $pnlQuery->whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
+                    $q->whereBetween('dn_date', [$start_date, $end_date]);
+                });
+            }
+    
+            $pnlData = $pnlQuery->get()
+                ->groupBy('product_id')
+                ->map(function ($items, $productId) {
+                    $productName = optional($items->first()->product)->title;
+    
+                    $totalQuantity = $items->sum('quantity');
+    
+                    // Get average purchase price from lots table
+                    $lots = Lot::where('product_id', $productId)->get();
+                    $totalLotQty = $lots->sum('quantity');
+                    $totalLotCost = $lots->sum(function ($lot) {
+                        return $lot->purchase_unit_price * $lot->quantity;
+                    });
+    
+                    $averagePurchasePrice = $totalLotQty > 0 ? $totalLotCost / $totalLotQty : 0;
+    
+                    // Sale calculation
+                    $totalSale = $items->sum(function ($item) {
+                        return $item->unit_price * $item->quantity;
+                    });
+    
+                    $totalPurchase = $averagePurchasePrice * $totalQuantity;
+    
+                    return [
+                        'product_id' => $productId,
+                        'product_name' => $productName,
+                        'quantity_sold' => $totalQuantity,
+                        'avg_purchase_price' => round($averagePurchasePrice, 2),
+                        'total_sale' => round($totalSale, 2),
+                        'total_purchase' => round($totalPurchase, 2),
+                        'profit' => round($totalSale - $totalPurchase, 2),
+                    ];
+                })->values();
+    
+            $overall = [
+                'total_sale' => $pnlData->sum('total_sale'),
+                'total_purchase' => $pnlData->sum('total_purchase'),
+                'total_profit' => $pnlData->sum('profit'),
+            ];
+    
+            return response()->json(['data' => $pnlData, 'summary' => $overall], 200);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     
 
 }

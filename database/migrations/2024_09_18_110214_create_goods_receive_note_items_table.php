@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
             $table->integer('quantity');
             $table->integer('receive');
+<<<<<<< HEAD
             $table->decimal('billed', 8, 2);
             $table->decimal('purchase_unit_price', 25, 2);
             $table->decimal('sale_unit_price', 25, 2);
@@ -26,6 +27,13 @@ return new class extends Migration
             $table->boolean('discount_in_percentage')->default(0);
             $table->decimal('total_price', 25, 2);
             $table->decimal('tax', 25, 2)->default(0.00);
+=======
+            $table->decimal('billed', 18, 2);
+            $table->decimal('purchase_unit_price', 20, 2);
+            $table->decimal('sale_unit_price', 20, 2);
+            $table->decimal('total_price', 20, 2);
+            $table->decimal('tax', 20, 2)->default(0.00);
+>>>>>>> 803cd829cb9ef0bee955b0a1747a61b6d788ce57
             $table->timestamps();
         });
     }

@@ -108,8 +108,11 @@ class SaleReceiptController extends Controller
                 'business_id' => $businessId,
                 'receipt_no' => $receipt_no,
                 'receipt_date' => $request->receipt_date,
+                'delivery_cost'=> $DN->delivery_cost,
+                'total_discount'=> $DN->total_discount,
+                'total_tax'=> $DN->total_tax,
+                'total'=> $DN->total,
             ]);
-
             // Map DN items to PI items
             foreach ($DN->items as $item) {
                 SaleReceiptItem::create([
@@ -117,11 +120,17 @@ class SaleReceiptController extends Controller
                     'product_id' => $item->product_id,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
+                    'discount' => $item->discount,
+                    'discount_in_percentage' => $item->discount_in_percentage,
                     'total' => $item->total_price,
                     'tax' => $item->tax,
                 ]);
             }
 
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Create Sale Receipt. Code:'. $receipt_no,
+            ]);
             DB::commit();
             return response()->json($saleReceipt, 200);
         }catch(QueryException $e){
@@ -203,7 +212,7 @@ class SaleReceiptController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'update sale receipt Status',   
+                'description' => 'update sale receipt Status. Code: '. $data->receipt_no,   
             ]);
             return response()->json($data);
         }catch(QueryException $e){
@@ -244,28 +253,30 @@ class SaleReceiptController extends Controller
             ->where('sale_receipts.id', $id)->first();
             
             if (!$data) throw new Exception('Sale Receipt not found', 404);
+
+            return response()->json($data);
             
-            // Use the Blade file to generate the PDF
-            $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
+            // // Use the Blade file to generate the PDF
+            // $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
     
-            $fileName = 'sale-receipt-' . $id . '.pdf';
-            $directory = public_path('storage/receipts');
-            $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+            // $fileName = 'sale-receipt-' . $id . '.pdf';
+            // $directory = public_path('storage/receipts');
+            // $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
 
-            // Create the directory if it doesn't exist
-            if (!file_exists($directory)) {
-                mkdir($directory, 0777, true);
-            }
+            // // Create the directory if it doesn't exist
+            // if (!file_exists($directory)) {
+            //     mkdir($directory, 0777, true);
+            // }
 
-            // Save the PDF file
-            $pdf->save($filePath);
+            // // Save the PDF file
+            // $pdf->save($filePath);
 
-            // Return the PDF file so it opens in the browser for printing.
-            return response()->file($filePath);
+            // // Return the PDF file so it opens in the browser for printing.
+            // return response()->file($filePath);
         } catch (QueryException $e) {
-            return redirect()->back()->with('error', 'DB error: ' . $e->getMessage());
+            return response()->json( 'DB error: ' ,400);
         } catch (Exception $e) {
-            return redirect()->back()->with('error', $e->getMessage());
+            return response()->json('error' ,400);
         }
     }
 
@@ -293,6 +304,10 @@ class SaleReceiptController extends Controller
                 'dn_id' => $id,
                 'business_id' => $businessId,
                 'receipt_no' => $receipt_no,
+                'delivery_cost'=> $DN->delivery_cost,
+                'total_discount'=> $DN->total_discount,
+                'total_tax'=> $DN->total_tax,
+                'total'=> $DN->total,
                 'receipt_date' => date('Y-m-d'),
             ]);
 
@@ -301,10 +316,13 @@ class SaleReceiptController extends Controller
                 SaleReceiptItem::create([
                     'sale_receipt_id' => $saleReceipt->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
-                    'total' => $item->total_price,
+                    'discount_in_percentage' => $item->discount_in_percentage,
+                    'discount' => $item->discount,
                     'tax' => $item->tax,
+                    'total' => $item->total_price,
                 ]);
             }
 

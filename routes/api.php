@@ -183,6 +183,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/vendor/',[VendorController::class,'list']);
     Route::get('/csv/vendor', [VendorController::class, 'csvVendor']);
     Route::post('/csv/vendor/upload', [VendorController::class, 'importVendor']);
+    Route::get('vendor-analytics',[VendorController::class,'vendorAnalytics']);
     
     Route::apiResource('department',DepartmentController::class)->only('index','store','show','update');
     Route::get('list/department',[DepartmentController::class,'list']);
@@ -314,22 +315,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('sale-summary',[ReportsController::class,'salesSummary']);
     Route::get('purchase-summary',[ReportsController::class,'purchaseSummary']);
+    Route::get('sale-report',[ReportsController::class,'saleReport']);
 
+
+    Route::get('sales-chart',[ReportsController::class,'salesChart']);
+    Route::get('sales-chart-by-item-and-month',[ReportsController::class,'salesChartByItemAndMonth']);
     Route::get('party-sale-summary',[ReportsController::class,'partySalesSummary']);
     Route::get('party-purchase-summary',[ReportsController::class,'partyPurchaseSummary']);
+    Route::get('purchase-report',[ReportsController::class,'purchaseReport']);
 
     Route::get('balance-sheet',[ReportsController::class,'balanceSheet']);
 
     Route::get('customer-balances',[ReportsController::class,'customerBalances']);
-
+    Route::get('employee-balances',[ReportsController::class,'employeeBalances']);
     Route::get('vendor-balances',[ReportsController::class,'vendorBalances']);
     Route::get('cnb-balances',[ReportsController::class,'cnbBalances']);
 
-    Route::get('sales-chart',[ReportsController::class,'salesChart']);
+
+
+    Route::get('pnl-report',[ReportsController::class,'pnl']);
+
 
     // Dashboard
 
-    Route::get('dashboard/customer',[DashboardController::class,'nonPaidCustomer']);
+    Route::get('dashboard/low-pay-customer',[DashboardController::class,'nonPaidCustomer']);
+    Route::get('dashboard/customer',[DashboardController::class,'lowPayCustomers']);
     Route::get('dashboard/inventory',[DashboardController::class,'inventoryProducts']);
     Route::get('dashboard/sale-analysis',[DashboardController::class,'salesAnalysis']);
     Route::get('dashboard/statistics',[DashboardController::class,'statistics']);

@@ -79,6 +79,8 @@ class SaleOrderController extends Controller
                     'due_date' => 'required',
                     'total' => 'required|numeric',
                     'total_tax' => 'required|numeric',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
                     'items' => 'required|array',
 
             ],[
@@ -95,6 +97,12 @@ class SaleOrderController extends Controller
                 
                 'total_tax.required' => 'Total Tax is required.',
                 'total_tax.numeric' => 'Total Tax must be a number.',
+
+                'delivery_cost.required' => 'Delivery cost is required.',
+                'delivery_cost.numeric' => 'Delivery cost must be a number.',
+
+                'total_discount.required' => 'Total Discount is required.',
+                'total_discount.numeric' => 'Total Discount must be a number.',
                 
                 'items.required' => 'Items are required.',
             ]);
@@ -111,22 +119,50 @@ class SaleOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
+                'delivery_cost' => $request->delivery_cost,
+                'total_discount' => $request->total_discount ?? 0,
                 'terms_of_payment' => $request->terms_of_payment ?? null,
                 'remarks' => $request->remarks ?? null,
                 'special' => $request->special ?? 0,
                 'status' => $request->status ?? 0
             ]);
+
+            $total_discount = 0;
+
             foreach($request->items as $item){
+                $discount = 0;
+
+                // Calculate discount amount
+                if (!empty($item['discount_in_percentage']) && $item['discount_in_percentage']) {
+                    $discount = round(($item['unit_price'] * $item['quantity']) * ($item['discount'] / 100));
+                } else {
+                    $discount = round($item['discount']); // Flat value
+                }
+
+                $subtotal = round(($item['unit_price'] * $item['quantity']) - $discount);
+                $total_discount += $discount;
+
+                // logic end
+
                 SaleOrderItem::create([
                     'sale_order_id' => $data->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'] ?? 0,
                     'total_price' => $item['total_price'],
                     'tax' => $item['tax'],
                 ]); 
             }
-            $n_url ='/view-sale-order/'.$data->id;
+            if (round($request->total_discount) != $total_discount) {
+                throw new Exception('Total discount does not match calculated item discounts.'.$total_discount, 400);
+            }
+            $n_url ='view-sale-order/'.$data->id;
+            $data->update([
+                'total_discount' => $request->total_discount
+            ]);
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create delivery notes', 'New sale order created and approved',$n_url);
             }else{
@@ -134,7 +170,7 @@ class SaleOrderController extends Controller
             }         
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Sale Order',   
+                'description' => 'Create Sale Order. Code:'. $order_code,
             ]);
             DB::commit();
             return response()->json($data);
@@ -165,7 +201,8 @@ class SaleOrderController extends Controller
                 }
             }
             $data = SaleOrder::with(['items' => function ($query) {
-                $query->with('product:id,title');
+                $query->with('product:id,title')->leftJoin('inventory_details', 'sale_order_items.product_id', '=', 'inventory_details.product_id')
+                ->addSelect('sale_order_items.*', 'inventory_details.stock as max_quantity');
             }])
             ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with the customer table
             ->select('sale_orders.*', 'customers.name as customer_name') // Select fields including customer name
@@ -200,6 +237,8 @@ class SaleOrderController extends Controller
                     'due_date' => 'required',
                     'total' => 'required|numeric',
                     'total_tax' => 'required|numeric',
+                    'delivery_cost' => 'required|numeric',
+                    'total_discount' => 'required|numeric',
                     'terms_of_payment' => 'nullable|string',
                     'remarks' => 'nullable|string',
                     'items' => 'required|array',
@@ -217,6 +256,12 @@ class SaleOrderController extends Controller
                 
                 'total_tax.required' => 'Total Tax is required.',
                 'total_tax.numeric' => 'Total Tax must be a number.',
+
+                'delivery_cost.required' => 'Delivery cost is required.',
+                'delivery_cost.numeric' => 'Delivery cost must be a number.',
+
+                'total_discount.required' => 'Total discount is required.',
+                'total_discount.numeric' => 'Total discount must be a number.',
                 
                 'items.required' => 'Items are required.',
             ]);
@@ -229,19 +274,37 @@ class SaleOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
+                'total_discount' => $request->total_discount,
+                'delivery_cost' => $request->delivery_cost,
                 'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
                 'status' => 0,
             ]);
             $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
             $requestItemIds = [];
+            $total_discount = 0;
             foreach ($request->items as $item) {
+                $discount = 0;
+
+                // Calculate discount amount
+                if (!empty($item['discount_in_percentage']) && $item['discount_in_percentage']) {
+                    $discount = round(($item['unit_price'] * $item['quantity']) * ($item['discount'] / 100));
+                } else {
+                    $discount = round($item['discount']); // Flat value
+                }
+
+                $subtotal = round(($item['unit_price'] * $item['quantity']) - $discount);
+                $total_discount += $discount;
+
+
                 if (empty($item['id']) && isset($item['id']) && isset($existingItems[$item['id']])) {
                     // Update existing item
                     $existingItems[$item['id']]->update([
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'tax' => $item['tax'],
                     ]);
                     $requestItemIds[] = $item['id'];  // Keep track of updated items
@@ -250,20 +313,26 @@ class SaleOrderController extends Controller
                     SaleOrderItem::create([
                         'sale_order_id' => $id,
                         'product_id' => $item['product_id'],
+                        'measurement_unit' => $item['measurement_unit'],
                         'quantity' => $item['quantity'],
                         'unit_price' => $item['unit_price'],
                         'total_price' => $item['total_price'],
+                        'discount' => $item['discount'],
+                        'discount_in_percentage' => $item['discount_in_percentage'],
                         'tax' => $item['tax'],
                     ]);
                 }
+            }
+            if (round($request->total_discount) != $total_discount) {
+                throw new Exception('Total discount does not match calculated item discounts.'.$total_discount, 400);
             }
             $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
             SaleOrderItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Order',   
+                'description' => 'Update Sale Order. Code:'. $data->order_code,
             ]);
-            $n_url ='/view-sale-order/'.$id;
+            $n_url ='view-sale-order/'.$id;
             notifyUser($user->id, $businessId,'view sale orders', 'sale order has been updated',$n_url);
             return response()->json($data);
         }catch(QueryException $e){
@@ -296,9 +365,9 @@ class SaleOrderController extends Controller
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Sale Order Status',   
+                'description' => 'Update Sale Order Status. Code:'. $data->order_code,   
             ]);
-            $n_url ='/view-sale-order/'.$id;
+            $n_url ='view-sale-order/'.$id;
             if($request->status == 1){
                 notifyUser($user->id, $businessId,'create delivery notes', 'sale order approved successfully',$n_url);
             }elseif($request->status == 2){

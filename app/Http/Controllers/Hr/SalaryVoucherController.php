@@ -305,33 +305,34 @@ class SalaryVoucherController extends Controller
             if($data->status == 1){
                 // transaction
                 $acc = $data->acc_id;
-                $employee_acc = Employee::where('id', $data->employee_id)->first()->value('acc_id');
+                $employee = Employee::where('id', $data->employee_id)->first();
                 $total_billed = $data->voucher_amount;
-                $a_cb = calculateBalance($acc, $total_billed, true);
-                $e_cb = calculateBalance($employee_acc, $total_billed, false);
+                $a_cb = calculateBalance($acc, $total_billed, false);
+                $e_cb = calculateBalance($employee->acc_id, $total_billed, false);
                 
+                // Debit the employee account (money recorded as an employee)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $employee->acc_id,
+                    'transaction_type' => 2, // 2 -> Expense
+                    'description' => 'Amount is recorded as an employee.',
+                    'debit' => $total_billed, // Money recorded as an employee
+                    'credit' => 0.00, // No money leaving the employee account
+                    'current_balance' => $e_cb // Updated balance for the employee account
+                ]);
 
                 // Credit the asset account (money is leaving)
                 Transaction::create([
                     'business_id' => $data->business_id,
                     'acc_id' => $acc,
                     'transaction_type' => 2, // 2 -> Expense
-                    'description' => 'Payment for expense voucher.',
+                    'description' => 'Amount is leaving the asset account for salary.',
                     'debit' => 0.00, // No money added to the asset account
                     'credit' => $total_billed, // Money leaving the asset account
                     'current_balance' => $a_cb // Updated balance for the asset account
                 ]);
 
-                // Debit the employee account (money recorded as an employee)
-                Transaction::create([
-                    'business_id' => $data->business_id,
-                    'acc_id' => $employee_acc,
-                    'transaction_type' => 2, // 2 -> Expense
-                    'description' => 'Recording expense payment.',
-                    'debit' => $total_billed, // Money recorded as an employee
-                    'credit' => 0.00, // No money leaving the employee account
-                    'current_balance' => $e_cb // Updated balance for the employee account
-                ]);
+                
                 
                 $paySlip = PaySlip::find( $data->pay_slip_id);
 

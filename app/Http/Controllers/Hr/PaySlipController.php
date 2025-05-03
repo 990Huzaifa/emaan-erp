@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\Log;
 use App\Models\PayPolicy;
 use App\Models\PaySlip;
+use App\Models\Transaction;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -296,18 +297,35 @@ class PaySlipController extends Controller
                 throw new Exception($validator->errors()->first(), 400);
 
             $data = PaySlip::find($id);
+            $employee = Employee::find($data->employee_id);
             if (empty($data))
                 throw new Exception('No data found', 404);
             if ($data->status != 0)
                 throw new Exception('Status cannot be updated', 400);
             if ($data->status == $request->status)
                 throw new Exception('Status already updated', 400);
+            // if approved
+            if($request->status ==1){
+                $e_cb = calculateBalance($employee->acc_id, $data->net_pay, true);
+                
+
+                // Credit the employee account (money is increased)
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $employee->acc_id,
+                    'transaction_type' => 2, // 2 -> Expense
+                    'description' => "The employee's salary is credited to his account. Slip no:" . $data->slip_no,
+                    'credit' => $data->net_pay, // Money added to the employee account
+                    'debit' => 0.00, // No money credit to the employee account
+                    'current_balance' => $e_cb // Updated balance for the asset account
+                ]);
+            }
             $data->update([
                 'status' => $request->status,
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Pay Slip Status Updated successfully',
+                'description' => 'Pay Slip Status Updated successfully. Slip no: ' . $data->slip_no,
             ]);
             DB::commit();
             return response()->json($data, 200);
