@@ -82,6 +82,7 @@ class SaleReturnController extends Controller
                 'reason' => 'required|string',
                 'items' => 'required|array',
                 'items.*.product_id' => 'required|exists:products,id',
+                'items.*.measurement_unit' => 'required',
                 'items.*.quantity' => 'required|numeric',
                 'items.*.unit_price' => 'required|numeric',
                 'items.*.total_price' => 'required|numeric',
@@ -95,6 +96,7 @@ class SaleReturnController extends Controller
                 'items.required' => 'Items are required.',
                 'items.*.product_id.required' => 'Product is required.',
                 'items.*.product_id.exists' => 'Product does not exist.',
+                'items.*.measurement_unit.required' => 'Measurement unit is required.',
                 'items.*.quantity.required' => 'Quantity is required.',
                 'items.*.quantity.numeric' => 'Quantity must be a number.',
                 'items.*.unit_price.required' => 'Unit price is required.',
@@ -125,6 +127,7 @@ class SaleReturnController extends Controller
             foreach($request->items as $item){
                 $data->items()->create([
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'total_price' => $item['total_price'],
