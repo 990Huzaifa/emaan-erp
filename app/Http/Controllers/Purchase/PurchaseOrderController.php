@@ -154,7 +154,7 @@ class PurchaseOrderController extends Controller
                 'total' => $request->total,
                 'total_discount' => $request->total_discount,
                 'total_tax' => $request->total_tax,
-                'terms_of_payment' => $request->terms_conditions ?? null,
+                'terms_of_payment' => $request->terms_of_payment ?? null,
                 'remarks' => $request->remarks ?? null,
                 'status' => $request->status ?? 0
             ]);
@@ -316,7 +316,9 @@ class PurchaseOrderController extends Controller
                 'due_date' => $request->due_date,
                 'total' => $request->total,
                 'total_tax' => $request->total_tax,
-                'terms_of_payment' => $request->terms_conditions ?? $data->terms_of_payment,
+                'total_discount' => $request->total_discount,
+                'delivery_cost' => $request->delivery_cost,
+                'terms_of_payment' => $request->terms_of_payment,
                 'remarks' => $request->remarks ?? $data->remarks,
                 'status' => 0,
             ]);
