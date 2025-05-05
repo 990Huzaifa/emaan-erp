@@ -17,8 +17,8 @@ class PurchaseOrderItem extends Model
         'unit_price',
         'discount_in_percentage',
         'discount',
+        'tax',
         'total_price',
-        'total_tax',
     ];
 
     public function product()

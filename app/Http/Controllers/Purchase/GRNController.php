@@ -93,7 +93,8 @@ class GRNController extends Controller
                     'items.*.product_id' => 'required|exists:products,id',
                     'items.*.measurement_unit' => 'required|string',
                     'items.*.quantity' => 'required|numeric',
-                    'items.*.unit_price' => 'required|numeric',
+                    'items.*.purchase_unit_price' => 'required|numeric',
+                    'items.*.sale_unit_price' => 'required|numeric',
                     'items.*.discount' => 'required|numeric',
                     'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
                     'items.*.tax' => 'required|numeric',
@@ -133,9 +134,12 @@ class GRNController extends Controller
                 'items.*.quantity.required' => 'Quantity is required.',
                 'items.*.quantity.numeric' => 'Quantity must be a number.',
 
-                'items.*.unit_price.required' => 'Unit price is required.',
-                'items.*.unit_price.numeric' => 'Unit price must be a number.',
+                'items.*.purchase_unit_price.required' => 'Purchase unit price is required.',
+                'items.*.purchase_unit_price.numeric' => 'Purchase unit price must be a number.',
 
+                'items.*.sale_unit_price.required' => 'Sale unit price is required.',
+                'items.*.sale_unit_price.numeric' => 'Sale unit price must be a number.',
+                
                 'items.*.discount.required' => 'Discount is required.',
                 'items.*.discount.numeric' => 'Discount must be a number.',
 
