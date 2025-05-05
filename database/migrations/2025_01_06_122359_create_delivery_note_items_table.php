@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreign('delivery_note_id')->references('id')->on('delivery_notes')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->string('measurement_unit');
             $table->unsignedBigInteger('lot_id');
             $table->foreign('lot_id')->references('id')->on('lots')->onDelete('cascade');
             $table->integer('quantity');
@@ -25,6 +26,8 @@ return new class extends Migration
             $table->decimal('unit_price', 20, 2);
             $table->decimal('total_price', 40, 2);
             $table->decimal('tax', 20, 2)->default(0.00);
+            $table->boolean('discount_in_percentage')->default(0);
+            $table->decimal('discount', 20, 2);
             $table->timestamps();
         });
     }

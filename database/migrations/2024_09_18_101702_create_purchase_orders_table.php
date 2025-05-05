@@ -24,17 +24,10 @@ return new class extends Migration
             $table->string('remarks')->nullable();
             $table->string('reference')->nullable();
             $table->string('status')->default(0)->comment('0 = Pending, 1 = Approved, 2 = Rejected');
-<<<<<<< HEAD
             $table->decimal('delivery_cost', 25, 2)->default(0.00);
             $table->decimal('total_tax', 25, 2)->default(0.00);
             $table->decimal('total_discount', 25, 2)->default(0.00);
             $table->decimal('total', 25, 2)->default(0.00);
-=======
-            $table->decimal('total_tax', 30, 2)->default(0.00);
-            $table->decimal('total', 30, 2)->default(0.00);
-            $table->decimal('paid', 30, 2)->default(0.00);
-            $table->decimal('due', 30, 2)->default(0.00);
->>>>>>> 803cd829cb9ef0bee955b0a1747a61b6d788ce57
             $table->timestamps();
         });
     }

@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreign('purchase_invoice_id')->references('id')->on('purchase_invoices')->onDelete('cascade');
             $table->unsignedBigInteger('product_id');
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+            $table->string('measurement_unit');
             $table->integer('quantity');
             $table->decimal('unit_price', 20, 2);
             $table->decimal('tax', 20, 2);

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('purchase_return_id');
             $table->unsignedBigInteger('product_id');
+            $table->string('measurement_unit');
             $table->unsignedBigInteger('lot_id');
             $table->integer('quantity');
             $table->decimal('unit_price', 28, 2);
