@@ -261,9 +261,9 @@ class SaleReceiptController extends Controller
 
             return view('invoice.sale-receipt', compact('data'));
         } catch (QueryException $e) {
-            return response()->json( 'DB error: ' ,400);
+            return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
-            return response()->json('error' ,400);
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
