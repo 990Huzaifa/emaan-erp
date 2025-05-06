@@ -474,7 +474,7 @@ class GRNController extends Controller
                 // create sale receipt 
                 $invoiceObj = new PurchaseInvoiceController();
                 $invoice = $invoiceObj->createInvoice($id, $businessId);
-                if($invoice != true) throw new Exception('Error in creating purchase invoice', 400);
+                if($invoice != true) throw new Exception($invoice, 400);
 
 
                 Log::create([

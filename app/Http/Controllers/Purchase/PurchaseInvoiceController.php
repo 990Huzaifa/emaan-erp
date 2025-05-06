@@ -376,10 +376,10 @@ class PurchaseInvoiceController extends Controller
             return true;
         }catch(QueryException $e){
             DB::rollBack();
-            return false;
+            return $e->getMessage();
         }catch(Exception $e){
             DB::rollBack();
-            return false;
+            return $e->getMessage();
         }
     }
 }
