@@ -254,25 +254,7 @@ class SaleReceiptController extends Controller
             
             if (!$data) throw new Exception('Sale Receipt not found', 404);
 
-            return response()->json($data);
-            
-            // // Use the Blade file to generate the PDF
-            // $pdf = PDF::loadView('invoice.sale-receipt', compact('data'));
-    
-            // $fileName = 'sale-receipt-' . $id . '.pdf';
-            // $directory = public_path('storage/receipts');
-            // $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
-
-            // // Create the directory if it doesn't exist
-            // if (!file_exists($directory)) {
-            //     mkdir($directory, 0777, true);
-            // }
-
-            // // Save the PDF file
-            // $pdf->save($filePath);
-
-            // // Return the PDF file so it opens in the browser for printing.
-            // return response()->file($filePath);
+            return view('invoice.sale-receipt', compact('data'));
         } catch (QueryException $e) {
             return response()->json( 'DB error: ' ,400);
         } catch (Exception $e) {
