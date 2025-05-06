@@ -292,13 +292,12 @@
         <!-- Invoice Header -->
         <div class="invoice-header">
             <div class="company-logo">
-                <div class="logo-container">
-                    <img src="{{ asset('assets/business-logo/'.$data->business_logo) }}" alt="emaan">
-                    {{$data->business_name}}
+            <div class="logo-container">
+                    <img src="{{ url($data->business_logo) }}" alt="Logo">
                 </div>
                 <div class="company-info">
                     <div class="company-details">
-                        www.emantraders.com<br>
+                    <p>{{ url('/') }}</p><br>
                         {{ $data->business_telephone }}
                     </div>
                 </div>
