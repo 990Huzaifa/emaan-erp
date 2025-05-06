@@ -242,13 +242,18 @@ class SaleReceiptController extends Controller
             }])
             ->join('businesses', 'sale_receipts.business_id', '=', 'businesses.id')
             ->join('customers', 'sale_receipts.customer_id', '=', 'customers.id') // Join with vendors
-            ->join('cities', 'customers.city_id', '=', 'cities.id')
+            ->join('cities as customer_city', 'customers.city_id', '=', 'customer_city.id')
+            ->join('cities as business_city', 'businesses.city_id', '=', 'business_city.id')
             ->select('sale_receipts.*',
             'customers.name as customer_name',
             'customers.address as customer_address',
             'customers.telephone as customer_telephone',
             'businesses.name as business_name',
-            'cities.name as city_name'
+            'businesses.logo as business_logo',
+            'businesses.address as business_address',
+            'businesses.phone as business_telephone',
+            'customer_city.name as customer_city_name',
+            'business_city.name as business_city_name'
             ) // Select fields including vendor name
             ->where('sale_receipts.id', $id)->first();
             

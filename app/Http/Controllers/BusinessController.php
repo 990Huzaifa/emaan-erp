@@ -81,6 +81,8 @@ class BusinessController extends Controller
                     'email'=>'required|email|string|unique:users,email',
                     'password'=>'required|string|min:8',
                     'confirm_password'=>'required|string|min:8',
+                    'address'=>'required|string',
+                    'phone'=>'required|numeric',
                     'opening_balance'=>'nullable|numeric',
 
             ],[
@@ -107,6 +109,12 @@ class BusinessController extends Controller
                 
                 'opening_balance.numeric'=>'Opening Balance is must be a numeric',
 
+                'phone.required' => 'Phone is required.',
+                'phone.numeric' => 'Phone must be a numeric.',
+
+                'address.required' => 'Address is required.',
+                'address.string' => 'Address must be a string.',
+
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             if($request->password != $request->confirm_password) throw new Exception('Password Mismatch', 400);
@@ -124,6 +132,8 @@ class BusinessController extends Controller
                 'city_id'=> $request->city,
                 'email' => $request->email,
                 'cash' => $request->opening_balance ?? 0.00,
+                'address' => $request->address,
+                'phone' => $request->phone,
                 'logo' => $logo,
             ]); 
             // validate coa

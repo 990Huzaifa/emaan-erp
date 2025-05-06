@@ -293,19 +293,18 @@
         <div class="invoice-header">
             <div class="company-logo">
                 <div class="logo-container">
-                    <!-- <img src="./assets/images/Logo.png" alt="emaan"> -->
+                    <img src="{{ asset('assets/business-logo/'.$data->business_logo) }}" alt="emaan">
                     {{$data->business_name}}
                 </div>
-                <div class="company-info">f.invoice-container
+                <div class="company-info">
                     <div class="company-details">
                         www.emantraders.com<br>
-                        +92 00000 00000
+                        {{ $data->business_telephone }}
                     </div>
                 </div>
             </div>
             <div class="company-address">
-                Shop#2, Memon Chalets Plaza, near JS Bank,<br>
-                Citizen Colony, Qasimabad, Hyderabad
+                {{ $data->business_address }}, {{ $data->business_city_name }}
             </div>
         </div>
 
@@ -314,19 +313,19 @@
             <div class="invoice-info">
                 <div class="info-column">
                     <div class="info-title">Billed to</div>
-                    <div class="info-value">M/s {{$data->vendor_name}} E/S</div>
-                    <div class="info-value"><strong>Address:</strong> {{$data->vendor_address}}, {{$data->vendor_city}}</div>
-                    <div class="info-value"><strong>Telephone:</strong> {{$data->vendor_phone}}</div>
+                    <div class="info-value">M/s {{$data->customer_name}} E/S</div>
+                    <div class="info-value"><strong>Address:</strong> {{$data->customer_address}}, {{$data->customer_city_name}}</div>
+                    <div class="info-value"><strong>Telephone:</strong> {{$data->customer_phone}}</div>
                 </div>
 
                 <div class="info-column">
                     <div class="info-title">Invoice no.</div>
-                    <div class="info-value">#{{$data->invoice_no}}</div>
+                    <div class="info-value">#{{$data->receipt_no}}</div>
                 </div>
 
                 <div class="info-column">
                     <div class="info-title">Invoice date</div>
-                    <div class="info-value">{{$data->invoice_date}}</div>
+                    <div class="info-value">{{$data->receipt_date}}</div>
                 </div>
 
                 <div class="info-column">
@@ -355,6 +354,7 @@
                     @endphp
                     @foreach ($data->items as $item )
                     <tr>
+                        <td>{{$loop->iteration}}</td>
                         <td>{{$item['product']['title']}}</td>
                         <td class="text-right">{{$item->quantity}} {{$item->measurement_unit}}</td>
                         <td class="text-right">{{number_format($item->unit_price)}} Rs</td>

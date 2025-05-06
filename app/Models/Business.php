@@ -13,7 +13,8 @@ class Business extends Model
         'city_id',
         'email',
         'cash',
-        'bank',
         'logo',
+        'address',
+        'phone',
     ];
 }
