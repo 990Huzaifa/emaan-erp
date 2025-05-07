@@ -238,7 +238,10 @@ class BusinessController extends Controller
             $logo = $business->logo;
             if ($request->hasFile('logo')) {
                 $oldLogo = $logo;
-                unlink(public_path($oldLogo));
+                // if exists in directory so unlink
+                if (file_exists(public_path($oldLogo))) {
+                    unlink(public_path($oldLogo));
+                }
 
                 $image = $request->file('logo');
                 $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
