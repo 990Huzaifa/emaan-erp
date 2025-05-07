@@ -134,6 +134,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     
     Route::apiResource('business', BusinessController::class)->only(['index', 'store', 'show', 'update']);
+    Route::post('business-update/{id}',[BusinessController::class,'updateBusiness']);
     Route::get('business-list',[BusinessController::class, 'list']);
     Route::get('business-accounts',[BusinessController::class,'businessAccounts']);
     Route::get('global-accounts',[BusinessController::class,'globalAccounts']);

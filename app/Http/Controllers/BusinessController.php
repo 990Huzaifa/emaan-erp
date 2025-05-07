@@ -195,7 +195,7 @@ class BusinessController extends Controller
         }
     }
     
-    public function update(Request $request, String $id): JsonResponse
+    public function updateBusiness(Request $request, String $id): JsonResponse
     {
         try{
             $user = Auth::user();
