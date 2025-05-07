@@ -189,12 +189,85 @@ class BusinessController extends Controller
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()],400);
-
         }catch(Exception $e){
             DB::rollBack();
             return response()->json(['error' => $e->getMessage()],400);
         }
     }
+    
+    public function update(Request $request, String $id): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            if ($user->role == 'user') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'create businesses')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $validator = Validator::make(
+                $request->all(),[
+                    'city'=>'required|numeric',
+                    'logo'=>'nullable|image|mimes:jpeg,png,jpg,gif,svg',
+                    'address'=>'required|string',
+                    'phone'=>'required|numeric',
+
+            ],[
+                'city.required'=>'City is Required',
+                'city.numeric'=>'City is must be a numeric',
+
+                'logo.required' => 'Logo is required.',
+                'logo.image' => 'Logo must be an image.',
+                'logo.mimes' => 'Logo must be in jpeg, png, jpg, gif, or svg format.',
+
+                'phone.required' => 'Phone is required.',
+                'phone.numeric' => 'Phone must be a numeric.',
+
+                'address.required' => 'Address is required.',
+                'address.string' => 'Address must be a string.',
+
+            ]);
+            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+
+            DB::beginTransaction();
+            $business = Business::find($id);
+            if(empty($business)) throw new Exception('Business not found', 404);
+            $logo = $business->logo;
+            if ($request->hasFile('logo')) {
+                $oldLogo = $logo;
+                unlink(public_path($oldLogo));
+
+                $image = $request->file('logo');
+                $image_name = 'logo' . time() . '.' . $image->getClientOriginalExtension();
+                $image->move(public_path('business-logo'), $image_name);
+                $logo = 'business-logo/' . $image_name;
+                
+            }
+            $business->update([
+                'address' => $request->address,
+                'phone' => $request->phone,
+                'city_id' => $request->city,
+                'logo' => $logo,
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User update business',
+            ]);
+            DB::commit();
+            return response()->json(['message'=>'Business updated successfully'],200);
+
+        }catch(QueryException $e){
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()],400);
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()],400);
+        }
+    }
+
 
     /**
      * Display the resource.
