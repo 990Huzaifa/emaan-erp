@@ -257,7 +257,7 @@ class BusinessController extends Controller
                 'description' => 'User update business',
             ]);
             DB::commit();
-            return response()->json(['message'=>'Business updated successfully'],200);
+            return response()->json(['data'=>$business],200);
 
         }catch(QueryException $e){
             DB::rollBack();
