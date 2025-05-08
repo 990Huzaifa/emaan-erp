@@ -9,11 +9,13 @@ use App\Models\InventoryDetail;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseQuotation;
+use App\Models\PurchaseReturn;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
 use App\Models\SaleQuotation;
 use App\Models\SaleReceipt;
 use App\Models\SaleReceiptItem;
+use App\Models\SaleReturn;
 use App\Models\SaleVoucher;
 use Carbon\Carbon;
 use Exception;
@@ -739,6 +741,10 @@ class DashboardController extends Controller
             $purchaseInvoice = [];
             $purhcaseVoucher = [];
             $saleVoucher = [];
+            $purchaseReturn = [];
+            $saleReturn = [];
+            $purchaseReturnVoucher = [];
+            $saleReturnVoucher = [];
 
 
 
@@ -746,8 +752,14 @@ class DashboardController extends Controller
                 if ($user->hasBusinessPermission($businessId, 'approve purchase orders')) {
                     $purchaseOrders = PurchaseOrder::where('business_id', $businessId)->where('status', 0)->get();
                 }
+                if ($user->hasBusinessPermission($businessId, 'approve purchase return')) {
+                    $purchaseReturn = PurchaseReturn::where('business_id', $businessId)->where('status', 0)->get();
+                }
                 if ($user->hasBusinessPermission($businessId, 'approve sale orders')) {
                     $saleOrders = SaleOrder::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve sale return')) {
+                    $saleReturn = SaleReturn::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase quotations')) {
                     $purchaseQuotation = PurchaseQuotation::where('business_id', $businessId)->where('status', 0)->get();
@@ -773,6 +785,12 @@ class DashboardController extends Controller
                 if ($user->hasBusinessPermission($businessId, 'approve sale voucher')) {
                     $saleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
+                if ($user->hasBusinessPermission($businessId, 'approve purchase return voucher')) {
+                    $purchaseReturnVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve sale return voucher')) {
+                    $saleReturnVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                }
 
             }
 
@@ -786,7 +804,11 @@ class DashboardController extends Controller
                 'saleReceipt' => $saleReceipt,
                 'purchaseInvoice' => $purchaseInvoice,
                 'purhcaseVoucher' => $purhcaseVoucher,
-                'saleVoucher' => $saleVoucher
+                'saleVoucher' => $saleVoucher,
+                'purchaseReturn' => $purchaseReturn,
+                'saleReturn' => $saleReturn,
+                'purchaseReturnVoucher' => $purchaseReturnVoucher,
+                'saleReturnVoucher' => $saleReturnVoucher
             ]);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
