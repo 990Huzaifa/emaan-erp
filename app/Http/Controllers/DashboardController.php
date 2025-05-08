@@ -771,7 +771,7 @@ class DashboardController extends Controller
                     $purhcaseVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale voucher')) {
-                    $SaleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
 
             }
