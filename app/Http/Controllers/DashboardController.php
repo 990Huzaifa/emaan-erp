@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\InventoryDetail;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseQuotation;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
+use App\Models\SaleQuotation;
 use App\Models\SaleReceipt;
 use App\Models\SaleReceiptItem;
 use App\Models\SaleVoucher;
@@ -709,6 +711,48 @@ class DashboardController extends Controller
                 'last_30_days_highest_amount_order' => $last30DaysHighestAmountOrder,
                 'last_60_days_highest_amount_order' => $last60DaysHighestAmountOrder,
                 'orders' => $orders,
+            ]);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+
+    public function thingsToReview(): JsonResponse
+    {
+        try{
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            $purchaseOrders = [];
+            $saleOrders = [];
+            $purchaseQuotation = [];
+            $saleQuotation = [];
+
+
+            if ($user->role != 'admin') {
+                if ($user->hasBusinessPermission($businessId, 'approve purchase orders')) {
+                    $purchaseOrders = PurchaseOrder::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve sale orders')) {
+                    $saleOrders = SaleOrder::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve purchase quotations')) {
+                    $purchaseQuotation = PurchaseQuotation::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve sale quotations')) {
+                    $saleQuotation = SaleQuotation::where('business_id', $businessId)->where('status', 0)->get();
+                }
+
+            }
+
+            return response()->json([
+                'purchaseOrders' => $purchaseOrders,
+                'saleOrders' => $saleOrders,
+                'purchaseQuotation' => $purchaseQuotation,
+                'saleQuotation' => $saleQuotation,
             ]);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
