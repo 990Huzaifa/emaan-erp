@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
+use App\Models\DeliveryNote;
+use App\Models\GoodsReceiveNote;
 use App\Models\InventoryDetail;
+use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseQuotation;
 use App\Models\PurchaseVoucher;
@@ -730,6 +733,13 @@ class DashboardController extends Controller
             $saleOrders = [];
             $purchaseQuotation = [];
             $saleQuotation = [];
+            $grn = [];
+            $dn = [];
+            $saleReceipt = [];
+            $purchaseInvoice = [];
+            $purhcaseVoucher = [];
+            $saleVoucher = [];
+
 
 
             if ($user->role != 'admin') {
@@ -745,14 +755,38 @@ class DashboardController extends Controller
                 if ($user->hasBusinessPermission($businessId, 'approve sale quotations')) {
                     $saleQuotation = SaleQuotation::where('business_id', $businessId)->where('status', 0)->get();
                 }
+                if ($user->hasBusinessPermission($businessId, 'approve goods received notes')) {
+                    $grn = GoodsReceiveNote::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve delivery notes')) {
+                    $dn = DeliveryNote::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve sale receipt')) {
+                    $saleReceipt = SaleReceipt::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve purchase invoice')) {
+                    $purchaseInvoice = PurchaseInvoice::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
+                    $purhcaseVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                }
+                if ($user->hasBusinessPermission($businessId, 'approve sale voucher')) {
+                    $SaleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                }
 
             }
 
             return response()->json([
-                'purchaseOrders' => $purchaseOrders,
-                'saleOrders' => $saleOrders,
                 'purchaseQuotation' => $purchaseQuotation,
+                'purchaseOrders' => $purchaseOrders,
                 'saleQuotation' => $saleQuotation,
+                'saleOrders' => $saleOrders,
+                'grn' => $grn,
+                'dn' => $dn,
+                'saleReceipt' => $saleReceipt,
+                'purchaseInvoice' => $purchaseInvoice,
+                'purhcaseVoucher' => $purhcaseVoucher,
+                'saleVoucher' => $saleVoucher
             ]);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
