@@ -381,7 +381,7 @@ function convertNumberToWords($number)
         $ones = ['','one','two','three','four','five','six','seven','eight','nine'];
         $teens = ['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
         $tens = ['','ten','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
-        $thousands = ['','thousand','million','billion'];
+        $thousands = ['','thousand', 'lakh', 'crore', 'million','billion'];
 
         $numberString = (string) $number;
         $numberArray = array_reverse(str_split($numberString, 3));

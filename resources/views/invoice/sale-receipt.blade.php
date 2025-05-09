@@ -373,7 +373,7 @@
             <div class="invoice-summary">
                 <div class="amount-words">
                     <strong>Amount in Words:</strong><br>
-                    {{ convertNumberToWords($item->total) }}
+                    {{ convertNumberToWords($item->total) }} only
                     
                 </div>
                 <div class="amount-calculations">
