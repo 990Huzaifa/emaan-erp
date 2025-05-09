@@ -381,12 +381,23 @@ function convertNumberToWords($number)
     $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
     $teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
     $tens = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-    $thousands = ['', 'thousand', 'lakh', 'crore', 'million', 'billion'];
+    $thousands = ['', 'thousand', 'lakh', 'crore', 'billion'];
 
     $numberString = (string)$number;
-    $numberArray = array_reverse(str_split($numberString, 3));
 
-    foreach ($numberArray as $key => $value) {
+    // Handle lakh and crore by dividing the number accordingly.
+    $chunks = [];
+    if (strlen($numberString) > 6) {
+        // For numbers larger than a crore
+        $chunks[] = substr($numberString, 0, strlen($numberString) - 7); // Crore place (first part)
+        $chunks[] = substr($numberString, -7, 2); // Lakh place
+        $numberString = substr($numberString, -5); // Remaining part after lakh
+    }
+
+    // Breaking number into chunks of 3 digits (for thousands, hundreds)
+    $chunks = array_merge($chunks, str_split($numberString, 3));
+
+    foreach ($chunks as $key => $value) {
         $currentPart = (int)$value;
         $currentWords = [];
 
@@ -405,15 +416,11 @@ function convertNumberToWords($number)
         }
 
         if (!empty($currentWords)) {
-            // Only add the place value if it's not an empty chunk
+            // Add the corresponding place value
             $words[] = implode(' ', $currentWords) . ' ' . $thousands[$key];
         }
     }
 
-    // Fix issue: If the last chunk is zero, remove "hundred"
-    if (count($words) > 1 && strpos($words[count($words) - 1], 'hundred') !== false) {
-        $words[count($words) - 1] = str_replace('hundred', '', $words[count($words) - 1]);
-    }
-
     return ucfirst(implode(' ', array_reverse($words)));
 }
+
