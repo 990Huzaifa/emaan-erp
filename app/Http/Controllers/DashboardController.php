@@ -750,46 +750,46 @@ class DashboardController extends Controller
 
             if ($user->role != 'admin') {
                 if ($user->hasBusinessPermission($businessId, 'approve purchase orders')) {
-                    $purchaseOrders = PurchaseOrder::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $purchaseOrders = PurchaseOrder::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase return')) {
-                    $purchaseReturn = PurchaseReturn::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $purchaseReturn = PurchaseReturn::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale orders')) {
-                    $saleOrders = SaleOrder::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $saleOrders = SaleOrder::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale return')) {
-                    $saleReturn = SaleReturn::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $saleReturn = SaleReturn::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase quotations')) {
-                    $purchaseQuotation = PurchaseQuotation::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $purchaseQuotation = PurchaseQuotation::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale quotations')) {
-                    $saleQuotation = SaleQuotation::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $saleQuotation = SaleQuotation::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve goods received notes')) {
-                    $grn = GoodsReceiveNote::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $grn = GoodsReceiveNote::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve delivery notes')) {
-                    $dn = DeliveryNote::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $dn = DeliveryNote::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale receipt')) {
-                    $saleReceipt = SaleReceipt::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $saleReceipt = SaleReceipt::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase invoice')) {
-                    $purchaseInvoice = PurchaseInvoice::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $purchaseInvoice = PurchaseInvoice::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
-                    $purhcaseVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $purhcaseVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale voucher')) {
-                    $saleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $saleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase return voucher')) {
-                    $purchaseReturnVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $purchaseReturnVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale return voucher')) {
-                    $saleReturnVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get()->toArray();
+                    $saleReturnVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
                 }
 
             }
@@ -803,7 +803,7 @@ class DashboardController extends Controller
                 'dn' => $dn,
                 'saleReceipt' => $saleReceipt,
                 'purchaseInvoice' => $purchaseInvoice,
-                'purhcaseVoucher' => $purhcaseVoucher,
+                'purchaseVoucher' => $purhcaseVoucher,
                 'saleVoucher' => $saleVoucher,
                 'purchaseReturn' => $purchaseReturn,
                 'saleReturn' => $saleReturn,
