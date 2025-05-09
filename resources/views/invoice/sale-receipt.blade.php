@@ -373,17 +373,17 @@
             <div class="invoice-summary">
                 <div class="amount-words">
                     <strong>Amount in Words:</strong><br>
-                    {{ convertNumberToWords($item->total) }} only
+                    {{ convertNumberToWords($data->total) }} only
                     
                 </div>
                 <div class="amount-calculations">
                     <div class="calc-row">
                         <div>Subtotal</div>
-                        <div>Rs. {{number_format($item->total)}}</div>
+                        <div>Rs. {{number_format($data->total)}}</div>
                     </div>
                     <div class="calc-row">
                         <div>Amount Received</div>
-                        <div>Rs. {{number_format($item->total)}}</div>
+                        <div>Rs. {{number_format($data->total)}}</div>
                     </div>
                     <hr>
                     <div class="calc-row total">
