@@ -342,7 +342,8 @@
                         <th class="text-center">QTY</th>
                         <th class="text-right">RATE</th>
                         <th class="text-right">GROSS AMOUNT</th>
-                        <!-- <th class="text-right">DISCOUNT</th> -->
+                        <th class="text-right">TAX</th>
+                        <th class="text-right">DISCOUNT</th>
                         <th class="text-right">NET AMOUNT</th>
                     </tr>
                 </thead>
@@ -357,12 +358,12 @@
                         <td>{{$item['product']['title']}}</td>
                         <td class="text-right">{{$item->quantity}} {{$item->measurement_unit}}</td>
                         <td class="text-right">{{number_format($item->unit_price)}} Rs</td>
+                        <td class="text-right">{{number_format($item->discount)}} @if($item->discount_in_percentage == 1)% @else Rs @endif</td>
+                        <td class="text-right">{{number_format($item->total - $item->tax)}} Rs</td>
+                        <td class="text-right">{{number_format($item->tax)}} Rs</td>
                         <td class="text-right">{{number_format($item->total)}} Rs</td>
 
-                        @php
-                        $subtotal += $item->total;
-                        $tax += $item->tax;
-                        @endphp
+                        
                     </tr>
                     @endforeach
                 </tbody>
@@ -377,16 +378,16 @@
                 <div class="amount-calculations">
                     <div class="calc-row">
                         <div>Subtotal</div>
-                        <div>Rs. 130,500.00</div>
+                        <div>Rs. {{number_format($item->total)}}</div>
                     </div>
                     <div class="calc-row">
                         <div>Amount Received</div>
-                        <div>0.00</div>
+                        <div>Rs. {{number_format($item->total)}}</div>
                     </div>
                     <hr>
                     <div class="calc-row total">
                         <div>Balanced</div>
-                        <div>Rs. 130,550.00</div>
+                        <div>Rs. {{ number_format($t->balance) }}</div>
                     </div>
                 </div>
             </div>

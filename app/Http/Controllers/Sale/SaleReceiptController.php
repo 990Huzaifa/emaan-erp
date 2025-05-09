@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sale;
 
+use App\Models\Transaction;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -256,10 +257,15 @@ class SaleReceiptController extends Controller
             'business_city.name as business_city_name'
             ) // Select fields including vendor name
             ->where('sale_receipts.id', $id)->first();
+
+            $t = Transaction::select('transactions.current_balance as balance')
+            ->join('customers', $data->customer_id, '=', 'customers.id')
+            ->join('transactions', 'acc_id', '=', 'customers.acc_id')
+            ->orderBy('transactions.id', 'desc')->first();
             
             if (!$data) throw new Exception('Sale Receipt not found', 404);
 
-            return view('invoice.sale-receipt', compact('data'));
+            return view('invoice.sale-receipt', compact('data','t'));
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
