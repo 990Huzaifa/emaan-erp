@@ -375,39 +375,45 @@ function timeLimit($id)
 
 
 function convertNumberToWords($number)
-    {
-        $number = (int)$number;
-        $words = [];
-        $ones = ['','one','two','three','four','five','six','seven','eight','nine'];
-        $teens = ['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
-        $tens = ['','ten','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
-        $thousands = ['','thousand', 'lakh', 'crore', 'million','billion'];
+{
+    $number = (int)$number;
+    $words = [];
+    $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+    $teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+    $tens = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+    $thousands = ['', 'thousand', 'lakh', 'crore', 'million', 'billion'];
 
-        $numberString = (string) $number;
-        $numberArray = array_reverse(str_split($numberString, 3));
+    $numberString = (string)$number;
+    $numberArray = array_reverse(str_split($numberString, 3));
 
-        foreach ($numberArray as $key => $value) {
-            $currentPart = (int)$value;
-            $currentWords = [];
+    foreach ($numberArray as $key => $value) {
+        $currentPart = (int)$value;
+        $currentWords = [];
 
-            if ($currentPart > 99) {
-                $currentWords[] = $ones[(int)($currentPart / 100)] . ' hundred';
-                $currentPart %= 100;
-            }
-
-            if ($currentPart > 19) {
-                $currentWords[] = $tens[(int)($currentPart / 10)];
-                $currentPart %= 10;
-            }
-
-            if ($currentPart > 0) {
-                $currentWords[] = $ones[$currentPart];
-            }
-
-            if (!empty($currentWords)) {
-                $words[] = implode(' ', $currentWords) . ' ' . $thousands[$key];
-            }
+        if ($currentPart > 99) {
+            $currentWords[] = $ones[(int)($currentPart / 100)] . ' hundred';
+            $currentPart %= 100;
         }
 
-        return ucfirst(implode(' ', array_reverse($words)));
+        if ($currentPart > 19) {
+            $currentWords[] = $tens[(int)($currentPart / 10)];
+            $currentPart %= 10;
+        }
+
+        if ($currentPart > 0) {
+            $currentWords[] = $ones[$currentPart];
+        }
+
+        if (!empty($currentWords)) {
+            // Only add the place value if it's not an empty chunk
+            $words[] = implode(' ', $currentWords) . ' ' . $thousands[$key];
+        }
     }
+
+    // Fix issue: If the last chunk is zero, remove "hundred"
+    if (count($words) > 1 && strpos($words[count($words) - 1], 'hundred') !== false) {
+        $words[count($words) - 1] = str_replace('hundred', '', $words[count($words) - 1]);
+    }
+
+    return ucfirst(implode(' ', array_reverse($words)));
+}
