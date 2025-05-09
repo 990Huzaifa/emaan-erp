@@ -731,20 +731,20 @@ class DashboardController extends Controller
             $user = Auth::user();
             $businessId = $user->login_business;
 
-            $purchaseOrders = [];
-            $saleOrders = [];
-            $purchaseQuotation = [];
-            $saleQuotation = [];
-            $grn = [];
-            $dn = [];
-            $saleReceipt = [];
-            $purchaseInvoice = [];
-            $purhcaseVoucher = [];
-            $saleVoucher = [];
-            $purchaseReturn = [];
-            $saleReturn = [];
-            $purchaseReturnVoucher = [];
-            $saleReturnVoucher = [];
+            $purchaseOrders = null;
+            $saleOrders = null;
+            $purchaseQuotation = null;
+            $saleQuotation = null;
+            $grn = null;
+            $dn = null;
+            $saleReceipt = null;
+            $purchaseInvoice = null;
+            $purhcaseVoucher = null;
+            $saleVoucher = null;
+            $purchaseReturn = null;
+            $saleReturn = null;
+            $purchaseReturnVoucher = null;
+            $saleReturnVoucher = null;
 
 
 
