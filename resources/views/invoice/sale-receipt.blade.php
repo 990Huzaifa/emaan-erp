@@ -373,7 +373,8 @@
             <div class="invoice-summary">
                 <div class="amount-words">
                     <strong>Amount in Words:</strong><br>
-                    Rupees one hundred thirty thousand, five hundred and 00/100 only.
+                    {{ convertNumberToWords($item->total) }}
+                    
                 </div>
                 <div class="amount-calculations">
                     <div class="calc-row">

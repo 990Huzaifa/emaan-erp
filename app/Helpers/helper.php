@@ -372,3 +372,42 @@ function timeLimit($id)
 
     return $daysDifference > 30 ? 0 : 1;
 }
+
+
+function convertNumberToWords($number)
+    {
+        $number = (int)$number;
+        $words = [];
+        $ones = ['','one','two','three','four','five','six','seven','eight','nine'];
+        $teens = ['ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
+        $tens = ['','ten','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+        $thousands = ['','thousand','million','billion'];
+
+        $numberString = (string) $number;
+        $numberArray = array_reverse(str_split($numberString, 3));
+
+        foreach ($numberArray as $key => $value) {
+            $currentPart = (int)$value;
+            $currentWords = [];
+
+            if ($currentPart > 99) {
+                $currentWords[] = $ones[(int)($currentPart / 100)] . ' hundred';
+                $currentPart %= 100;
+            }
+
+            if ($currentPart > 19) {
+                $currentWords[] = $tens[(int)($currentPart / 10)];
+                $currentPart %= 10;
+            }
+
+            if ($currentPart > 0) {
+                $currentWords[] = $ones[$currentPart];
+            }
+
+            if (!empty($currentWords)) {
+                $words[] = implode(' ', $currentWords) . ' ' . $thousands[$key];
+            }
+        }
+
+        return ucfirst(implode(' ', array_reverse($words)));
+    }
