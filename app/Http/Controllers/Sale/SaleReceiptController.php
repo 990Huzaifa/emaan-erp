@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\DeliveryNote;
 use App\Models\Log;
 use App\Models\SaleReceipt;
+use App\Models\Customer;
 use App\Models\SaleReceiptItem;
 use App\Models\SaleOrder;
 use Illuminate\Support\Facades\Auth;
@@ -258,14 +259,13 @@ class SaleReceiptController extends Controller
             ) // Select fields including vendor name
             ->where('sale_receipts.id', $id)->first();
 
-            $t = Transaction::select('transactions.current_balance as balance')
-            ->join('customers', $data->customer_id, '=', 'customers.id')
-            ->join('transactions', 'acc_id', '=', 'customers.acc_id')
-            ->orderBy('transactions.id', 'desc')->first();
+            $acc_id = Customer::where('id',$data->customer_id)->value('acc_id');
             
-            if (!$data) throw new Exception('Sale Receipt not found', 404);
+            $current_balance = Transaction::where('acc_id', $acc_id)
+            ->orderBy('id', 'desc')->value('current_balance');
 
-            return view('invoice.sale-receipt', compact('data','t'));
+            if (!$data) throw new Exception('Sale Receipt not found', 404);
+            return view('invoice.sale-receipt', compact('data','current_balance'));
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {

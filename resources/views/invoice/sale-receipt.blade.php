@@ -387,7 +387,7 @@
                     <hr>
                     <div class="calc-row total">
                         <div>Balanced</div>
-                        <div>Rs. {{ number_format($t->balance) }}</div>
+                        <div>Rs. {{ number_format($current_balance) }}</div>
                     </div>
                 </div>
             </div>
