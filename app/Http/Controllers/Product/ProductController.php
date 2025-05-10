@@ -551,17 +551,6 @@ class ProductController extends Controller
                         'added_by' => $user->id,
                     ]);
     
-                    // Create opening balance
-                    OpeningBalance::create([
-                        'acc_id' => $COA->id,
-                        'amount' => 0,
-                    ]);
-                    
-                    Balance::create([
-                        'acc_id' => $COA->id,
-                        'amount' => 0,
-                    ]);
-    
                     // Update COA reference
                     $COA->update([
                         'ref_id' => $product->id,
