@@ -57,6 +57,22 @@ class BusinessController extends Controller
         }
     }
 
+
+    public function show($id)
+    {
+        try{
+            $user = Auth::user();
+
+            $data = Business::find($id);
+            return response()->json($data,200);
+
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -194,6 +210,7 @@ class BusinessController extends Controller
             return response()->json(['error' => $e->getMessage()],400);
         }
     }
+    
     
     public function updateBusiness(Request $request, String $id): JsonResponse
     {
