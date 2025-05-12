@@ -358,12 +358,10 @@
                         <td>{{$item['product']['title']}}</td>
                         <td class="text-right">{{$item->quantity}} {{$item->measurement_unit}}</td>
                         <td class="text-right">{{number_format($item->unit_price)}} Rs</td>
-                        <td class="text-right">{{number_format($item->discount)}} @if($item->discount_in_percentage == 1)% @else Rs @endif</td>
-                        <td class="text-right">{{number_format($item->total - $item->tax)}} Rs</td>
+                        <td class="text-right">{{number_format($item->unit_price * $item->quantity)}} Rs</td>
                         <td class="text-right">{{number_format($item->tax)}} Rs</td>
+                        <td class="text-right">{{number_format($item->discount)}} @if($item->discount_in_percentage == 1)% @else Rs @endif</td>
                         <td class="text-right">{{number_format($item->total)}} Rs</td>
-
-                        
                     </tr>
                     @endforeach
                 </tbody>
@@ -379,7 +377,11 @@
                 <div class="amount-calculations">
                     <div class="calc-row">
                         <div>Subtotal</div>
-                        <div>Rs. {{number_format($data->total)}}</div>
+                        <div>Rs. {{number_format($data->delivery_cost )}}</div>
+                    </div>
+                    <div class="calc-row">
+                        <div>Subtotal</div>
+                        <div>Rs. {{number_format($data->total )}}</div>
                     </div>
                     <div class="calc-row">
                         <div>Amount Received</div>
