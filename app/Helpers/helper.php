@@ -374,53 +374,93 @@ function timeLimit($id)
 }
 
 
+// function convertNumberToWords($number)
+// {
+//     $number = (int)$number;
+//     $words = [];
+//     $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
+//     $teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+//     $tens = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+//     $thousands = ['', 'thousand', 'lakh', 'crore', 'billion'];
+
+//     $numberString = (string)$number;
+
+//     // Handle lakh and crore by dividing the number accordingly.
+//     $chunks = [];
+//     if (strlen($numberString) > 6) {
+//         // For numbers larger than a crore
+//         $chunks[] = substr($numberString, 0, strlen($numberString) - 7); // Crore place (first part)
+//         $chunks[] = substr($numberString, -7, 2); // Lakh place
+//         $numberString = substr($numberString, -5); // Remaining part after lakh
+//     }
+
+//     // Breaking number into chunks of 3 digits (for thousands, hundreds)
+//     $chunks = array_merge($chunks, str_split($numberString, 3));
+
+//     foreach ($chunks as $key => $value) {
+//         $currentPart = (int)$value;
+//         $currentWords = [];
+
+//         if ($currentPart > 99) {
+//             $currentWords[] = $ones[(int)($currentPart / 100)] . ' hundred';
+//             $currentPart %= 100;
+//         }
+
+//         if ($currentPart > 19) {
+//             $currentWords[] = $tens[(int)($currentPart / 10)];
+//             $currentPart %= 10;
+//         }
+
+//         if ($currentPart > 0) {
+//             $currentWords[] = $ones[$currentPart];
+//         }
+
+//         if (!empty($currentWords)) {
+//             // Add the corresponding place value
+//             $words[] = implode(' ', $currentWords) . ' ' . $thousands[$key];
+//         }
+//     }
+
+//     return ucfirst(implode(' ', array_reverse($words)));
+// }
+
 function convertNumberToWords($number)
-{
-    $number = (int)$number;
-    $words = [];
-    $ones = ['', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
-    $teens = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
-    $tens = ['', 'ten', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
-    $thousands = ['', 'thousand', 'lakh', 'crore', 'billion'];
+    {
+        if ($number < 0) return false;
 
-    $numberString = (string)$number;
+        // Arrays to hold words for single-digit, double-digit, and below-hundred numbers
+        $single_digit = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        $double_digit = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        $below_hundred = ['Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
 
-    // Handle lakh and crore by dividing the number accordingly.
-    $chunks = [];
-    if (strlen($numberString) > 6) {
-        // For numbers larger than a crore
-        $chunks[] = substr($numberString, 0, strlen($numberString) - 7); // Crore place (first part)
-        $chunks[] = substr($numberString, -7, 2); // Lakh place
-        $numberString = substr($numberString, -5); // Remaining part after lakh
+        if ($number === 0) return 'Zero';
+
+        // Recursive function to translate the number into words
+        function translate($n, $single_digit, $double_digit, $below_hundred)
+        {
+            $word = "";
+            if ($n < 10) {
+                $word = $single_digit[$n] . ' ';
+            } else if ($n < 20) {
+                $word = $double_digit[$n - 10] . ' ';
+            } else if ($n < 100) {
+                $rem = translate($n % 10, $single_digit, $double_digit, $below_hundred);
+                $word = $below_hundred[floor($n / 10) - 2] . ' ' . $rem;
+            } else if ($n < 1000) {
+                $word = $single_digit[floor($n / 100)] . ' Hundred ' . translate($n % 100, $single_digit, $double_digit, $below_hundred);
+            } else if ($n < 1000000) {
+                $word = translate(floor($n / 1000), $single_digit, $double_digit, $below_hundred) . 'Thousand ' . translate($n % 1000, $single_digit, $double_digit, $below_hundred);
+            } else if ($n < 1000000000) {
+                $word = translate(floor($n / 1000000), $single_digit, $double_digit, $below_hundred) . 'Million ' . translate($n % 1000000, $single_digit, $double_digit, $below_hundred);
+            } else if ($n < 1000000000000) {
+                $word = translate(floor($n / 1000000000), $single_digit, $double_digit, $below_hundred) . 'Billion ' . translate($n % 1000000000, $single_digit, $double_digit, $below_hundred);
+            } else {
+                $word = translate(floor($n / 1000000000000), $single_digit, $double_digit, $below_hundred) . 'Trillion ' . translate($n % 1000000000000, $single_digit, $double_digit, $below_hundred);
+            }
+            return $word;
+        }
+
+        // Get the result by translating the given number
+        $result = translate($number, $single_digit, $double_digit, $below_hundred);
+        return trim($result);
     }
-
-    // Breaking number into chunks of 3 digits (for thousands, hundreds)
-    $chunks = array_merge($chunks, str_split($numberString, 3));
-
-    foreach ($chunks as $key => $value) {
-        $currentPart = (int)$value;
-        $currentWords = [];
-
-        if ($currentPart > 99) {
-            $currentWords[] = $ones[(int)($currentPart / 100)] . ' hundred';
-            $currentPart %= 100;
-        }
-
-        if ($currentPart > 19) {
-            $currentWords[] = $tens[(int)($currentPart / 10)];
-            $currentPart %= 10;
-        }
-
-        if ($currentPart > 0) {
-            $currentWords[] = $ones[$currentPart];
-        }
-
-        if (!empty($currentWords)) {
-            // Add the corresponding place value
-            $words[] = implode(' ', $currentWords) . ' ' . $thousands[$key];
-        }
-    }
-
-    return ucfirst(implode(' ', array_reverse($words)));
-}
-
