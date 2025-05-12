@@ -418,60 +418,11 @@
             </div>
         </div>
     </div>
-        <script>
-        (async () => {
-            const params = new URLSearchParams(window.location.search);
-            const id = params.get('id');
-            const API_URL = 'https://your.api.url/'; // match your existing constant
-
-            // get token (adapt if you store it somewhere else)
-            const token = localStorage.getItem('access_token');
-
-            try {
-                const res = await fetch(`${API_URL}sale-receipt/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const r = await res.json();
-
-                // fill in header fields
-                document.getElementById('receipt-no').textContent = r.receipt_no;
-                document.getElementById('receipt-date').textContent = r.receipt_date;
-                document.getElementById('customer-name').textContent = r.customer_name;
-                document.getElementById('customer-address').textContent = r.customer_address;
-                document.getElementById('customer-telephone').textContent = r.customer_telephone;
-                document.getElementById('business-name').textContent = r.business_name;
-                // …etc for all your info columns…
-
-                // build items table
-                const tbody = document.getElementById('items-body');
-                r.items.forEach((item, i) => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                <td>${i + 1}</td>
-                <td>${item.product.title}</td>
-                <td class="text-center">${item.quantity}</td>
-                <td class="text-right">${item.unit_price}</td>
-                <td class="text-right">${(item.quantity * item.unit_price).toFixed(2)}</td>
-                <td class="text-right">${item.discount}</td>
-                <td class="text-right">${item.total}</td>
-              `;
-                    tbody.appendChild(tr);
-                });
-
-                // totals & words
-                document.getElementById('subtotal').textContent = r.total;
-                document.getElementById('amount-received').textContent = r.amount_received || '0.00';
-                document.getElementById('balanced').textContent = r.total;  // or compute
-
-                // if you want “amount in words”, you can call your existing helper or paste it here
-
-                // now that everything’s in the DOM:
-                window.print();
-            } catch (e) {
-                console.error('Print page error', e);
-                alert('Could not load receipt for printing.');
-            }
-        })();
+<script>
+        // Trigger print automatically when the page is fully loaded
+        window.onload = function() {
+            window.print();
+        };
     </script>
 </body>
 
