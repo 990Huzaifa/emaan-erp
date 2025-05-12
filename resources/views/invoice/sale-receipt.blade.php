@@ -376,7 +376,7 @@
                 </div>
                 <div class="amount-calculations">
                     <div class="calc-row">
-                        <div>Subtotal</div>
+                        <div>Delivery Cost</div>
                         <div>Rs. {{number_format($data->delivery_cost )}}</div>
                     </div>
                     <div class="calc-row">
@@ -409,7 +409,7 @@
 
         <div class="terms-container">
             <div class="terms-title">Terms & Conditions</div>
-            <div class="terms-text">Please pay within 15 days of receiving this invoice.</div>
+            <div class="terms-text">{{ $data->terms_of_payment }}</div>
         </div>
     </div>
 </body>
