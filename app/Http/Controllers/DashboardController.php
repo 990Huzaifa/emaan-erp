@@ -353,9 +353,9 @@ class DashboardController extends Controller
 
             $trend_customers = $this->checkTrend($cm_customers,$lm_customers);
 
-            $total_inventory = InventoryDetail::distinct('product_id')->where('in_stock',0)->count();
-            $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month_date->month)->whereYear('created_at', $last_month_date->year)->distinct('product_id')->count();
-            $cm_inventory = InventoryDetail::whereMonth('created_at', Carbon::now()->month)->whereYear('created_at', Carbon::now()->year)->distinct('product_id')->count();
+            $total_inventory = InventoryDetail::distinct('product_id')->where('in_stock',1)->count();
+            $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month_date->month)->where('in_stock',1)->whereYear('created_at', $last_month_date->year)->distinct('product_id')->count();
+            $cm_inventory = InventoryDetail::whereMonth('created_at', Carbon::now()->month)->where('in_stock',1)->whereYear('created_at', Carbon::now()->year)->distinct('product_id')->count();
             $ipc_inventory = ($lm_inventory > 0) ? (($cm_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
 
             $trend_inventory = $this->checkTrend($cm_inventory,$lm_inventory);
