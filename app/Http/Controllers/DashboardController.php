@@ -96,6 +96,9 @@ class DashboardController extends Controller
     public function lowPayCustomers(Request $request): JsonResponse
     {
         try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
             $start_date = $request->input('start_date');
             $end_date = $request->input('end_date');
 
@@ -128,6 +131,7 @@ class DashboardController extends Controller
                     ) as t
                 "), 'customers.acc_id', '=', 't.acc_id') // Inner join ensures only customers with transactions
                 ->leftJoin('opening_balances as ob', 'customers.acc_id', '=', 'ob.acc_id')
+                ->where('customers.business_id', $businessId)
                 ->get();
 
             return response()->json($customers, 200);
