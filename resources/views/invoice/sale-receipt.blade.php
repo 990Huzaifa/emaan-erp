@@ -409,7 +409,13 @@
 
         <div class="terms-container">
             <div class="terms-title">Terms & Conditions</div>
-            <div class="terms-text">{{ $data->terms_of_payment }}</div>
+            <div class="terms-text">
+                @if ($data->terms_of_payment != null)
+                    {{ $data->terms_of_payment }}
+                @else
+                    Please pay within 15 days of receiving this invoice.
+                @endif
+            </div>
         </div>
     </div>
 </body>
