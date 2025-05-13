@@ -109,13 +109,13 @@ class DashboardController extends Controller
 
             $customers = Customer::select(
                     'customers.id',
-                    'customers.name as customer_name',
+                    'customers.name',
                     'customers.acc_id',
-                    'cities.name as city',
+                    'cities.name as city_name',
                     DB::raw("
                         COALESCE(t.current_balance, ob.amount) as balance
                     "),
-                    DB::raw('t.debit as voucher_amount')
+                    DB::raw('t.debit as payment')
                 )
                 ->leftJoin('cities', 'customers.city_id', '=', 'cities.id')
                 ->join(DB::raw("
