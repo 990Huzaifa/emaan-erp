@@ -79,14 +79,13 @@ class COAController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'name'=>'required|string|unique:chart_of_accounts,name',
+                    'name'=>'required|string',
                     'type'=>'required|string|in:BANK,CASH,BUSINESS_EXPENSES',
                     'opening_balance'=>'required|numeric',
 
             ],[
                 'name.required'=>'Name is Required',
                 'name.string'=>'Name is must be a string',
-                'name.unique'=>'Name is Already in use',
 
                 'type.required'=>'Type is Required',
                 'type.string'=>'Type must be a string',
