@@ -61,7 +61,7 @@ use App\Http\Controllers\Hr\SalaryVoucherController;
 
 
 // API Routes
-Route::get('/api', function () {
+Route::get('/', function () {
     echo "<h1>very funny😑, GO to Hell</h1>";
 });
 
