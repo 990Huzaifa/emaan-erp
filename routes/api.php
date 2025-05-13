@@ -61,40 +61,8 @@ use App\Http\Controllers\Hr\SalaryVoucherController;
 
 
 // API Routes
-Route::get('/', function () {
-    $routes = Route::getRoutes();
-    echo '
-        <table style="width: 100%; border-collapse: collapse;" border="1">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>URI</th>
-                </tr>
-            </thead>
-            <tbody>
-    ';
-    $i = 1;
-    foreach ($routes as $route) {
-        if (str_starts_with($route->uri(), 'api/')) {
-            echo "
-                <tr>
-                    <td>{$i}</td>
-                    <td>"
-                        . $route->methods()[0] .
-                        " - <a href='" . env('APP_URL') . $route->uri() . "'>"
-                        . env('APP_URL') . $route->uri()
-                        . "</a>
-                    </td>
-                </tr>
-            ";
-            $i++; 
-        };
-    }
-    echo '
-            </tbody>
-        </table>
-    ';
-    return "";
+Route::get('/api', function () {
+    return "very funny😑, GO to Hell";
 });
 
 
