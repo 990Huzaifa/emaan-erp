@@ -785,8 +785,8 @@ class DashboardController extends Controller
                     ->where('sale_quotations.business_id', $businessId)->where('sale_quotations.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve goods received notes')) {
-                    $grn = GoodsReceiveNote::join('puchase_orders', 'goods_receive_notes.purchase_order_id', '=', 'puchase_orders.id')
-                    ->join('vendors', 'puchase_orders.vendor_id', '=', 'vendors.id')
+                    $grn = GoodsReceiveNote::join('purchase_orders', 'goods_receive_notes.purchase_order_id', '=', 'purchase_orders.id')
+                    ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
                     ->select('goods_receive_notes.*', 'vendors.name as vendor')
                     ->where('goods_receive_notes.business_id', $businessId)->where('goods_receive_notes.status', 0)->get();
                 }
