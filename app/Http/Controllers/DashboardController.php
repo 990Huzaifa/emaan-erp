@@ -754,46 +754,77 @@ class DashboardController extends Controller
 
             if ($user->role != 'admin') {
                 if ($user->hasBusinessPermission($businessId, 'approve purchase orders')) {
-                    $purchaseOrders = PurchaseOrder::where('business_id', $businessId)->where('status', 0)->get();
+                    $purchaseOrders = PurchaseOrder::join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
+                    ->select('purchase_orders.*', 'vendors.name as vendor')
+                    ->where('purchase_orders.business_id', $businessId)->where('purchase_orders.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase return')) {
-                    $purchaseReturn = PurchaseReturn::where('business_id', $businessId)->where('status', 0)->get();
+                    $purchaseReturn = PurchaseReturn::
+                    join('vendors', 'purchase_returns.vendor_id', '=', 'vendors.id')
+                    ->select('purchase_returns.*', 'vendors.name as vendor')
+                    ->where('purchase_returns.business_id', $businessId)->where('purchase_returns.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale orders')) {
-                    $saleOrders = SaleOrder::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleOrders = SaleOrder::join('customers', 'sale_orders.customer_id', '=', 'customers.id')
+                    ->select('sale_orders.*', 'customers.name as customer')
+                    ->where('sale_orders.business_id', $businessId)->where('sale_orders.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale return')) {
-                    $saleReturn = SaleReturn::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleReturn = SaleReturn::join('customers', 'sale_returns.customer_id', '=', 'customers.id')
+                    ->select('sale_returns.*', 'customers.name as customer')
+                    ->where('sale_returns.business_id', $businessId)->where('sale_returns.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase quotations')) {
-                    $purchaseQuotation = PurchaseQuotation::where('business_id', $businessId)->where('status', 0)->get();
+                    $purchaseQuotation = PurchaseQuotation::join('vendors', 'purchase_quotations.vendor_id', '=', 'vendors.id')
+                    ->select('purchase_quotations.*', 'vendors.name as vendor')
+                    ->where('purchase_quotations.business_id', $businessId)->where('purchase_quotations.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale quotations')) {
-                    $saleQuotation = SaleQuotation::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleQuotation = SaleQuotation::join('customers', 'sale_quotations.customer_id', '=', 'customers.id')
+                    ->select('sale_quotations.*', 'customers.name as customer')
+                    ->where('sale_quotations.business_id', $businessId)->where('sale_quotations.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve goods received notes')) {
-                    $grn = GoodsReceiveNote::where('business_id', $businessId)->where('status', 0)->get();
+                    $grn = GoodsReceiveNote::join('puchase_orders', 'goods_receive_notes.purchase_order_id', '=', 'puchase_orders.id')
+                    ->join('vendors', 'puchase_orders.vendor_id', '=', 'vendors.id')
+                    ->select('goods_receive_notes.*', 'vendors.name as vendor')
+                    ->where('goods_receive_notes.business_id', $businessId)->where('goods_receive_notes.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve delivery notes')) {
-                    $dn = DeliveryNote::where('business_id', $businessId)->where('status', 0)->get();
+                    $dn = DeliveryNote::join('sale_orders', 'delivery_notes.sale_order_id', '=', 'sale_orders.id')
+                    ->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
+                    ->select('delivery_notes.*', 'customers.name as customer')
+                    ->where('delivery_notes.business_id', $businessId)->where('delivery_notes.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale receipt')) {
-                    $saleReceipt = SaleReceipt::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleReceipt = SaleReceipt::join('customers', 'sale_receipts.customer_id', '=', 'customers.id')
+                    ->select('sale_receipts.*', 'customers.name as customer')
+                    ->where('sale_receipts.business_id', $businessId)->where('sale_receipts.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase invoice')) {
-                    $purchaseInvoice = PurchaseInvoice::where('business_id', $businessId)->where('status', 0)->get();
+                    $purchaseInvoice = PurchaseInvoice::join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id')
+                    ->select('purchase_invoices.*', 'vendors.name as vendor')
+                    ->where('purchase_invoicesbusiness_id', $businessId)->where('purchase_invoicesstatus', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
-                    $purhcaseVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                    $purhcaseVoucher = PurchaseVoucher::join('customers', 'purchase_vouchers.customer_id', '=', 'customers.id')
+                        ->select('purchase_vouchers.*', 'customers.name as customer')
+                        ->where('purchase_vouchers.business_id', $businessId)->where('purchase_vouchers.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale voucher')) {
-                    $saleVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleVoucher = SaleVoucher::join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
+                    ->select('sale_vouchers.*', 'customers.name as customer')
+                    ->where('sale_vouchers.business_id', $businessId)->where('sale_vouchers.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase return voucher')) {
-                    $purchaseReturnVoucher = PurchaseVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                    $purchaseReturnVoucher = PurchaseVoucher::join('vendors', 'purchase_vouchers.vendor_id', '=', 'vendors.id')
+                    ->select('purchase_vouchers.*', 'vendors.name as vendor')
+                    ->where('purchase_vouchers.business_id', $businessId)->where('purchase_vouchers.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale return voucher')) {
-                    $saleReturnVoucher = SaleVoucher::where('business_id', $businessId)->where('status', 0)->get();
+                    $saleReturnVoucher = SaleVoucher::join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
+                    ->select('sale_vouchers.*', 'customers.name as customer')
+                    ->where('sale_vouchers.business_id', $businessId)->where('sale_vouchers.status', 0)->get();
                 }
 
             }
