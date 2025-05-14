@@ -120,6 +120,7 @@ class SaleReceiptController extends Controller
                 SaleReceiptItem::create([
                     'sale_receipt_id' => $saleReceipt->id,
                     'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
                     'unit_price' => $item->unit_price,
                     'discount' => $item->discount,
