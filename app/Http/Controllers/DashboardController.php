@@ -804,7 +804,7 @@ class DashboardController extends Controller
                 if ($user->hasBusinessPermission($businessId, 'approve purchase invoice')) {
                     $purchaseInvoice = PurchaseInvoice::join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id')
                     ->select('purchase_invoices.*', 'vendors.name as vendor')
-                    ->where('purchase_invoicesbusiness_id', $businessId)->where('purchase_invoicesstatus', 0)->get();
+                    ->where('purchase_invoices.business_id', $businessId)->where('purchase_invoices.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
                     $purhcaseVoucher = PurchaseVoucher::join('customers', 'purchase_vouchers.customer_id', '=', 'customers.id')
