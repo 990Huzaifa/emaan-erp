@@ -115,6 +115,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('invite-list/user',[UserController::class,'inviteList']);
     Route::post('invite-update/{id}/user',[UserController::class,'updateInvite']);
     Route::post('setup/{id}/user',[UserController::class,'sendSetupMail']);
+
+    Route::post('update-profile',[UserController::class,'editProfile']);
     
     
     // partners 

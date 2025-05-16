@@ -658,7 +658,7 @@ class UserController extends Controller
         }
     }
     
-    public function editProfile(Request $request, $id):JsonResponse
+    public function editProfile(Request $request):JsonResponse
     {
         try{
             $user = Auth::user();
@@ -671,8 +671,6 @@ class UserController extends Controller
                     ], 403);
                 }
             }
-            $user = User::findOrFail($id);
-            if (empty($user)) throw new Exception('No User found', 404);
             $validator = Validator::make(
                 $request->all(),[
                     'phone'=>'nullable|string',
