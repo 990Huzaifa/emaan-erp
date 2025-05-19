@@ -28,6 +28,7 @@ class User extends Authenticatable
         'password',
         'setup_code',
         'address',
+        'phone',
         'setup_code_expiry',
         'cnic_images',
         'avatar',
