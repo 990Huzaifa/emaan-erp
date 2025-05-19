@@ -27,6 +27,7 @@ class User extends Authenticatable
         'city_id',
         'password',
         'setup_code',
+        'address',
         'setup_code_expiry',
         'cnic_images',
         'avatar',
