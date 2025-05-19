@@ -17,7 +17,7 @@ class WhatsAppService
 
     public function sendTemplateMessage($to, $templateName, array $bodyParams = [], $mediaType = null, $mediaUrl = null, $filename = null, $language = 'en_US')
     {
-        $url = "https://graph.facebook.com/v18.0/{$this->phoneNumberId}/messages";
+        $url = "https://graph.facebook.com/v22.0/{$this->phoneNumberId}/messages";
 
         $components = [];
 
