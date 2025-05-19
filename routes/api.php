@@ -324,6 +324,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('dashboard/aov',[DashboardController::class,'AOV']);
     Route::get('dashboard/things-to-review',[DashboardController::class,'thingsToReview']);
 
+    Route::get('test/whatsapp',[DashboardController::class,'testWhatsapp']);
+
 
 });
 

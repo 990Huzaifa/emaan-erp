@@ -24,6 +24,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\WhatsAppService;
 
 class DashboardController extends Controller
 {
@@ -850,5 +851,16 @@ class DashboardController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+
+
+    public function testWhatsapp(){
+
+        $newService = new WhatsAppService;
+        $data = ['Customer', 'May Invoice'];
+        $newService->sendTemplateMessage('3133054378', 'hello_world', $data);
+        $message = "Hello, this is a test message from the server.";
+        return response()->json(['message' => $newService]);
     }
 }

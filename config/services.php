@@ -30,5 +30,9 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
+    'whatsapp' => [
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID','7323362332856090'),
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN','EAAR1Rq25RVcBOxT3HAkUXcDsafKg61AxiAgsoGT2U2PYmRdvxlD7813L3lPOSgzhbWyrTZBk56wzDRlLmZC8kVTnpNUUowGiypRG8ZCpA6TVPrzow0H569MwmV9VinKocz3DspFktLIM4FXKmdJBdtnaOkNwdA8XMOHoJBWgzMbndlh6LnZCirCcxs8yLC8PGgZDZD'),
+    ],
 
 ];
