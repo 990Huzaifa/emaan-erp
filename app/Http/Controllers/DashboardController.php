@@ -858,9 +858,9 @@ class DashboardController extends Controller
     public function testWhatsapp(){
 
         $newService = new WhatsAppService;
-        $data = ['Customer', 'May Invoice'];
-        $newService->sendTemplateMessage('3133054378', 'hello_world', $data);
+        $data = ['saad'];
+        $response = $newService->sendTemplateMessage('3133054378', 'hello_world', $data);
         $message = "Hello, this is a test message from the server.";
-        return response()->json(['message' => $newService]);
+        return response()->json(['message' => $response]);
     }
 }
