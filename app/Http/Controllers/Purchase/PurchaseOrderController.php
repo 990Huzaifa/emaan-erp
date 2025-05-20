@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Purchase;
 
+use DB;
 use Exception;
 use App\Models\Log;
 use Illuminate\Http\Request;
@@ -74,6 +75,7 @@ class PurchaseOrderController extends Controller
                     ], 403);
                 }
             }
+            DB::beginTransaction();
             $validator = Validator::make(
                 $request->all(),
                 [
@@ -192,15 +194,17 @@ class PurchaseOrderController extends Controller
             // save pdf
 
             $path = 'purchase-order/' . $this->savePO($data->id);
-
+            
             $data->update([
                 'pdf' => url($path)
             ]);
-
+            DB::commit();
             return response()->json($data);
         } catch (QueryException $e) {
+            DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
+            DB::rollBack();
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
