@@ -11,8 +11,8 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->phoneNumberId = env('WHATSAPP_PHONE_NUMBER_ID');
-        $this->accessToken = env('WHATSAPP_ACCESS_TOKEN');
+        $this->phoneNumberId = config('whatsapp.phone_number_id');
+        $this->accessToken = config('whatsapp.access_token');
     }
 
     public function sendTemplateMessage($to, $templateName, array $bodyParams = [], $mediaType = null, $mediaUrl = null, $filename = null, $language = 'en_US')
