@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Purchase;
 
+use App\Services\WhatsAppService;
 use DB;
 use Exception;
 use App\Models\Log;
@@ -514,6 +515,13 @@ class PurchaseOrderController extends Controller
 
         // Save the PDF file
         $pdf->save($filePath);
+        $body = [
+            $data->vendor_name,
+            $data->order_code,
+        ];
+        $newMessage = new WhatsAppService();
+        $newMessage->sendTemplateMessage($data->vendor_phone, 'purchase_order', $body, 'document', url('public/storage/orders/' . $fileName), $fileName);
         return url('public/storage/orders/' . $fileName);;
     }
+
 }
