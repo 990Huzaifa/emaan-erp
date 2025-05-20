@@ -196,7 +196,7 @@ class PurchaseOrderController extends Controller
             
 
             $data->update([
-                'pdf' => public_path($path)
+                'pdf' => $path
             ]);
             DB::commit();
             return response()->json($data);
