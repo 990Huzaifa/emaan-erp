@@ -26,6 +26,7 @@ class PurchaseOrder extends Model
         'total_discount',
         'total_tax',
         'total',
+        'pdf',
         'reference'
     ];
 

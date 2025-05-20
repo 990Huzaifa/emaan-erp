@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
 class PurchaseOrderController extends Controller
 {
@@ -20,9 +21,9 @@ class PurchaseOrderController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -34,22 +35,24 @@ class PurchaseOrderController extends Controller
             }
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $query = PurchaseOrder::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])
-            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
-            ->where('business_id',$businessId)
-            ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
-            ->orderBy('purchase_orders.id', 'desc');
+            $query = PurchaseOrder::with([
+                'items.product' => function ($query) {
+                    $query->select('id', 'title'); // Select product name and id
+                }
+            ])
+                ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
+                ->where('business_id', $businessId)
+                ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
+                ->orderBy('purchase_orders.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -59,9 +62,9 @@ class PurchaseOrderController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -72,9 +75,10 @@ class PurchaseOrderController extends Controller
                 }
             }
             $validator = Validator::make(
-                $request->all(),[
-                    'vendor_id'=>'required|exists:vendors,id',
-                    'order_date'=>'required',
+                $request->all(),
+                [
+                    'vendor_id' => 'required|exists:vendors,id',
+                    'order_date' => 'required',
                     'due_date' => 'required',
                     'delivery_cost' => 'required|numeric',
                     'total' => 'required|numeric',
@@ -91,58 +95,61 @@ class PurchaseOrderController extends Controller
                     'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
                     'items.*.tax' => 'required|numeric',
 
-            ],[
+                ],
+                [
 
-                'vendor_id.required' => 'Vendor is required.',
-                'vendor_id.exists' => 'Vendor does not exist.',
+                    'vendor_id.required' => 'Vendor is required.',
+                    'vendor_id.exists' => 'Vendor does not exist.',
 
-                'order_date.required' => 'Order date is required.',
+                    'order_date.required' => 'Order date is required.',
 
-                'due_date.required' => 'Due date is required.',
+                    'due_date.required' => 'Due date is required.',
 
-                'total.required' => 'Total is required.',
-                'total.numeric' => 'Total must be a number.',
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
 
-                'total_discount.required' => 'Total Discount is required.',
-                'total_discount.numeric' => 'Total Discount must be a number.',
+                    'total_discount.required' => 'Total Discount is required.',
+                    'total_discount.numeric' => 'Total Discount must be a number.',
 
-                'delivery_cost.required' => 'Delivery cost is required.',
-                'delivery_cost.numeric' => 'Delivery cost must be a number.',
-                
-                'total_tax.required' => 'Total Tax is required.',
-                'total_tax.numeric' => 'Total Tax must be a number.',
-                
-                'items.required' => 'Items are required.',
-                'items.array' => 'Items must be an array.',
+                    'delivery_cost.required' => 'Delivery cost is required.',
+                    'delivery_cost.numeric' => 'Delivery cost must be a number.',
 
-                'items.*.product_id.required' => 'Product is required.',
-                'items.*.product_id.exists' => 'Product does not exist.',
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
 
-                'items.*.measurement_unit.required' => 'Measurement unit is required.',
-                'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+                    'items.required' => 'Items are required.',
+                    'items.array' => 'Items must be an array.',
 
-                'items.*.quantity.required' => 'Quantity is required.',
-                'items.*.quantity.numeric' => 'Quantity must be a number.',
-                
-                'items.*.unit_price.required' => 'Unit price is required.',
-                'items.*.unit_price.numeric' => 'Unit price must be a number.',
-                
-                'items.*.total_price.required' => 'Total price is required.',
-                'items.*.total_price.numeric' => 'Total price must be a number.',
-                
-                'items.*.discount.required' => 'Discount is required.',
-                'items.*.discount.numeric' => 'Discount must be a number.',
-                
-                'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
-                'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
-                'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
-                
-                'items.*.tax.required' => 'Tax is required.',
-                'items.*.tax.numeric' => 'Tax must be a number.',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+                    'items.*.product_id.required' => 'Product is required.',
+                    'items.*.product_id.exists' => 'Product does not exist.',
+
+                    'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                    'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                    'items.*.quantity.required' => 'Quantity is required.',
+                    'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                    'items.*.unit_price.required' => 'Unit price is required.',
+                    'items.*.unit_price.numeric' => 'Unit price must be a number.',
+
+                    'items.*.total_price.required' => 'Total price is required.',
+                    'items.*.total_price.numeric' => 'Total price must be a number.',
+
+                    'items.*.discount.required' => 'Discount is required.',
+                    'items.*.discount.numeric' => 'Discount must be a number.',
+
+                    'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                    'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+                    'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
+
+                    'items.*.tax.required' => 'Tax is required.',
+                    'items.*.tax.numeric' => 'Tax must be a number.',
+                ]
+            );
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
             do {
-                $order_code = 'PO-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $order_code = 'PO-' . str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (PurchaseOrder::where('order_code', $order_code)->exists());
             $data = PurchaseOrder::create([
                 'order_code' => $order_code,
@@ -158,7 +165,7 @@ class PurchaseOrderController extends Controller
                 'remarks' => $request->remarks ?? null,
                 'status' => $request->status ?? 0
             ]);
-            foreach($request->items as $item){
+            foreach ($request->items as $item) {
                 PurchaseOrderItem::create([
                     'purchase_order_id' => $data->id,
                     'product_id' => $item['product_id'],
@@ -169,22 +176,31 @@ class PurchaseOrderController extends Controller
                     'discount' => $item['discount'],
                     'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
-                ]); 
+                ]);
             }
-            $n_url ='view-purchase-order/'.$data->id;
-            if($request->status == 1){
-                notifyUser($user->id, $businessId,'create goods received notes', 'New purchase order created and approved',$n_url);
-            }else{
-                notifyUser($user->id, $businessId,'approve purchase orders', 'New purchase order created',$n_url);
-            }         
+            $n_url = 'view-purchase-order/' . $data->id;
+            if ($request->status == 1) {
+                notifyUser($user->id, $businessId, 'create goods received notes', 'New purchase order created and approved', $n_url);
+            } else {
+                notifyUser($user->id, $businessId, 'approve purchase orders', 'New purchase order created', $n_url);
+            }
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Create Purchase Order code: '.$data->order_code,   
+                'description' => 'Create Purchase Order code: ' . $data->order_code,
             ]);
+
+            // save pdf
+
+            $path = 'purchase-order/' . $this->savePO($data->id);
+
+            $data->update([
+                'pdf' => url($path)
+            ]);
+
             return response()->json($data);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -194,9 +210,9 @@ class PurchaseOrderController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -206,17 +222,19 @@ class PurchaseOrderController extends Controller
                     ], 403);
                 }
             }
-            $data = PurchaseOrder::with(['items.product' => function ($query) {
-                $query->select('id', 'title'); // Select product name and id
-            }])
-            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with the vendors table
-            ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
-            ->where('purchase_orders.id', $id) // Filter by the specific purchase order ID
-            ->firstOrFail();
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            $data = PurchaseOrder::with([
+                'items.product' => function ($query) {
+                    $query->select('id', 'title'); // Select product name and id
+                }
+            ])
+                ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with the vendors table
+                ->select('purchase_orders.*', 'vendors.name as vendor_name') // Select fields including vendor name
+                ->where('purchase_orders.id', $id) // Filter by the specific purchase order ID
+                ->firstOrFail();
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -227,7 +245,7 @@ class PurchaseOrderController extends Controller
      */
     public function update(Request $request, string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             // Check if the user has the required permission
             if ($user->role != 'admin') {
@@ -239,9 +257,10 @@ class PurchaseOrderController extends Controller
                 }
             }
             $validator = Validator::make(
-                $request->all(),[
-                    'vendor_id'=>'required|exists:vendors,id',
-                    'order_date'=>'required',
+                $request->all(),
+                [
+                    'vendor_id' => 'required|exists:vendors,id',
+                    'order_date' => 'required',
                     'due_date' => 'required',
                     'delivery_cost' => 'required|numeric',
                     'total' => 'required|numeric',
@@ -260,58 +279,62 @@ class PurchaseOrderController extends Controller
                     'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
                     'items.*.tax' => 'required|numeric',
 
-            ],[
-                'vendor_id.required' => 'Vendor is required.',
-                'vendor_id.exists' => 'Vendor does not exist.',
+                ],
+                [
+                    'vendor_id.required' => 'Vendor is required.',
+                    'vendor_id.exists' => 'Vendor does not exist.',
 
-                'order_date.required' => 'Order date is required.',
+                    'order_date.required' => 'Order date is required.',
 
-                'due_date.required' => 'Due date is required.',
+                    'due_date.required' => 'Due date is required.',
 
-                'total.required' => 'Total is required.',
-                'total.numeric' => 'Total must be a number.',
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
 
-                'total_discount.required' => 'Total Discount is required.',
-                'total_discount.numeric' => 'Total Discount must be a number.',
+                    'total_discount.required' => 'Total Discount is required.',
+                    'total_discount.numeric' => 'Total Discount must be a number.',
 
-                'delivery_cost.required' => 'Delivery cost is required.',
-                'delivery_cost.numeric' => 'Delivery cost must be a number.',
-                
-                'total_tax.required' => 'Total Tax is required.',
-                'total_tax.numeric' => 'Total Tax must be a number.',
-                
-                'items.required' => 'Items are required.',
+                    'delivery_cost.required' => 'Delivery cost is required.',
+                    'delivery_cost.numeric' => 'Delivery cost must be a number.',
 
-                'items.*.product_id.required' => 'Product is required.',
-                'items.*.product_id.exists' => 'Product does not exist.',
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
 
-                'items.*.measurement_unit.required' => 'Measurement unit is required.',
-                'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+                    'items.required' => 'Items are required.',
 
-                'items.*.quantity.required' => 'Quantity is required.',
-                'items.*.quantity.numeric' => 'Quantity must be a number.',
-                
-                'items.*.unit_price.required' => 'Unit price is required.',
-                'items.*.unit_price.numeric' => 'Unit price must be a number.',
-                
-                'items.*.total_price.required' => 'Total price is required.',
-                'items.*.total_price.numeric' => 'Total price must be a number.',
-                
-                'items.*.discount.required' => 'Discount is required.',
-                'items.*.discount.numeric' => 'Discount must be a number.',
-                
-                'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
-                'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
-                'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
-                
-                'items.*.tax.required' => 'Tax is required.',
-                'items.*.tax.numeric' => 'Tax must be a number.',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+                    'items.*.product_id.required' => 'Product is required.',
+                    'items.*.product_id.exists' => 'Product does not exist.',
+
+                    'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                    'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                    'items.*.quantity.required' => 'Quantity is required.',
+                    'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                    'items.*.unit_price.required' => 'Unit price is required.',
+                    'items.*.unit_price.numeric' => 'Unit price must be a number.',
+
+                    'items.*.total_price.required' => 'Total price is required.',
+                    'items.*.total_price.numeric' => 'Total price must be a number.',
+
+                    'items.*.discount.required' => 'Discount is required.',
+                    'items.*.discount.numeric' => 'Discount must be a number.',
+
+                    'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                    'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+                    'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
+
+                    'items.*.tax.required' => 'Tax is required.',
+                    'items.*.tax.numeric' => 'Tax must be a number.',
+                ]
+            );
+            if ($validator->fails())
+                throw new Exception($validator->errors()->first(), 400);
             $data = PurchaseOrder::find($id);
-            if (empty($data)) throw new Exception('No PO found', 404);
+            if (empty($data))
+                throw new Exception('No PO found', 404);
             $data->update([
-                'vendor_id'=>$request->vendor_id,
+                'vendor_id' => $request->vendor_id,
                 'order_date' => $request->order_date,
                 'due_date' => $request->due_date,
                 'total' => $request->total,
@@ -351,23 +374,23 @@ class PurchaseOrderController extends Controller
             PurchaseOrderItem::destroy($itemsToDelete);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order. code: '.$data->order_code,   
+                'description' => 'Update Purchase Order. code: ' . $data->order_code,
             ]);
-            $n_url ='view-purchase-order/'.$id;
-            notifyUser($user->id, $businessId,'view purchase orders', 'purchase order has been updated',$n_url);
+            $n_url = 'view-purchase-order/' . $id;
+            notifyUser($user->id, $businessId, 'view purchase orders', 'purchase order has been updated', $n_url);
             return response()->json($data);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-    
+
     public function updateStatus(Request $request, string $id): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -377,35 +400,37 @@ class PurchaseOrderController extends Controller
                     ], 403);
                 }
             }
-            if($request->status == 0) throw new Exception('Invalid status',400);
+            if ($request->status == 0)
+                throw new Exception('Invalid status', 400);
             $data = PurchaseOrder::find($id);
-            if($data->status != 0) throw new Exception("Status can't change",400);
+            if ($data->status != 0)
+                throw new Exception("Status can't change", 400);
             $data->update([
                 'status' => $request->status
             ]);
             Log::create([
                 'user_id' => $user->id,
-                'description' => 'Update Purchase Order Status. code: '.$data->order_code,   
+                'description' => 'Update Purchase Order Status. code: ' . $data->order_code,
             ]);
-            $n_url ='view-purchase-order/'.$id;
-            if($request->status == 1){
-                notifyUser($user->id, $businessId,'create goods received notes', 'purchase order approved successfully',$n_url);
-            }elseif($request->status == 2){
-                notifyUser($user->id, $businessId,'view purchase orders', 'purchase order Rejected',$n_url);
+            $n_url = 'view-purchase-order/' . $id;
+            if ($request->status == 1) {
+                notifyUser($user->id, $businessId, 'create goods received notes', 'purchase order approved successfully', $n_url);
+            } elseif ($request->status == 2) {
+                notifyUser($user->id, $businessId, 'view purchase orders', 'purchase order Rejected', $n_url);
             }
             return response()->json($data);
-        }catch(QueryException $e){
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
     public function list(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -416,26 +441,26 @@ class PurchaseOrderController extends Controller
                 }
             }
             $searchQuery = $request->query('search');
-            $query = PurchaseOrder::select('id','order_code')->where('status',1)->where('business_id',$businessId)
-            ->orderBy('purchase_orders.id', 'desc');
+            $query = PurchaseOrder::select('id', 'order_code')->where('status', 1)->where('business_id', $businessId)
+                ->orderBy('purchase_orders.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->get();
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-    
+
     public function list2(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
-            
+
             // Check if the user has the required permission
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -446,18 +471,45 @@ class PurchaseOrderController extends Controller
                 }
             }
             $searchQuery = $request->query('search');
-            $query = PurchaseOrder::select('id','order_code')->where('status',1)->where('vendor_id',$request->vendor_id)->where('business_id',$businessId)
-            ->orderBy('purchase_orders.id', 'desc');
+            $query = PurchaseOrder::select('id', 'order_code')->where('status', 1)->where('vendor_id', $request->vendor_id)->where('business_id', $businessId)
+                ->orderBy('purchase_orders.id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->get();
-            return response()->json($data,200);
-        }catch(QueryException $e){
+            return response()->json($data, 200);
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+    function savePO($id)
+    {
+        $data = PurchaseOrder::with([
+            'items.product' => function ($query) {
+                $query->select('id', 'title'); // Select product name and id
+            }
+        ])
+            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id') // Join with the vendors table
+            ->select('purchase_orders.*', 'vendors.name as vendor_name', 'vendors.email as vendor_email', 'vendors.phone as vendor_phone','vendors.address as vendor_address') // Select fields including vendor name
+            ->where('purchase_orders.id', $id) // Filter by the specific purchase order ID
+            ->firstOrFail();
+
+        $pdf = PDF::loadView('orders.purchase-order', compact('data'));
+
+        $fileName = 'purchase-order-' . $data->order_code . '-' . now() . '.pdf';
+        $directory = public_path('storage/orders');
+        $filePath = $directory . DIRECTORY_SEPARATOR . $fileName;
+
+        if (!file_exists($directory)) {
+            mkdir($directory, 0777, true);
+        }
+
+        // Save the PDF file
+        $pdf->save($filePath);
+        return $filePath;
     }
 }
