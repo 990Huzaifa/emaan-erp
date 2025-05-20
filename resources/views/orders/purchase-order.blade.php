@@ -205,8 +205,6 @@
             </thead>
             <tbody>
                 @foreach ($data->items as $item)
-                    
-                @endforeach
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $item['product']['title'] }}</td>
@@ -217,6 +215,7 @@
                         <td class="text-right">{{number_format($item->discount)}} @if($item->discount_in_percentage == 1)% @else Rs @endif</td>
                     <td class="text-end">{{ number_format($item->total) }}</td>
                 </tr>
+                @endforeach
             </tbody>
         </table>
         

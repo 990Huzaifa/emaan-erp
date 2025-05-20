@@ -192,9 +192,9 @@ class PurchaseOrderController extends Controller
             ]);
 
             // save pdf
-
             $path = 'purchase-order/' . $this->savePO($data->id);
             
+
             $data->update([
                 'pdf' => url($path)
             ]);
@@ -514,6 +514,6 @@ class PurchaseOrderController extends Controller
 
         // Save the PDF file
         $pdf->save($filePath);
-        return $filePath;
+        return $data;
     }
 }
