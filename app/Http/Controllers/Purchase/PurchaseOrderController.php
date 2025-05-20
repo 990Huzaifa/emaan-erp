@@ -514,6 +514,6 @@ class PurchaseOrderController extends Controller
 
         // Save the PDF file
         $pdf->save($filePath);
-        return $data;
+        return $filePath;
     }
 }
