@@ -192,11 +192,11 @@ class PurchaseOrderController extends Controller
             ]);
 
             // save pdf
-            $path = 'purchase-order/' . $this->savePO($data->id);
+            $path = $this->savePO($data->id);
             
 
             $data->update([
-                'pdf' => url($path)
+                'pdf' => public_path($path)
             ]);
             DB::commit();
             return response()->json($data);
