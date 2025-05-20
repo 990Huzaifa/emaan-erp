@@ -11,8 +11,8 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->phoneNumberId = config('whatsapp.phone_number_id');
-        $this->accessToken = config('whatsapp.access_token');
+        $this->phoneNumberId = config('whatsapp.phone_number_id','732336233285690');
+        $this->accessToken = config('whatsapp.access_token','EAAR1Rq25RVcBOxqBvzDEXF844jUZC5ATC0QTDJnJWpbnb1SE9RZBZAImynjp0fl0BAafRgOuGYsm7CJsYiljYSsDD5CpjwLfgrcf4Aph3xzOEK6ojPu7R3t7qkFS9sduPMuG1ZAXsBE0hCZCm6Fn535G0KxR6aj7PubQ2m4AXYdbcmtdHoiBstMmfZCnMUjuoYzwZDZD');
     }
 
     public function sendTemplateMessage($to, $templateName, array $bodyParams = [], $mediaType = null, $mediaUrl = null, $filename = null, $language = 'en_US')
