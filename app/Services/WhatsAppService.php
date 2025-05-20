@@ -21,45 +21,41 @@ class WhatsAppService
 
         $components = [];
 
-        // Add media header if applicable
+        // Header with media (e.g., document)
         if ($mediaType && $mediaUrl) {
-            $header = [
-                'type' => 'header',
-                'parameters' => [
-                    [
-                        'type' => $mediaType,
-                        $mediaType => [
-                            'link' => $mediaUrl
-                        ]
-                    ]
+            $headerParam = [
+                'type' => $mediaType,
+                $mediaType => [
+                    'link' => $mediaUrl
                 ]
             ];
 
-            // Add filename for document
             if ($mediaType === 'document' && $filename) {
-                $header['parameters'][0][$mediaType]['filename'] = $filename;
+                $headerParam[$mediaType]['filename'] = $filename;
             }
 
-            $components[] = $header;
+            $components[] = [
+                'type' => 'header',
+                'parameters' => [$headerParam]
+            ];
         }
 
-        // Add body text parameters
+        // Body text parameters
         if (!empty($bodyParams)) {
             $bodyComponent = [
                 'type' => 'body',
-                'parameters' => []
+                'parameters' => array_map(function ($text) {
+                    return [
+                        'type' => 'text',
+                        'text' => $text
+                    ];
+                }, $bodyParams)
             ];
-
-            foreach ($bodyParams as $param) {
-                $bodyComponent['parameters'][] = [
-                    'type' => 'text',
-                    'text' => $param
-                ];
-            }
 
             $components[] = $bodyComponent;
         }
 
+        // Final payload
         $payload = [
             'messaging_product' => 'whatsapp',
             'to' => $to,
@@ -71,9 +67,11 @@ class WhatsAppService
             ]
         ];
 
+        // Send the request using Laravel's HTTP client
         return Http::withToken($this->accessToken)
             ->post($url, $payload)
             ->json();
     }
+
 
 }
