@@ -32,7 +32,7 @@ return [
     ],
     'whatsapp' => [
         'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID','732336233285690'),
-        'access_token' => env('WHATSAPP_ACCESS_TOKEN','EAAR1Rq25RVcBOxT3HAkUXcDsafKg61AxiAgsoGT2U2PYmRdvxlD7813L3lPOSgzhbWyrTZBk56wzDRlLmZC8kVTnpNUUowGiypRG8ZCpA6TVPrzow0H569MwmV9VinKocz3DspFktLIM4FXKmdJBdtnaOkNwdA8XMOHoJBWgzMbndlh6LnZCirCcxs8yLC8PGgZDZD'),
+        'access_token' => env('WHATSAPP_ACCESS_TOKEN','EAAR1Rq25RVcBOxqBvzDEXF844jUZC5ATC0QTDJnJWpbnb1SE9RZBZAImynjp0fl0BAafRgOuGYsm7CJsYiljYSsDD5CpjwLfgrcf4Aph3xzOEK6ojPu7R3t7qkFS9sduPMuG1ZAXsBE0hCZCm6Fn535G0KxR6aj7PubQ2m4AXYdbcmtdHoiBstMmfZCnMUjuoYzwZDZD'),
     ],
 
 ];
