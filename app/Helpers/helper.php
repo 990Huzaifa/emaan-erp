@@ -464,3 +464,65 @@ function convertNumberToWords($number)
         $result = translate($number, $single_digit, $double_digit, $below_hundred);
         return trim($result);
     }
+
+
+function calculateDebitBalance($acc_id, $debit_amount): float
+{
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    $currentBalance = $lastTransaction ? $lastTransaction->current_balance : 
+                        (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+
+    // Determine the nature of the account using the helper
+    $majorType = getAccountMajorType($acc_id); 
+
+    // Rule: ASSET/EXPENSE have a Debit balance, so Debit increases the balance.
+    // Rule: LIABILITY/EQUITY/REVENUE have a Credit balance, so Debit decreases the balance.
+    
+    if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
+        return $currentBalance + $debit_amount; // Debit ADD
+    } else { 
+        return $currentBalance - $debit_amount; // Debit SUBTRACT
+    }
+}
+
+function calculateCreditBalance($acc_id, $credit_amount): float
+{
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    $currentBalance = $lastTransaction ? $lastTransaction->current_balance : 
+                        (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+
+    // Determine the nature of the account using the helper
+    $majorType = getAccountMajorType($acc_id); 
+
+    // Rule: LIABILITY/EQUITY/REVENUE have a Credit balance, so Credit increases the balance.
+    // Rule: ASSET/EXPENSE have a Debit balance, so Credit decreases the balance.
+
+    if (in_array($majorType, ['LIABILITY', 'EQUITY', 'REVENUE'])) {
+        return $currentBalance + $credit_amount; // Credit ADD
+    } else {
+        return $currentBalance - $credit_amount; // Credit SUBTRACT
+    }
+}
+
+function getAccountMajorType($acc_id): string
+{
+    // Fetch the account entry
+    $account = ChartOfAccount::where('id', $acc_id)->first(); 
+
+    if (!$account) {
+        // Handle error: account not found
+        return 'Unknown'; 
+    }
+
+    // Use the level1 code to determine the major type
+    $majorCode = $account->level1;
+
+    switch ($majorCode) {
+        case '1': return 'ASSET';
+        case '2': return 'LIABILITY';
+        case '3': return 'EQUITY';
+        case '4': return 'EXPENSE';
+        case '5': return 'REVENUE';
+        default: return 'UNKNOWN';
+    }
+}

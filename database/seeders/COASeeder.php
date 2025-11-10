@@ -125,6 +125,16 @@ class COASeeder extends Seeder
                 'level5' => '0',
             ],
             [
+                'code' => '2-2',
+                'parent_code' => '2',
+                'name' => 'TEMPORARY LIABILITY',
+                'level1' => '2',
+                'level2' => '2',
+                'level3' => '0',
+                'level4' => '0',
+                'level5' => '0',
+            ],
+            [
                 'code' => '2-1-1',
                 'parent_code' => '2-1',
                 'name' => 'VENDORS',
