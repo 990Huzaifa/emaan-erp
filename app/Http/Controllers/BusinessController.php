@@ -154,7 +154,7 @@ class BusinessController extends Controller
             ]); 
             // validate coa
             $cash_acc = ChartOfAccount::Where('name','CASH')->first();
-            if(empty($acc)) throw new Exception('Cash COA not found', 404);
+            if(empty($cash_acc)) throw new Exception('Cash COA not found', 404);
             
             $equity_acc = ChartOfAccount::Where('name','EQUITY')->first();
             if(empty($equity_acc)) throw new Exception('Equity COA not found', 404);
