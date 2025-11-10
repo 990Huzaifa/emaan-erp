@@ -294,10 +294,10 @@ class PurchaseReturnVoucherController extends Controller
             $data->update([
                 'approved_by' => $user->id,
                 'approved_date' => Carbon::now(),
-                'status'=> $request->status
+                'status'=> 1
                 ]);
             
-                if($request->status == 1){
+
                     // transaction
                     $vendor = Vendor::find($data->vendor_id);
                     $vendor_acc = $vendor->acc_id;
@@ -336,7 +336,7 @@ class PurchaseReturnVoucherController extends Controller
                         'user_id' => $user->id,
                         'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->voucher_code,   
                     ]);
-                }
+
             
             
             DB::commit();
