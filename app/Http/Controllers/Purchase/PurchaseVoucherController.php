@@ -296,12 +296,12 @@ class PurchaseVoucherController extends Controller
                     $total_billed = $data->voucher_amount;
 
                     // Calculate Cash/Bank Account Current Balance (Post-Credit)
-                    $b_cb = calculateBalance($data->acc_id, $total_billed, false); // Cash account is credited (reduced)
+                    $b_cb = calculateCreditBalance($data->acc_id, $total_billed); // Cash account is credited (reduced)
 
                     // Calculate Vendor Account Current Balance (Post-Debit)
-                    $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
+                    $v_cb = calculateDebitBalance($vendor_acc, $total_billed); // Vendor account is debited
                     
-                    // Credit amount to vendor's account
+                    // Debit amount to vendor's account (minus)
                     Transaction::create([
                         'business_id' => $data->business_id,
                         'acc_id' => $vendor_acc,
@@ -312,7 +312,7 @@ class PurchaseVoucherController extends Controller
                         'current_balance' => $v_cb // Updated balance for vendor account
                     ]);
 
-                    // Debit amount from business's account
+                    // Credit amount from business's account (minus)
                     Transaction::create([
                         'business_id' => $data->business_id,
                         'acc_id' => $data->acc_id,

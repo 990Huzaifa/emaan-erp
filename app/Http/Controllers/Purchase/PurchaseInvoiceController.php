@@ -219,7 +219,7 @@ class PurchaseInvoiceController extends Controller
             $total_amount_invoce  = $data->total;
             $grir_acc_id = ChartOfAccount::where('code','2-2')->value('id');
             $grir_cb = calculateDebitBalance($grir_acc_id, $total_amount_invoce);
-            // Debit amount to TL's account
+            // Debit amount to TL's account (minus)
             $link = $data->id;
             Transaction::create([
                 'business_id' => $businessId,
@@ -232,7 +232,7 @@ class PurchaseInvoiceController extends Controller
                 'current_balance' => $grir_cb
             ]);
 
-            // Credit amount to vendor account
+            // Credit amount to vendor account (sum)
 
             $v_cb = calculateCreditBalance($data->vendor_id, $total_amount_invoce);
 

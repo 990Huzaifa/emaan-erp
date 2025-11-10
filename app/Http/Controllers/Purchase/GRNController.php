@@ -434,7 +434,7 @@ class GRNController extends Controller
                     // hit transaction to product account
                     $pro_cb = calculateDebitBalance($product->acc_id, $item_total_cost_grn);
 
-                    // --- 1. Inventory Accounts (Debit Entry) ---
+                    // --- 1. Inventory Accounts (Debit Entry) --- (sum)
                     Transaction::create([
                         'business_id' => $businessId,
                         'acc_id' => $product->acc_id,
@@ -481,7 +481,7 @@ class GRNController extends Controller
                 // entry is credit but amount will be debited(sum)
                 $grir_acc_id = ChartOfAccount::where('code','2-2')->value('id');
                 $grir_cb = calculateCreditBalance($grir_acc_id, $total_amount_grn);
-                // Credit amount to Vendor's account
+                // Credit amount to TL's account (sum)
                 $link = $data->purhcase_order_id;
                 Transaction::create([
                     'business_id' => $businessId,
