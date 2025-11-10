@@ -233,12 +233,12 @@ class PurchaseInvoiceController extends Controller
             ]);
 
             // Credit amount to vendor account (sum)
-
-            $v_cb = calculateCreditBalance($data->vendor_id, $total_amount_invoce);
+            $vendor_acc_id = Vendor::where('id', $data->vendor_id)->value('acc_id');
+            $v_cb = calculateCreditBalance($vendor_acc_id, $total_amount_invoce);
 
             Transaction::create([
                 'business_id' => $businessId,
-                'acc_id' => $data->vendor_id,
+                'acc_id' => $data->vendor_acc_id,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'Credit Vendor for book liability on Invoice: ' . $data->id,
                 'link' => $link,
