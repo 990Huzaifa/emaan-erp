@@ -387,10 +387,6 @@ class PurchaseInvoiceController extends Controller
                 ]);
             }
 
-            $purchaseInvoice->update([
-                'total'=>$invoiceTotal
-            ]);
-
             DB::commit();
             return true;
         }catch(QueryException $e){
