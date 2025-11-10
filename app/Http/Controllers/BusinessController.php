@@ -171,26 +171,30 @@ class BusinessController extends Controller
             $COA3 = createCOA('SALES REVENUE',$business_revenue_acc->code);
 
             BusinessHasAccount::insert([
-                'business_id' => $business->id,
-                'chart_of_account_id' => $COA->id,
-            ],[
-                'business_id' => $business->id,
-                'chart_of_account_id' => $COA2->id,
-            ],[
-                'business_id' => $business->id,
-                'chart_of_account_id' => $COA3->id,
+                [
+                    'business_id' => $business->id,
+                    'chart_of_account_id' => $COA->id,
+                ],[
+                    'business_id' => $business->id,
+                    'chart_of_account_id' => $COA2->id,
+                ],[
+                    'business_id' => $business->id,
+                    'chart_of_account_id' => $COA3->id,
+                ]
             ]);
             
 
             OpeningBalance::insert([
-                'acc_id' => $COA->id,
-                'amount' => $request->opening_balance ?? 0,
-            ],[
-                'acc_id' => $COA2->id,
-                'amount' => 0,
-            ],[
-                'acc_id' => $COA3->id,
-                'amount' => 0,
+                [
+                    'acc_id' => $COA->id,
+                    'amount' => $request->opening_balance ?? 0,
+                ],[
+                    'acc_id' => $COA2->id,
+                    'amount' => 0,
+                ],[
+                    'acc_id' => $COA3->id,
+                    'amount' => 0,
+                ]
             ]);
             // creating user of business
             do {
