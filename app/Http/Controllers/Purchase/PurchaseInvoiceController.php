@@ -238,7 +238,7 @@ class PurchaseInvoiceController extends Controller
 
             Transaction::create([
                 'business_id' => $businessId,
-                'acc_id' => $data->vendor_acc_id,
+                'acc_id' => $vendor_acc_id,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'Credit Vendor for book liability on Invoice: ' . $data->id,
                 'link' => $link,
