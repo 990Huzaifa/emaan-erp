@@ -426,7 +426,7 @@ class GRNController extends Controller
                     // $product_acc_ids[] = $product->acc_id;
                     // hit transaction to product account
 
-                    $pro_cb = calculateDebitBalance($product->acc_id, $$item->purchase_unit_price * $item->quantity);
+                    $pro_cb = calculateDebitBalance($product->acc_id, $item->billed);
 
                     // --- 1. Inventory Accounts (Debit Entry) ---
                     Transaction::create([
@@ -435,7 +435,7 @@ class GRNController extends Controller
                         'transaction_type' => 0,
                         'description' => 'Debit Inventory Stock on GRN against PO: ' . $data->purchase_order->order_code,
                         'credit' => 0.00, 
-                        'debit' => $total_amount_grn,
+                        'debit' => $item->billed,
                         'current_balance' => $pro_cb
                     ]);
 
