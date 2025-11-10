@@ -408,6 +408,8 @@ class GRNController extends Controller
                 }
             }
             $data = GoodsReceiveNote::find($id);
+            $po_total_items_cost = $data->purchase_order->total; // Assuming PO has total amount of items
+            $delivery_cost = $data->purchase_order->delivery_cost ?? 0;
             DB::beginTransaction();
             if (empty($data)) throw new Exception('GRN not found', 400);
             if($data->status != 0) throw new Exception('status can not be changed', 400);
@@ -418,15 +420,19 @@ class GRNController extends Controller
             // lot entry
             $vendor = Vendor::find($data->purchase_order->vendor_id);
             $total_amount_grn = 0;
-            $product_acc_ids = [];
             if($request->status == 1){
                 foreach ($data->items as $item) {
                     $product = Product::find($item->product_id);
-                    // append acc id of each product by loop
-                    // $product_acc_ids[] = $product->acc_id;
-                    // hit transaction to product account
 
-                    $pro_cb = calculateDebitBalance($product->acc_id, $item->billed);
+                    // Calculate proportionate share of delivery cost for this item
+                    $item_cost_percentage = ($item->billed / $po_total_items_cost);
+                    $item_delivery_cost = round($delivery_cost * $item_cost_percentage, 2);
+                    
+                    // Total cost for inventory capitalization (Original Cost + Delivery Share)
+                    $item_total_cost_grn = $item->billed + $item_delivery_cost;
+
+                    // hit transaction to product account
+                    $pro_cb = calculateDebitBalance($product->acc_id, $item_total_cost_grn);
 
                     // --- 1. Inventory Accounts (Debit Entry) ---
                     Transaction::create([
@@ -435,13 +441,12 @@ class GRNController extends Controller
                         'transaction_type' => 0,
                         'description' => 'Debit Inventory Stock on GRN against PO: ' . $data->purchase_order->order_code,
                         'credit' => 0.00, 
-                        'debit' => $item->billed,
+                        'debit' => $item_total_cost_grn,
                         'current_balance' => $pro_cb
                     ]);
 
 
-                    $total_amount_grn += $item->billed;
-                    $total_billed = $item->billed;
+                    $total_amount_grn += $item_total_cost_grn;
 
                     // hit inventory
                     do {
