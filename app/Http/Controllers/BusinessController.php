@@ -153,21 +153,32 @@ class BusinessController extends Controller
                 'logo' => $logo,
             ]); 
             // validate coa
-            $acc = ChartOfAccount::Where('name','CASH')->first();
+            $cash_acc = ChartOfAccount::Where('name','CASH')->first();
+            $business_expense_acc = ChartOfAccount::Where('name','BUSINESS EXPENSE')->first();
             if(empty($acc)) throw new Exception('Cash COA not found', 404);
+
             $equity_acc = ChartOfAccount::Where('name','EQUITY')->first();
             if(empty($equity_acc)) throw new Exception('Cash COA not found', 404);
 
             // creating COA
-            $COA = createCOA('CASH IN HAND',$acc->code);
+            $COA = createCOA('CASH IN HAND',$cash_acc->code);
+            $COA2 = createCOA('COGS',$business_expense_acc->acc);
 
-            BusinessHasAccount::create([
+            BusinessHasAccount::insert([
                 'business_id' => $business->id,
                 'chart_of_account_id' => $COA->id,
+            ],[
+                'business_id' => $business->id,
+                'chart_of_account_id' => $COA2->id,
             ]);
-            OpeningBalance::create([
+            
+
+            OpeningBalance::insert([
                 'acc_id' => $COA->id,
                 'amount' => $request->opening_balance ?? 0,
+            ],[
+                'acc_id' => $COA2->id,
+                'amount' => 0,
             ]);
             // creating user of business
             do {
