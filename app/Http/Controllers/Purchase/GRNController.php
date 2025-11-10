@@ -480,7 +480,7 @@ class GRNController extends Controller
                 }
                 // entry is credit but amount will be debited(sum)
                 $grir_acc_id = ChartOfAccount::where('code','2-2')->value('id');
-                $grir_cb = calculateCreditBalance($grir_acc_id, $total_amount_grn);
+                $grir_cb = calculateCreditBalance($grir_acc_id, $data->total);
                 // Credit amount to TL's account (sum)
                 $link = $data->purhcase_order_id;
                 Transaction::create([
@@ -489,7 +489,7 @@ class GRNController extends Controller
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'Credit GR/IR Clearing for temporary liability on GRN: ' . $data->purchase_order->order_code,
                     'link' => $link,
-                    'credit' => $total_amount_grn, // Money credited to business account
+                    'credit' => $data->total, // Money credited to business account
                     'debit' => 0.00, // No money debited from business account
                     'current_balance' => $grir_cb
                 ]);
