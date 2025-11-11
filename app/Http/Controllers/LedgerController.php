@@ -30,17 +30,17 @@ class LedgerController extends Controller
             
 
             $results = DB::table('opening_balances as ob')
-    ->leftJoin('transactions as t', 'ob.acc_id', '=', 't.acc_id')
-    ->leftJoin('chart_of_accounts as coa', 'ob.acc_id', '=', 'coa.id')
-    ->select('ob.acc_id',
-            'coa.name as account_name',
-            'ob.created_at as opening_balance_date',
-            'ob.amount as opening_balance',
-            DB::raw('COALESCE(SUM(t.debit), 0) as total_debits'),
-            DB::raw('COALESCE(SUM(t.credit), 0) as total_credits'),
-            DB::raw('(ob.amount + COALESCE(SUM(t.debit), 0) - COALESCE(SUM(t.credit), 0)) as current_balance'))
-    ->groupBy('ob.acc_id', 'ob.created_at','ob.amount', 'coa.name')  // Added `ob.created_at` to GROUP BY
-    ->paginate($perPage);
+                ->leftJoin('transactions as t', 'ob.acc_id', '=', 't.acc_id')
+                ->leftJoin('chart_of_accounts as coa', 'ob.acc_id', '=', 'coa.id')
+                ->select('ob.acc_id',
+                        'coa.name as account_name',
+                        'ob.created_at as opening_balance_date',
+                        'ob.amount as opening_balance',
+                        DB::raw('COALESCE(SUM(t.debit), 0) as total_debits'),
+                        DB::raw('COALESCE(SUM(t.credit), 0) as total_credits'),
+                        DB::raw('(ob.amount + COALESCE(SUM(t.debit), 0) - COALESCE(SUM(t.credit), 0)) as current_balance'))
+                ->groupBy('ob.acc_id', 'ob.created_at','ob.amount', 'coa.name')  // Added `ob.created_at` to GROUP BY
+                ->paginate($perPage);
 
             return response()->json($results);
         }catch(QueryException $e){
@@ -150,4 +150,5 @@ class LedgerController extends Controller
         }
         
     }
+
 }

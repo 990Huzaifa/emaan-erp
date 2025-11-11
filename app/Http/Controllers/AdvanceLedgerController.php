@@ -92,6 +92,59 @@ class AdvanceLedgerController extends Controller
                 }
                 
             }
+            else if($acc_type == 'VENDORS'){
+                $vendor_id = Vendor::where('acc_id', $acc_id)->value('id');
+                $query = Transaction::select(
+                    'transactions.id',
+                    'transactions.acc_id',
+                    'transactions.debit',
+                    'transactions.credit',
+                    'transactions.current_balance',
+                    'transactions.description',
+                    'transactions.created_at',
+                    'transactions.updated_at',
+                    'transactions.link as purchase_order_id',
+                )->where('acc_id', $acc_id);
+
+                if (!empty($start_date)) {
+                    $query->where('created_at', '>=', $start_date);
+                }
+
+                if (!empty($end_date)) {
+                    $query->where('created_at', '<=', $end_date);
+                }
+
+                // Paginate the results
+                $results = $query->get();
+                $totalCredit = $results->sum('credit');
+                $remainingCredit = $totalCredit;
+                
+                foreach ($results as $transaction) {
+                    if($transaction->debit > 0){
+                        if ($remainingCredit > 0 ) {
+                            // Calculate how much of this debit is covered by remaining credit
+                            $coveredAmount = min($transaction->debit, $remainingCredit);
+                            
+                            // Calculate percentage
+                            $transaction->progress_percentage = ($coveredAmount / $transaction->debit) * 100;
+                            
+                            // Reduce remaining credit
+                            $remainingCredit -= $coveredAmount;
+                        }else{
+                            $transaction->progress_percentage =0;
+                        }
+                    } else {
+                        // If no remaining credit, progress is 0%
+                        $transaction->progress_percentage = null;
+                    }
+                }
+                // Sorting based on query param if provided
+                if ($sortOrder === 'credit_first') {
+                    $results = $results->sortByDesc('credit')->values();
+                } elseif ($sortOrder === 'debit_first') {
+                    $results = $results->sortByDesc('debit')->values();
+                }
+            }
             return response()->json($results, 200);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -141,4 +194,11 @@ class AdvanceLedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+
+
+    
+
+
+    // for vendors advance ledger
 }
