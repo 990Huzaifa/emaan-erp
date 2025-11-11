@@ -537,3 +537,13 @@ function getCOGS($businessId){
 
 
 }
+
+
+function getRevenueAccount($businessId){
+    $businessAccs = BusinessHasAccount::where('business_id', $businessId)->pluck('chart_of_account_id')->toArray();
+
+    $acc = ChartOfAccount::where('level1' , '5')
+    ->where('name','SALES REVENUE')
+    ->whereIn('id', $businessAccs)->first();
+    return  $acc->id;
+}

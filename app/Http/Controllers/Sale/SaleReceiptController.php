@@ -213,6 +213,44 @@ class SaleReceiptController extends Controller
             $data->update([
                 'status' => $request->status
             ]);
+
+            $total_amount_receipt  = $data->total;
+            $cus_acc_id = Customer::find($data->customer_id)->value('acc_id');
+            $rev_acc_id = getRevenueAccount($data->business_id);
+
+            // here we hit th tranactions
+
+            $c_cb = calculateDebitBalance($cus_acc_id, $total_amount_receipt);
+
+            Transaction::create([
+                'business_id' => $businessId,
+                'acc_id' => $cus_acc_id,
+                'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Book  amount to the customer account Sale Receipt: ' . $data->id,
+                'link' => $data->id,
+                'credit' => 0.00, // Money credited to business account
+                'debit' => $total_amount_receipt, // No money debited from business account
+                'current_balance' => $c_cb
+            ]);
+
+            $rev_cb = calculateCreditBalance($rev_acc_id, $total_amount_receipt);
+
+            Transaction::create([
+                'business_id' => $businessId,
+                'acc_id' => $rev_acc_id,
+                'transaction_type' => 3, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Credit Vendor for book liability on Invoice: ' . $data->id,
+                'link' => $data->id,
+                'credit' => $total_amount_receipt, // Money credited to business account
+                'debit' => 0.00, // No money debited from business account
+                'current_balance' => $rev_cb
+            ]);
+
+
+
+
+
+
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'update sale receipt Status. Code: '. $data->receipt_no,   

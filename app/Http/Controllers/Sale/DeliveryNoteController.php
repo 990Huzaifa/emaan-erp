@@ -486,7 +486,7 @@ class DeliveryNoteController extends Controller
                 Transaction::create([
                     'business_id' => $businessId,
                     'acc_id' => $cogs_acc_id,
-                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'credit amount to COGS account by DN with the SO is '.$data->sale_order->order_code,
                     'link' => $link,
                     'debit' => $total_amount_dn, // FIXED
