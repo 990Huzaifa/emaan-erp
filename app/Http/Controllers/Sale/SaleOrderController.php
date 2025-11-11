@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Sale;
 
+use App\Models\SaleReceipt;
+use App\Models\SaleReceiptItem;
 use Exception;
 use App\Models\Log;
 use App\Models\SaleOrder;
@@ -410,6 +412,22 @@ class SaleOrderController extends Controller
             // Execute the query with pagination
             $data = $query->get();
             return response()->json($data,200);
+        }catch(QueryException $e){
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function getLastReceiptItem($customerId): JsonResponse
+    {
+        try{
+            $SR = SaleReceipt::where('customer_id', $customerId)->orderBy('created_at', 'desc')->first();
+            if (empty($SR)) throw new Exception("No sale receipt found",400);
+            
+            $SRI = SaleReceiptItem::where('sale_receipt_id', $SR->id)->get();
+            
+            return response()->json($SRI,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){

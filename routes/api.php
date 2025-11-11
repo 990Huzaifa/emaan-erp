@@ -237,6 +237,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('sale-order',SaleOrderController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-order',[SaleOrderController::class,'updateStatus']);
     Route::get('list/sale-order',[SaleOrderController::class,'list']);
+    Route::get('last-receipt-item/{customerId}',[SaleOrderController::class,'getLastReceiptItem']);
     
     Route::apiResource('delivery-note',DeliveryNoteController::class)->only('index','store','show','update');
     Route::put('status/{id}/delivery-note',[DeliveryNoteController::class,'updateStatus']);
