@@ -1,6 +1,7 @@
 <?php
 
 use App\Events\NotificationSent;
+use App\Models\BusinessHasAccount;
 use App\Models\OpeningBalance;
 use App\Models\SaleVoucher;
 use App\Models\Transaction;
@@ -525,4 +526,14 @@ function getAccountMajorType($acc_id): string
         case '5': return 'REVENUE';
         default: return 'UNKNOWN';
     }
+}
+
+
+function getCOGS($businessId){
+    $businessAccs = BusinessHasAccount::where('business_id', $businessId)->pluck('acc_id')->toArray();
+
+    $acc = ChartOfAccount::where('name' , 'COGS')->whereIn('id', $businessAccs)->first();
+    return  $acc->id;
+
+
 }
