@@ -530,7 +530,7 @@ function getAccountMajorType($acc_id): string
 
 
 function getCOGS($businessId){
-    $businessAccs = BusinessHasAccount::where('business_id', $businessId)->pluck('acc_id')->toArray();
+    $businessAccs = BusinessHasAccount::where('business_id', $businessId)->pluck('chart_of_account_id')->toArray();
 
     $acc = ChartOfAccount::where('name' , 'COGS')->whereIn('id', $businessAccs)->first();
     return  $acc->id;
