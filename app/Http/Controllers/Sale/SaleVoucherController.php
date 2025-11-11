@@ -232,8 +232,8 @@ class SaleVoucherController extends Controller
                 // for products
                 $total_billed = $data->voucher_amount;
 
-                $c_cb = calculateBalance($customer_acc, $total_billed, false); // Credit customer's account
-                $b_cb = calculateBalance($data->acc_id, $total_billed, true);  // Debit business's account
+                $c_cb = calculateCreditBalance($customer_acc, $total_billed); // Credit customer's account
+                $b_cb = calculateDebitBalance($data->acc_id, $total_billed);  // Debit business's account
                 
                 // Credit amount to customer's account
                 Transaction::create([
