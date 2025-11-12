@@ -189,7 +189,7 @@ class SaleReceiptController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        
     }
 
     public function updateStatus(Request $request, string $id): JsonResponse
