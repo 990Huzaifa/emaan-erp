@@ -202,7 +202,7 @@ class BusinessController extends Controller
             } while (User::where('u_code', $u_code)->exists());  
            
             $user = User::create([
-                'name'=>$request->name,
+                'name'=> 'Admin',
                 'u_code'=>$u_code,
                 'city_id'=>$request->city,
                 'email' => $request->email,
