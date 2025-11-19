@@ -80,10 +80,13 @@ class PermissionsTableSeeder extends Seeder
             'view inventory detail',
             'list transaction',
             'view transaction',
+
             'create purchase voucher',
             'view purchase voucher',
             'list purchase voucher',
             'edit purchase voucher',
+            'approve purchase voucher',
+
             'list ledger',
             'list advance ledger',
             'list measurement unit',
