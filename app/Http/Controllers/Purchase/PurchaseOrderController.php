@@ -193,12 +193,12 @@ class PurchaseOrderController extends Controller
             ]);
 
             // save pdf
-            $path = $this->savePO($data->id);
+            // $path = $this->savePO($data->id);
             
 
-            $data->update([
-                'pdf' => $path
-            ]);
+            // $data->update([
+            //     'pdf' => $path
+            // ]);
             DB::commit();
             return response()->json($data);
         } catch (QueryException $e) {

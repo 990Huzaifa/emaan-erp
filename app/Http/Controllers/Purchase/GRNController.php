@@ -423,30 +423,10 @@ class GRNController extends Controller
             if($request->status == 1){
                 foreach ($data->items as $item) {
                     $product = Product::find($item->product_id);
-
-                    // Calculate proportionate share of delivery cost for this item
-                    $item_cost_percentage = ($item->billed / $po_total_items_cost);
-                    $item_delivery_cost = round($delivery_cost * $item_cost_percentage, 2);
                     
-                    // Total cost for inventory capitalization (Original Cost + Delivery Share)
-                    $item_total_cost_grn = $item->billed + $item_delivery_cost;
-
-                    // hit transaction to product account
-                    $pro_cb = calculateDebitBalance($product->acc_id, $item_total_cost_grn);
-
-                    // --- 1. Inventory Accounts (Debit Entry) --- (sum)
-                    Transaction::create([
-                        'business_id' => $businessId,
-                        'acc_id' => $product->acc_id,
-                        'transaction_type' => 0,
-                        'description' => 'Debit Inventory Stock on GRN against PO: ' . $data->purchase_order->order_code,
-                        'credit' => 0.00, 
-                        'debit' => $item_total_cost_grn,
-                        'current_balance' => $pro_cb
-                    ]);
-
-
-                    $total_amount_grn += $item_total_cost_grn;
+                    // hit transaction
+                    $total_amount_grn += $item->billed;
+                    $total_billed = $item->billed;
 
                     // hit inventory
                     do {
@@ -479,19 +459,18 @@ class GRNController extends Controller
                     
                 }
                 // entry is credit but amount will be debited(sum)
-                $grir_acc_id = ChartOfAccount::where('code','2-2')->value('id');
-                $grir_cb = calculateCreditBalance($grir_acc_id, $data->total);
-                // Credit amount to TL's account (sum)
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+                // Credit amount to Vendor's account
                 $link = $data->purhcase_order_id;
                 Transaction::create([
                     'business_id' => $businessId,
-                    'acc_id' => $grir_acc_id,
+                    'acc_id' => $vendor->acc_id,
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Credit GR/IR Clearing for temporary liability on GRN: ' . $data->purchase_order->order_code,
+                    'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
                     'link' => $link,
-                    'credit' => $data->total, // Money credited to business account
+                    'credit' => $total_amount_grn, // Money credited to business account
                     'debit' => 0.00, // No money debited from business account
-                    'current_balance' => $grir_cb
+                    'current_balance' => $v_cb
                 ]);
 
 

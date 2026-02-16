@@ -449,49 +449,21 @@ class DeliveryNoteController extends Controller
                         ]);
                     }
 
-
-
-
-                    // hit each product transaction
-
-                    // credit the product (minus)
-                    $product = Product::find($item->product_id);
-                    $pro_cb = calculateCreditBalance($product->acc_id,$item->charged);
-                    $link =$data->sale_order_id;
-                    // Debit amount to customer's account
-                    Transaction::create([
-                        'business_id' => $businessId,
-                        'acc_id' => $product->acc_id,
-                        'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'debit amount to product account by DN with the SO is '.$data->sale_order->order_code,
-                        'link' => $link,
-                        'debit' => $item->charged, // FIXED
-                        'credit' => 0.00, // FIXED
-                        'current_balance' => $pro_cb
-                    ]);
-
-
-
-
-
-
-
                     $total_amount_dn += $item->charged;
                 }
                 
-                $cogs_acc_id = getCOGS($businessId);
-                $cogs_cb = calculateBalance($cogs_acc_id,$total_amount_dn,true);
+                $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
                 $link =$data->sale_order_id;
-                // Credit COGS account (sum)
+                // Debit amount to customer's account
                 Transaction::create([
                     'business_id' => $businessId,
-                    'acc_id' => $cogs_acc_id,
-                    'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'credit amount to COGS account by DN with the SO is '.$data->sale_order->order_code,
+                    'acc_id' => $customer->acc_id,
+                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'debit amount to customer account by DN with the SO is '.$data->sale_order->order_code,
                     'link' => $link,
                     'debit' => $total_amount_dn, // FIXED
                     'credit' => 0.00, // FIXED
-                    'current_balance' => $cogs_cb
+                    'current_balance' => $c_cb
                 ]);
 
                 // create sale receipt 
