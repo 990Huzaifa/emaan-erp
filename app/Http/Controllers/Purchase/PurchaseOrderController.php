@@ -521,7 +521,7 @@ class PurchaseOrderController extends Controller
         ];
         $newMessage = new WhatsAppService();
         $res = $newMessage->sendTemplateMessage($data->vendor_phone, 'purchase_invoice_1', $body, 'document', url('public/storage/orders/' . $fileName), $fileName);
-        return url('public/storage/orders/' . $fileName);;
+        return url('public/storage/orders/' . $fileName);
     }
 
 }

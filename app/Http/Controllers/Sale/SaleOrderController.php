@@ -434,4 +434,52 @@ class SaleOrderController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function print(string $id)
+    {
+        try {
+            $user = Auth::user();
+            // Check if the user has the required permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view sale receipt')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+            
+            $data = SaleOrder::with(['items.product' => function ($query) {
+                $query->select('id', 'title');
+            }])
+            ->join('businesses', 'sale_orders.business_id', '=', 'businesses.id')
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id') // Join with vendors
+            ->join('cities as customer_city', 'customers.city_id', '=', 'customer_city.id')
+            ->join('cities as business_city', 'businesses.city_id', '=', 'business_city.id')
+            ->select('sale_orders.*',
+            'customers.name as customer_name',
+            'customers.address as customer_address',
+            'customers.telephone as customer_telephone',
+            'businesses.name as business_name',
+            'businesses.logo as business_logo',
+            'businesses.address as business_address',
+            'businesses.phone as business_telephone',
+            'customer_city.name as customer_city_name',
+            'business_city.name as business_city_name'
+            ) // Select fields including vendor name
+            ->where('sale_orders.id', $id)->first();
+
+            $acc_id = Customer::where('id',$data->customer_id)->value('acc_id');
+            
+            $current_balance = Transaction::where('acc_id', $acc_id)
+            ->orderBy('id', 'desc')->value('current_balance');
+
+            if (!$data) throw new Exception('Sale Receipt not found', 404);
+            return view('invoice.sale-receipt', compact('data','current_balance'));
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }

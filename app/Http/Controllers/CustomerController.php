@@ -322,7 +322,7 @@ class CustomerController extends Controller
             $customer->update([
                 'name'=>$request->name,
                 'city_id'=>$request->city_id,
-                'cnic'=>$request->cnic,
+                'cnic'=>$request->cnic ?? null,
                 'email' => $request->email ?? null,
                 'telephone' => $request->telephone ?? null,
                 'mobile' => $request->mobile ?? null,

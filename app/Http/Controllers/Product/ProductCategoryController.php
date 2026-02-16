@@ -68,12 +68,9 @@ class ProductCategoryController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'name'=>'required|string',
-                    'description'=>'nullable|string',
 
             ],[
                 'name.required'=>'Name is Required',
-                'name.string'=>'Name is must be a string',
-                'description.string' => 'Description is must be a string',
             ]);
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
 
@@ -91,7 +88,6 @@ class ProductCategoryController extends Controller
                 'name' => $name,
                 'pc_code' => $pc_code,
                 'acc_id' => $COA->id,
-                'description' => $request->description ?? null,
             ]);
             $COA->update([
                 'ref_id' => $category->id,

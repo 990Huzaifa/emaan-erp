@@ -110,7 +110,6 @@ class ProductController extends Controller
             $validator = Validator::make(
                 $request->all(),[
                     'title'=>'required|string',
-                    'brand_name'=>'nullable|string',
                     'terms_of_payment'=>'nullable|string',
                     'description'=>'nullable|string',
                     'category_id'=>'required|string',
@@ -180,14 +179,11 @@ class ProductController extends Controller
             }
             $product = Product::create([
                 'title' => $title,
-                'brand_name' => $request->brand_name ?? null,
-                'terms_of_payment' => $request->terms_of_payment ?? null,
                 'p_code' => $p_code,
                 'sku' => $sku_no,
                 'measurement_unit_id' => $request->measurement_unit_id,
                 'acc_id' => $COA->id,
                 'image' => $image,
-                'description' => $request->description ?? null,
                 'category_id' => $request->category_id,
                 'sub_category_id' => $request->sub_category_id,
                 'purchase_price' => $request->purchase_price,
@@ -282,9 +278,6 @@ class ProductController extends Controller
             $validator = Validator::make(
                     $request->all(),[
                         'title'=>'required|string',
-                        'brand_name'=>'nullable|string',
-                        'terms_of_payment'=>'nullable|string',
-                        'description'=>'required|string',
                         'category_id'=>'required|string',
                         'sub_category_id'=>'required|string',
                         'purchase_price'=>'required|string',
@@ -354,13 +347,10 @@ class ProductController extends Controller
         
             $product->update([
                 'title' => $title,
-                'brand_name' => $request->brand_name ?? null,
-                'terms_of_payment' => $request->terms_of_payment ?? null,
                 'p_code' => $product->p_code,
                 'sku' => $product->sku,
                 'measurement_unit_id' => $request->measurement_unit_id,
                 'image' => $image,
-                'description' => $request->description,
                 'category_id' => $request->category_id,
                 'sub_category_id' => $request->sub_category_id,
                 'purchase_price' => $request->purchase_price,
