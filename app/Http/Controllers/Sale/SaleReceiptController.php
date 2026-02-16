@@ -303,8 +303,12 @@ class SaleReceiptController extends Controller
             $current_balance = Transaction::where('acc_id', $acc_id)
             ->orderBy('id', 'desc')->value('current_balance');
 
+            $previous_balance = Transaction::where('acc_id', $acc_id)
+            ->orderBy('id', 'desc')->skip(1)->value('current_balance') ?? 0.00;
+
             if (!$data) throw new Exception('Sale Receipt not found', 404);
-            return view('invoice.sale-receipt', compact('data','current_balance'));
+            // return view('invoice.sale-receipt', compact('data','current_balance'));
+            return response()->json(['data' => $data, 'current_balance' => $current_balance, 'previous_balance' => $previous_balance], 200);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {
