@@ -91,7 +91,7 @@ class SaleReceiptController extends Controller
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
 
             do {
-                $receipt_no = 'SR-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                $receipt_no = 'SI-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
             } while (SaleReceipt::where('receipt_no', $receipt_no)->exists());
 
             $DN = DeliveryNote::with('items')->where('status',1)->find($request->dn_id);
