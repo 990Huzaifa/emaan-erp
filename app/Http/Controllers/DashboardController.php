@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\DeliveryNote;
 use App\Models\GoodsReceiveNote;
 use App\Models\InventoryDetail;
+use App\Models\Product;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseQuotation;
@@ -354,12 +355,12 @@ class DashboardController extends Controller
 
             $trend_customers = $this->checkTrend($cm_customers,$lm_customers);
 
-            $total_inventory = InventoryDetail::distinct('product_id')->where('in_stock',1)->count();
-            $lm_inventory = InventoryDetail::whereMonth('created_at', $last_month_date->month)->where('in_stock',1)->whereYear('created_at', $last_month_date->year)->distinct('product_id')->count();
-            $cm_inventory = InventoryDetail::whereMonth('created_at', Carbon::now()->month)->where('in_stock',1)->whereYear('created_at', Carbon::now()->year)->distinct('product_id')->count();
-            $ipc_inventory = ($lm_inventory > 0) ? (($cm_inventory - $lm_inventory) / $lm_inventory) * 100 : 0;
+            $total_product = Product::where('is_active',1)->count();
+            $lm_product = Product::whereMonth('created_at', $last_month_date->month)->where('is_active',1)->whereYear('created_at', $last_month_date->year)->count();
+            $cm_product = Product::whereMonth('created_at', Carbon::now()->month)->where('is_active',1)->whereYear('created_at', Carbon::now()->year)->count();
+            $ipc_product = ($lm_product > 0) ? (($cm_product - $lm_product) / $lm_product) * 100 : 0;
 
-            $trend_inventory = $this->checkTrend($cm_inventory,$lm_inventory);
+            $trend_product = $this->checkTrend($cm_product,$lm_product);
 
             $total_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
 
@@ -385,9 +386,9 @@ class DashboardController extends Controller
 
                 ],
                 'Products' => [
-                    'total' => $total_inventory,
-                    'trend' => $trend_inventory,
-                    'ipc' => $ipc_inventory
+                    'total' => $total_product,
+                    'trend' => $trend_product,
+                    'ipc' => $ipc_product
                 ],
                 'Sales' => [
                     'total' => $total_sales,

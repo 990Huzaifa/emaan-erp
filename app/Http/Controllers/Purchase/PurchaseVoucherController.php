@@ -281,46 +281,43 @@ class PurchaseVoucherController extends Controller
                 'status'=> 1
                 ]);
             
+            // transaction
+            $vendor = Vendor::find($data->vendor_id);
+            $vendor_acc = $vendor->acc_id;
+            // for products
+            $total_billed = $data->voucher_amount;
 
-                    // transaction
-                    $vendor = Vendor::find($data->vendor_id);
-                    $vendor_acc = $vendor->acc_id;
-                    // for products
-                    $total_billed = $data->voucher_amount;
+            // Calculate Cash/Bank Account Current Balance (Post-Credit)
+            $b_cb = calculateCreditBalance($data->acc_id, $total_billed); // Cash account is credited (reduced)
 
-                    // Calculate Cash/Bank Account Current Balance (Post-Credit)
-                    $b_cb = calculateCreditBalance($data->acc_id, $total_billed); // Cash account is credited (reduced)
-
-                    // Calculate Vendor Account Current Balance (Post-Debit)
-                    $v_cb = calculateDebitBalance($vendor_acc, $total_billed); // Vendor account is debited
-                    
-                    // Debit amount to vendor's account (minus)
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $vendor_acc,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'Payment received by vendor: ' . $vendor->name,
-                        'debit' => $total_billed, // Money debited from vendor's account
-                        'credit' => 0.00, // No money credited to vendor's account
-                        'current_balance' => $v_cb // Updated balance for vendor account
-                    ]);
-
-                    // Credit amount from business's account (minus)
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $data->acc_id,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => 'Payment send to vendor: ' . $vendor->name,
-                        'debit' => 0.00, // No money debited to business account
-                        'credit' => $total_billed, // Money credited from business account
-                        'current_balance' => $b_cb
-                    ]);
-                    Log::create([
-                        'user_id' => $user->id,
-                        'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->code,   
-                    ]);
-
+            // Calculate Vendor Account Current Balance (Post-Debit)
+            $v_cb = calculateDebitBalance($vendor_acc, $total_billed); // Vendor account is debited
             
+            // Debit amount to vendor's account (minus)
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $vendor_acc,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Payment received by vendor: ' . $vendor->name,
+                'debit' => $total_billed, // Money debited from vendor's account
+                'credit' => 0.00, // No money credited to vendor's account
+                'current_balance' => $v_cb // Updated balance for vendor account
+            ]);
+
+            // Credit amount from business's account (minus)
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $data->acc_id,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'Payment send to vendor: ' . $vendor->name,
+                'debit' => 0.00, // No money debited to business account
+                'credit' => $total_billed, // Money credited from business account
+                'current_balance' => $b_cb
+            ]);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->code,   
+            ]);            
             
             DB::commit();
             return response()->json($data, 200);
