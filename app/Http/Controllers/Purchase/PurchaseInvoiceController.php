@@ -283,11 +283,15 @@ class PurchaseInvoiceController extends Controller
             ->select(
                 'purchase_invoices.*',
                 'vendors.name as vendor_name',
+                'vendors.code as vendor_code',
                 'vendors.address as vendor_address',
                 'vendors.phone as vendor_phone',
                 'businesses.name as business_name',
                 'businesses.logo as business_logo',
-                'cities.name as vendor_city'
+                'businesses.address as business_address',
+                'businesses.phone as business_telephone',
+                'cities.name as vendor_city',
+                'business_city.name as business_city_name',
             )
             ->where('purchase_invoices.id', $id)->first();
     
