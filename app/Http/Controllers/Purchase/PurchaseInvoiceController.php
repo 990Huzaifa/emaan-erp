@@ -214,40 +214,6 @@ class PurchaseInvoiceController extends Controller
             $data->update([
                 'status' => $request->status
             ]);
-
-            // hit transaction to the vendor account now. in sum and Temporary Liability in minus
-            $total_amount_invoce  = $data->total;
-            $grir_acc_id = ChartOfAccount::where('code','2-2')->value('id');
-            $grir_cb = calculateDebitBalance($grir_acc_id, $total_amount_invoce);
-            // Debit amount to TL's account (minus)
-            $link = $data->id;
-            Transaction::create([
-                'business_id' => $businessId,
-                'acc_id' => $grir_acc_id,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Debit GR/IR Clearing for temporary liability on Invoice: ' . $data->id,
-                'link' => $link,
-                'credit' => 0.00, // Money credited to business account
-                'debit' => $total_amount_invoce, // No money debited from business account
-                'current_balance' => $grir_cb
-            ]);
-
-            // Credit amount to vendor account (sum)
-            $vendor_acc_id = Vendor::where('id', $data->vendor_id)->value('acc_id');
-            $v_cb = calculateCreditBalance($vendor_acc_id, $total_amount_invoce);
-
-            Transaction::create([
-                'business_id' => $businessId,
-                'acc_id' => $vendor_acc_id,
-                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'Credit Vendor for book liability on Invoice: ' . $data->id,
-                'link' => $link,
-                'credit' => $total_amount_invoce, // Money credited to business account
-                'debit' => 0.00, // No money debited from business account
-                'current_balance' => $v_cb
-            ]);
-
-
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Update purchase invoice Status code: '. $data->invoice_no,   
