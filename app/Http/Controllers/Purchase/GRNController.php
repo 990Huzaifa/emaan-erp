@@ -169,7 +169,7 @@ class GRNController extends Controller
                 'total_tax' => $request->total_tax,
                 'total' => $request->total
             ]);
-
+            $total_amount_grn = 0;
             foreach ($request->items as $item) {
                 GoodsReceiveNoteItem::create([
                     'goods_receive_note_id' => $GRN->id,
@@ -185,7 +185,80 @@ class GRNController extends Controller
                     'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
                 ]);
+
+                $total_amount_grn += $item['billed'];
             }
+
+            if($request->status == 1){
+                foreach ($request->items as $item) {
+                    $product = Product::find($item['product_id']);
+                    
+                    // hit transaction
+                    $total_amount_grn += $item['billed'];
+                    $total_billed = $item['billed'];
+
+                    // hit inventory
+                    do {
+                        $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                    } while (Lot::where('lot_code', $lot_code)->exists());
+                    $lot = Lot::create([
+                        'purchase_order_id' => $GRN->purchase_order_id,
+                        'grn_id' => $GRN->id,
+                        'product_id' => $item['product_id'],
+                        'lot_code' => $lot_code,
+                        'vendor_id' => $GRN->purchase_order->vendor_id,
+                        'purchase_unit_price' => $item['purchase_unit_price'],
+                        'sale_unit_price' => $item['sale_unit_price'],
+                        'quantity' => $item['quantity'],
+                        'status' => 1,
+                        'total_price' => $item['purchase_unit_price'] * $item['quantity'],
+                    ]);
+                    $check = InventoryDetail::where('product_id', $item['product_id'])->first();
+                    if ($check) {
+                        $check->update([
+                            'stock' => $check->stock + $item['quantity']
+                        ]);
+                    }else{
+                        InventoryDetail::create([
+                            'product_id' => $item->product_id,
+                            'stock' => $item->quantity,
+                            'in_stock' => 1,
+                        ]);
+                    }
+                    
+                }
+                // entry is credit but amount will be debited(sum)
+                $vendor = Vendor::find($GRN->purchase_order->vendor_id);
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+                // Credit amount to Vendor's account
+                $link = $GRN->purchase_order_id;
+                Transaction::create([
+                    'business_id' => $businessId,
+                    'acc_id' => $vendor->acc_id,
+                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'credit amount to vendor account by GRN with the PO is '. $GRN->purchase_order->order_code,
+                    'link' => $link,
+                    'credit' => $total_amount_grn, // Money credited to business account
+                    'debit' => 0.00, // No money debited from business account
+                    'current_balance' => $v_cb
+                ]);
+
+
+                // create sale receipt 
+                $invoiceObj = new PurchaseInvoiceController();
+                $invoice = $invoiceObj->createInvoice($GRN->id, $businessId);
+                if($invoice != true) throw new Exception($invoice, 400);
+
+
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => ' code: '. $GRN->grn_code,   
+                ]);
+
+                $n_url ='view-goods-received-note/'.$GRN->id;
+                notifyUser($user->id, $businessId,'view goods received notes', 'Goods received note Approved successfully',$n_url);
+            }
+
             $n_url ='view-goods-received-note/'.$GRN->id;
             notifyUser($user->id, $businessId,'approve goods received notes', 'New Goods received note created',$n_url);
             Log::create([
