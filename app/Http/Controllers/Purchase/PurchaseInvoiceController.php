@@ -279,7 +279,8 @@ class PurchaseInvoiceController extends Controller
             }])
             ->join('businesses', 'purchase_invoices.business_id', '=', 'businesses.id')
             ->join('vendors', 'purchase_invoices.vendor_id', '=', 'vendors.id')
-            ->join('cities', 'vendors.city_id', '=', 'cities.id')
+            ->join('cities as vendor_city', 'vendors.city_id', '=', 'vendor_city.id')
+            ->join('cities as business_city', 'businesses.city_id', '=', 'business_city.id')
             ->select(
                 'purchase_invoices.*',
                 'vendors.name as vendor_name',
@@ -290,7 +291,7 @@ class PurchaseInvoiceController extends Controller
                 'businesses.logo as business_logo',
                 'businesses.address as business_address',
                 'businesses.phone as business_telephone',
-                'cities.name as vendor_city',
+                'vendor_city.name as vendor_city',
                 'business_city.name as business_city_name',
             )
             ->where('purchase_invoices.id', $id)->first();
