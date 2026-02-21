@@ -283,7 +283,7 @@ class PurchaseInvoiceController extends Controller
             ->select(
                 'purchase_invoices.*',
                 'vendors.name as vendor_name',
-                'vendors.code as vendor_code',
+                'vendors.v_code as vendor_code',
                 'vendors.address as vendor_address',
                 'vendors.phone as vendor_phone',
                 'businesses.name as business_name',

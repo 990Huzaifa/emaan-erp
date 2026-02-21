@@ -249,7 +249,7 @@ class SaleReceiptController extends Controller
             ->join('cities as business_city', 'businesses.city_id', '=', 'business_city.id')
             ->select('sale_receipts.*',
             'customers.name as customer_name',
-            'customers.code as customer_code',
+            'customers.c_code as customer_code',
             'customers.address as customer_address',
             'customers.mobile as customer_telephone',
             'businesses.name as business_name',
