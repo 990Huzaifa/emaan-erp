@@ -87,6 +87,7 @@ class PurchaseOrderController extends Controller
                     'total' => 'required|numeric',
                     'total_discount' => 'required|numeric',
                     'total_tax' => 'required|numeric',
+                    'is_grn_approved' => 'nullable|boolean',
 
                     'items' => 'required|array',
                     'items.*.product_id' => 'required|exists:products,id',
@@ -184,6 +185,9 @@ class PurchaseOrderController extends Controller
             $n_url = 'view-purchase-order/' . $data->id;
             if ($request->status == 1) {
                 notifyUser($user->id, $businessId, 'create goods received notes', 'New purchase order created and approved', $n_url);
+            } else if ($request->is_grn_approved == 1) {
+                $GRNController = new GRNController();
+                $GRNController->readyGrn($data->id);
             } else {
                 notifyUser($user->id, $businessId, 'approve purchase orders', 'New purchase order created', $n_url);
             }

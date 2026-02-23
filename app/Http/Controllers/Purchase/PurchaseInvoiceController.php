@@ -342,7 +342,8 @@ class PurchaseInvoiceController extends Controller
                 'remarks' => $GRN->remarks,
                 'total' => $GRN->total,
                 'total_discount' => $GRN->total_discount,
-                'total_tax' => $GRN->total_tax
+                'total_tax' => $GRN->total_tax,
+                'status' => 1
 
             ]);
             $invoiceTotal = 0;

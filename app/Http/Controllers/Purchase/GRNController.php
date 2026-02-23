@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Purchase;
 
 use App\Http\Controllers\Controller;
-use App\Models\ChartOfAccount;
 use App\Models\GoodsReceiveNote;
 use App\Models\GoodsReceiveNoteItem;
 use App\Models\InventoryDetail;
 use App\Models\Lot;
 use App\Models\Product;
 use App\Models\PurchaseInvoice;
+use App\Models\PurchaseOrder;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use Exception;
@@ -684,6 +684,132 @@ class GRNController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }    
+    }
+
+    public function readyGrn($poId): JsonResponse
+    {
+        try{
+
+            DB::beginTransaction();
+            $po = PurchaseOrder::find($poId);
+            do {
+                $grn_code = 'GRN-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (GoodsReceiveNote::where('grn_code', $grn_code)->exists());
+            $GRN = GoodsReceiveNote::create([
+                'purchase_order_id' => $po->id,
+                'business_id' => $po->business_id,
+                'grn_code' => $grn_code,
+                'grn_date' => $po->order_date,
+                'received_by' => $po->user_id,
+                'remarks' => $po->remarks,
+                'terms_of_payment' => $po->terms_of_payment,
+                'delivery_cost' => $po->delivery_cost,
+                'total_discount' => $po->total_discount,
+                'total_tax' => $po->total_tax,
+                'total' => $po->total,
+                'status' => 1
+            ]);
+            $total_amount_grn = 0;
+            foreach ($po->items as $item) {
+                GoodsReceiveNoteItem::create([
+                    'goods_receive_note_id' => $GRN->id,
+                    'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
+                    'quantity' => $item->quantity,
+                    'receive' => $item->quantity,
+                    'billed' => $item->billed,
+                    'purchase_unit_price' => $item->purchase_unit_price,
+                    'sale_unit_price' => $item->sale_unit_price,
+                    'total_price' => $item->total_price,
+                    'discount' => $item->discount,
+                    'discount_in_percentage' => $item->discount_in_percentage,
+                    'tax' => $item->tax,
+                ]);
+
+                $total_amount_grn += $item->billed;
+            }
+
+
+                foreach ($po->items as $item) {
+                    $product = Product::find($item->product_id);
+                    
+                    // hit transaction
+                    $total_amount_grn += $item->billed;
+                    $total_billed = $item->billed;
+
+                    // hit inventory
+                    do {
+                        $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                    } while (Lot::where('lot_code', $lot_code)->exists());
+                    $lot = Lot::create([
+                        'purchase_order_id' => $GRN->purchase_order_id,
+                        'grn_id' => $GRN->id,
+                        'product_id' => $item->product_id,
+                        'lot_code' => $lot_code,
+                        'vendor_id' => $GRN->purchase_order->vendor_id,
+                        'purchase_unit_price' => $item->purchase_unit_price,
+                        'sale_unit_price' => $item->sale_unit_price,
+                        'quantity' => $item->quantity,
+                        'status' => 1,
+                        'total_price' => $item->purchase_unit_price * $item->quantity,
+                    ]);
+                    $check = InventoryDetail::where('product_id', $item->product_id)->first();
+                    if ($check) {
+                        $check->update([
+                            'stock' => $check->stock + $item->quantity
+                        ]);
+                    }else{
+                        InventoryDetail::create([
+                            'product_id' => $item->product_id,
+                            'stock' => $item->quantity,
+                            'in_stock' => 1,
+                        ]);
+                    }
+                    
+                }
+                // entry is credit but amount will be debited(sum)
+                $vendor = Vendor::find($GRN->purchase_order->vendor_id);
+                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+                // Credit amount to Vendor's account
+                $link = $GRN->purchase_order_id;
+                Transaction::create([
+                    'business_id' => $po->business_id,
+                    'acc_id' => $vendor->acc_id,
+                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'credit amount to vendor account by GRN with the PO is '. $GRN->purchase_order->order_code,
+                    'link' => $link,
+                    'credit' => $total_amount_grn, // Money credited to business account
+                    'debit' => 0.00, // No money debited from business account
+                    'current_balance' => $v_cb
+                ]);
+
+
+                // create sale receipt 
+                $invoiceObj = new PurchaseInvoiceController();
+                $invoice = $invoiceObj->createInvoice($GRN->id, $po->business_id);
+                if($invoice != true) throw new Exception($invoice, 400);
+
+
+                Log::create([
+                    'user_id' => $po->user_id,
+                    'description' => ' code: '. $GRN->grn_code,   
+                ]);
+
+            $n_url ='view-goods-received-note/'.$GRN->id;
+            notifyUser($po->user_id, $po->business_id,'approve goods received notes', 'New Goods received note created',$n_url);
+            Log::create([
+                'user_id' => $po->user_id,
+                'description' => 'user created GRN code:'.$grn_code,
+            ]);
+            DB::commit();
+            return response()->json($GRN,200);
+        }catch(QueryException $e){
+            DB::rollBack(); 
+            return response()->json(['DB error' => $e->getMessage()], 400);            
+        }catch(Exception $e){
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
 }
