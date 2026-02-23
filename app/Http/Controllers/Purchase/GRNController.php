@@ -687,7 +687,7 @@ class GRNController extends Controller
         }    
     }
 
-    public function readyGrn($poId): JsonResponse
+    public function readyGrn($poId)
     {
         try{
 
