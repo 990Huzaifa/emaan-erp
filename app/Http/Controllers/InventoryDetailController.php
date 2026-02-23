@@ -184,19 +184,26 @@ class InventoryDetailController extends Controller
                 }
             }
             $data = InventoryDetail::join('products', 'inventory_details.product_id', '=', 'products.id')
-            ->leftJoin('lots', 'products.id', '=', 'lots.product_id') // Join with lots table
-            ->leftJoin('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id') // Join with lots table
+            ->leftJoin('lots', 'products.id', '=', 'lots.product_id')
+            ->leftJoin('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id')
             ->select(
                 'products.id as product_id',
                 'products.title',
                 'inventory_details.stock as quantity',
                 'inventory_details.in_stock',
                 'measurement_units.name as measurement_unit',
-                DB::raw('COALESCE(AVG(CASE WHEN lots.quantity != 0 THEN lots.sale_unit_price END), 0) as sale_price') // Calculate average price
+                DB::raw('COALESCE(AVG(CASE WHEN lots.quantity != 0 THEN lots.sale_unit_price END), 0) as sale_price')
             )
             ->where('inventory_details.in_stock', '!=', 0)
-            ->groupBy('products.id', 'products.title', 'inventory_details.stock', 'inventory_details.in_stock', 'measurement_units.name') // Group by product to get avg per product
-            ->orderBy('inventory_details.id', 'desc')->get();
+            ->groupBy(
+                'products.id',
+                'products.title',
+                'inventory_details.stock',
+                'inventory_details.in_stock',
+                'measurement_units.name'
+            )
+            ->orderBy('products.id', 'desc')
+            ->get();
             return response()->json($data,200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
