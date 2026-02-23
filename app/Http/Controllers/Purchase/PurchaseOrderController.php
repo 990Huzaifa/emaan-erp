@@ -15,6 +15,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
+use Illuminate\Support\Facades\Log as SysLog;
 
 class PurchaseOrderController extends Controller
 {
@@ -187,6 +188,7 @@ class PurchaseOrderController extends Controller
                 notifyUser($user->id, $businessId, 'create goods received notes', 'New purchase order created and approved', $n_url);
             } else if ($request->status == 1 && $request->is_grn_approved == 1) {
                 $GRNController = new GRNController();
+                SysLog::info('Ready GRN for PO: ' . $data->order_code);
                 $GRNController->readyGrn($data->id);
             } else {
                 notifyUser($user->id, $businessId, 'approve purchase orders', 'New purchase order created', $n_url);
