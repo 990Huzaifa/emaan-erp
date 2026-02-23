@@ -189,7 +189,7 @@ class PurchaseOrderController extends Controller
             } else if ($request->status == 1 && $request->is_grn_approved == 1) {
                 $GRNController = new GRNController();
                 SysLog::info('Ready GRN for PO: ' . $data->order_code);
-                $GRNController->readyGrn($data->id);
+                $GRNController->readyGrn($data->id, $user->id);
             } else {
                 notifyUser($user->id, $businessId, 'approve purchase orders', 'New purchase order created', $n_url);
             }

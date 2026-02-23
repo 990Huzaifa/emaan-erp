@@ -687,7 +687,7 @@ class GRNController extends Controller
         }    
     }
 
-    public function readyGrn($poId)
+    public function readyGrn($poId, $userId)
     {
         try{
 
@@ -701,7 +701,7 @@ class GRNController extends Controller
                 'business_id' => $po->business_id,
                 'grn_code' => $grn_code,
                 'grn_date' => $po->order_date,
-                'received_by' => $po->user_id,
+                'received_by' => $userId,
                 'remarks' => $po->remarks,
                 'terms_of_payment' => $po->terms_of_payment,
                 'delivery_cost' => $po->delivery_cost,
@@ -792,14 +792,14 @@ class GRNController extends Controller
 
 
             Log::create([
-                'user_id' => $po->user_id,
+                'user_id' => $userId,
                 'description' => ' code: '. $GRN->grn_code,   
             ]);
 
             $n_url ='view-goods-received-note/'.$GRN->id;
-            notifyUser($po->user_id, $po->business_id,'approve goods received notes', 'New Goods received note created',$n_url);
+            notifyUser($userId, $po->business_id,'approve goods received notes', 'New Goods received note created',$n_url);
             Log::create([
-                'user_id' => $po->user_id,
+                'user_id' => $userId,
                 'description' => 'user created GRN code:'.$grn_code,
             ]);
             DB::commit();
