@@ -183,9 +183,9 @@ class PurchaseOrderController extends Controller
                 ]);
             }
             $n_url = 'view-purchase-order/' . $data->id;
-            if ($request->status == 1) {
+            if ($request->status == 1 && $request->is_grn_approved == 0) {
                 notifyUser($user->id, $businessId, 'create goods received notes', 'New purchase order created and approved', $n_url);
-            } else if ($request->is_grn_approved == 1) {
+            } else if ($request->status == 1 && $request->is_grn_approved == 1) {
                 $GRNController = new GRNController();
                 $GRNController->readyGrn($data->id);
             } else {

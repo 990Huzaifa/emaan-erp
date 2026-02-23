@@ -730,70 +730,70 @@ class GRNController extends Controller
             }
 
 
-                foreach ($po->items as $item) {
-                    $product = Product::find($item->product_id);
-                    
-                    // hit transaction
-                    $total_amount_grn += $item->billed;
-                    $total_billed = $item->billed;
+            foreach ($po->items as $item) {
+                $product = Product::find($item->product_id);
+                
+                // hit transaction
+                $total_amount_grn += $item->billed;
+                $total_billed = $item->billed;
 
-                    // hit inventory
-                    do {
-                        $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-                    } while (Lot::where('lot_code', $lot_code)->exists());
-                    $lot = Lot::create([
-                        'purchase_order_id' => $GRN->purchase_order_id,
-                        'grn_id' => $GRN->id,
-                        'product_id' => $item->product_id,
-                        'lot_code' => $lot_code,
-                        'vendor_id' => $GRN->purchase_order->vendor_id,
-                        'purchase_unit_price' => $item->purchase_unit_price,
-                        'sale_unit_price' => $item->sale_unit_price,
-                        'quantity' => $item->quantity,
-                        'status' => 1,
-                        'total_price' => $item->purchase_unit_price * $item->quantity,
+                // hit inventory
+                do {
+                    $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+                } while (Lot::where('lot_code', $lot_code)->exists());
+                $lot = Lot::create([
+                    'purchase_order_id' => $GRN->purchase_order_id,
+                    'grn_id' => $GRN->id,
+                    'product_id' => $item->product_id,
+                    'lot_code' => $lot_code,
+                    'vendor_id' => $GRN->purchase_order->vendor_id,
+                    'purchase_unit_price' => $item->purchase_unit_price,
+                    'sale_unit_price' => $item->sale_unit_price,
+                    'quantity' => $item->quantity,
+                    'status' => 1,
+                    'total_price' => $item->purchase_unit_price * $item->quantity,
+                ]);
+                $check = InventoryDetail::where('product_id', $item->product_id)->first();
+                if ($check) {
+                    $check->update([
+                        'stock' => $check->stock + $item->quantity
                     ]);
-                    $check = InventoryDetail::where('product_id', $item->product_id)->first();
-                    if ($check) {
-                        $check->update([
-                            'stock' => $check->stock + $item->quantity
-                        ]);
-                    }else{
-                        InventoryDetail::create([
-                            'product_id' => $item->product_id,
-                            'stock' => $item->quantity,
-                            'in_stock' => 1,
-                        ]);
-                    }
-                    
+                }else{
+                    InventoryDetail::create([
+                        'product_id' => $item->product_id,
+                        'stock' => $item->quantity,
+                        'in_stock' => 1,
+                    ]);
                 }
-                // entry is credit but amount will be debited(sum)
-                $vendor = Vendor::find($GRN->purchase_order->vendor_id);
-                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
-                // Credit amount to Vendor's account
-                $link = $GRN->purchase_order_id;
-                Transaction::create([
-                    'business_id' => $po->business_id,
-                    'acc_id' => $vendor->acc_id,
-                    'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'credit amount to vendor account by GRN with the PO is '. $GRN->purchase_order->order_code,
-                    'link' => $link,
-                    'credit' => $total_amount_grn, // Money credited to business account
-                    'debit' => 0.00, // No money debited from business account
-                    'current_balance' => $v_cb
-                ]);
+                
+            }
+            // entry is credit but amount will be debited(sum)
+            $vendor = Vendor::find($GRN->purchase_order->vendor_id);
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+            // Credit amount to Vendor's account
+            $link = $GRN->purchase_order_id;
+            Transaction::create([
+                'business_id' => $po->business_id,
+                'acc_id' => $vendor->acc_id,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => 'credit amount to vendor account by GRN with the PO is '. $GRN->purchase_order->order_code,
+                'link' => $link,
+                'credit' => $total_amount_grn, // Money credited to business account
+                'debit' => 0.00, // No money debited from business account
+                'current_balance' => $v_cb
+            ]);
 
 
-                // create sale receipt 
-                $invoiceObj = new PurchaseInvoiceController();
-                $invoice = $invoiceObj->createInvoice($GRN->id, $po->business_id);
-                if($invoice != true) throw new Exception($invoice, 400);
+            // create sale receipt 
+            $invoiceObj = new PurchaseInvoiceController();
+            $invoice = $invoiceObj->createInvoice($GRN->id, $po->business_id);
+            if($invoice != true) throw new Exception($invoice, 400);
 
 
-                Log::create([
-                    'user_id' => $po->user_id,
-                    'description' => ' code: '. $GRN->grn_code,   
-                ]);
+            Log::create([
+                'user_id' => $po->user_id,
+                'description' => ' code: '. $GRN->grn_code,   
+            ]);
 
             $n_url ='view-goods-received-note/'.$GRN->id;
             notifyUser($po->user_id, $po->business_id,'approve goods received notes', 'New Goods received note created',$n_url);
