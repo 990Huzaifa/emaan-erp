@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log as SysLog;
 
 class GRNController extends Controller
 {
@@ -802,13 +803,13 @@ class GRNController extends Controller
                 'description' => 'user created GRN code:'.$grn_code,
             ]);
             DB::commit();
-            return response()->json($GRN,200);
+            return true;
         }catch(QueryException $e){
             DB::rollBack(); 
-            return response()->json(['DB error' => $e->getMessage()], 400);            
+            SysLog::error('Error creating GRN: ' . $e->getMessage());          
         }catch(Exception $e){
             DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 400);
+            SysLog::error('Error creating GRN: ' . $e->getMessage());
         }
     }
 
