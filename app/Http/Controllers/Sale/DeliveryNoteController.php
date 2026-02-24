@@ -637,7 +637,7 @@ class DeliveryNoteController extends Controller
                     'product_id' => $item->product_id,
                     'measurement_unit' => $item->measurement_unit,
                     'quantity' => $item->quantity,
-                    'delivered' => $item->delivered,
+                    'delivered' => $item->quantity,
                     'charged' => $item->charged,
                     'unit_price' => $item->unit_price,
                     'discount' => $item->discount,
