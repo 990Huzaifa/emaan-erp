@@ -15,7 +15,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
-
+use Illuminate\Support\Facades\Log as SysLog;
 
 class SaleOrderController extends Controller
 {
@@ -84,6 +84,7 @@ class SaleOrderController extends Controller
                     'delivery_cost' => 'required|numeric',
                     'total_discount' => 'required|numeric',
                     'items' => 'required|array',
+                    'is_dn_approved' => 'nullable|boolean',
 
             ],[
 
@@ -165,8 +166,12 @@ class SaleOrderController extends Controller
             $data->update([
                 'total_discount' => $request->total_discount
             ]);
-            if($request->status == 1){
+            if($request->status == 1 && $request->is_dn_approved == 0){
                 notifyUser($user->id, $businessId,'create delivery notes', 'New sale order created and approved',$n_url);
+            }else if($request->status == 1 && $request->is_dn_approved == 0){
+                $DNController = new DeliveryNoteController();
+                SysLog::info('Ready DN for SO: ' . $data->order_code);
+                $DNController->readyDn($data->id, $user->id);
             }else{
                 notifyUser($user->id, $businessId,'approve sale orders', 'New sale order created',$n_url);
             }         

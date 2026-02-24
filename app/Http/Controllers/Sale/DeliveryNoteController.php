@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Lot;
 use App\Models\Product;
+use App\Models\SaleOrder;
+use App\Models\SaleOrderItem;
 use App\Models\SaleReceipt;
 use App\Models\Transaction;
 use Exception;
@@ -19,6 +21,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log as SysLog;
 
 class DeliveryNoteController extends Controller
 {
@@ -603,6 +606,120 @@ class DeliveryNoteController extends Controller
         }catch(Exception $e){
             return response()->json(['error' => $e->getMessage()], 400);
         }    
+    }
+
+    public function readyDn($soId, $userId)
+    {
+        try{
+            $so = SaleOrder::find($soId);
+            if(empty($so)) throw new Exception('Sale order not found', 400);
+            DB::beginTransaction();
+            do {
+                $dn_code = 'DN-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (DeliveryNote::where('dn_code', $dn_code)->exists());
+            $deliveryNote = DeliveryNote::create([
+                'sale_order_id' => $soId,
+                'business_id' => $so->business_id,
+                'dn_code' => $dn_code,
+                'dn_date' => $so->order_date,
+                'received_by' => $userId, //need to know
+                'remarks' => $so->remarks,
+                'terms_of_payment' => $so->terms_of_payment,
+                'total_tax' => $so->total_tax,
+                'delivery_cost' => $so->delivery_cost,
+                'total_discount' => $so->total_discount,
+                'total' => $so->total,
+                'status' => 1,
+            ]);
+            $soItems = SaleOrderItem::where('sale_order_id', $soId)->get();
+            foreach($soItems as $item){
+                DeliveryNoteItem::create([
+                    'delivery_note_id' => $deliveryNote->id,
+                    'product_id' => $item->product_id,
+                    'measurement_unit' => $item->measurement_unit,
+                    'quantity' => $item->quantity,
+                    'delivered' => $item->delivered,
+                    'charged' => $item->charged,
+                    'unit_price' => $item->unit_price,
+                    'discount' => $item->discount,
+                    'discount_in_percentage' => $item->discount_in_percentage,
+                    'tax' => $item->tax,
+                    'total_price' => $item->total_price,
+                ]);
+            }
+
+            $customer = Customer::find($so->customer_id);
+            $total_amount_dn = 0;
+
+            foreach ($deliveryNote->items as $item) {
+                    // Fetch available lots in FIFO order
+                    $lots = Lot::where('product_id', $item->product_id)
+                    ->where('quantity', '>', 0)
+                    ->orderBy('created_at', 'asc')
+                    ->get();
+    
+                    $remainingQty = $item->quantity; // Total quantity to deduct from lots
+                    
+                    // Deduct item quantity from lots one by one (FIFO)
+                    foreach ($lots as $lot) {
+                        if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
+
+                        $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
+                        // Update lot: reduce quantity and total_price based on unit price
+                        $lot->update([
+                            'quantity' => $lot->quantity - $deductQty,
+                            'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
+                        ]);
+                        $remainingQty -= $deductQty;
+                    }
+
+                    // Update overall inventory stock for the product
+                    $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
+                    if ($inventory_details) {
+                        $inventory_details->update([
+                            'stock' => $inventory_details->stock - $item->quantity,
+                        ]);
+                    }
+
+                    $total_amount_dn += $item->charged;
+                }
+                
+                $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
+                $link =$soId;
+                // Debit amount to customer's account
+                Transaction::create([
+                    'business_id' => $so->business_id,
+                    'acc_id' => $customer->acc_id,
+                    'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
+                    'description' => 'debit amount to customer account by DN with the SO is '.$so->order_code,
+                    'link' => $link,
+                    'debit' => $total_amount_dn, // FIXED
+                    'credit' => 0.00, // FIXED
+                    'current_balance' => $c_cb
+                ]);
+
+                // create sale receipt 
+                $srObj = new SaleReceiptController();
+                $sr = $srObj->createSR($deliveryNote->id, $so->business_id);
+                if($sr != true) throw new Exception('Error in creating sale invoice', 400);
+
+                Log::create([
+                    'user_id' => $so->user_id,
+                    'description' => 'update Delivery Note Status to approved. Code: '. $deliveryNote->dn_code,   
+                ]);
+                $n_url ='view-delivery-notes/'.$deliveryNote->id;
+                notifyUser($so->user_id, $so->business_id,'view delivery notes', 'Delivery note Approved successfully',$n_url);
+            
+            
+            DB::commit();
+            return true;
+        }catch(QueryException $e){
+            DB::rollBack();
+            SysLog::error('Error creating DN: ' . $e->getMessage());          
+        }catch(Exception $e){
+            DB::rollBack();
+            SysLog::error('Error creating DN: ' . $e->getMessage());
+        }
     }
 
 }
