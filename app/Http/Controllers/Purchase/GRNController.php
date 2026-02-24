@@ -10,6 +10,7 @@ use App\Models\Lot;
 use App\Models\Product;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use Exception;
@@ -711,7 +712,8 @@ class GRNController extends Controller
                 'status' => 1
             ]);
             $total_amount_grn = 0;
-            foreach ($po->items as $item) {
+            $poItems = PurchaseOrderItem::where('purchase_order_id', $poId)->get();
+            foreach ($poItems as $item) {
                 GoodsReceiveNoteItem::create([
                     'goods_receive_note_id' => $GRN->id,
                     'product_id' => $item->product_id,
@@ -731,7 +733,7 @@ class GRNController extends Controller
             }
 
 
-            foreach ($po->items as $item) {
+            foreach ($poItems as $item) {
                 $product = Product::find($item->product_id);
                 
                 // hit transaction
