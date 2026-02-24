@@ -751,11 +751,11 @@ class GRNController extends Controller
                     'product_id' => $item->product_id,
                     'lot_code' => $lot_code,
                     'vendor_id' => $GRN->purchase_order->vendor_id,
-                    'purchase_unit_price' => $item->purchase_unit_price,
-                    'sale_unit_price' => $item->purchase_unit_price,
+                    'purchase_unit_price' => $item->unit_price,
+                    'sale_unit_price' => $item->unit_price,
                     'quantity' => $item->quantity,
                     'status' => 1,
-                    'total_price' => $item->purchase_unit_price * $item->quantity,
+                    'total_price' => $item->unit_price * $item->quantity,
                 ]);
                 $check = InventoryDetail::where('product_id', $item->product_id)->first();
                 if ($check) {
