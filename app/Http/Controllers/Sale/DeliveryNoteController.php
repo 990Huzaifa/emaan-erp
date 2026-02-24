@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Sale;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Lot;
-use App\Models\Product;
 use App\Models\SaleOrder;
 use App\Models\SaleOrderItem;
 use App\Models\SaleReceipt;
