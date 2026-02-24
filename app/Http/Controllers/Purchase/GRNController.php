@@ -752,7 +752,7 @@ class GRNController extends Controller
                     'lot_code' => $lot_code,
                     'vendor_id' => $GRN->purchase_order->vendor_id,
                     'purchase_unit_price' => $item->purchase_unit_price,
-                    'sale_unit_price' => $item->sale_unit_price,
+                    'sale_unit_price' => $item->purchase_unit_price,
                     'quantity' => $item->quantity,
                     'status' => 1,
                     'total_price' => $item->purchase_unit_price * $item->quantity,
