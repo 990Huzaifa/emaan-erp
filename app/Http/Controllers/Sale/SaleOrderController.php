@@ -168,7 +168,7 @@ class SaleOrderController extends Controller
             ]);
             if($request->status == 1 && $request->is_dn_approved == 0){
                 notifyUser($user->id, $businessId,'create delivery notes', 'New sale order created and approved',$n_url);
-            }else if($request->status == 1 && $request->is_dn_approved == 0){
+            }else if($request->status == 1 && $request->is_dn_approved == 1){
                 $DNController = new DeliveryNoteController();
                 SysLog::info('Ready DN for SO: ' . $data->order_code);
                 $DNController->readyDn($data->id, $user->id);
