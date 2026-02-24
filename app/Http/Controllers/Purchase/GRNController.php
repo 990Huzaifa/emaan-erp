@@ -714,7 +714,7 @@ class GRNController extends Controller
             $total_amount_grn = 0;
             $poItems = PurchaseOrderItem::where('purchase_order_id', $poId)->get();
             foreach ($poItems as $item) {
-                $billed = $item->quantity * $item->purchase_unit_price;
+                $billed = $item->quantity * $item->unit_price;
                 GoodsReceiveNoteItem::create([
                     'goods_receive_note_id' => $GRN->id,
                     'product_id' => $item->product_id,
@@ -722,8 +722,8 @@ class GRNController extends Controller
                     'quantity' => $item->quantity,
                     'receive' => $item->quantity,
                     'billed' => $billed,
-                    'purchase_unit_price' => $item->purchase_unit_price,
-                    'sale_unit_price' => $item->sale_unit_price,
+                    'purchase_unit_price' => $item->unit_price,
+                    'sale_unit_price' => $item->unit_price,
                     'total_price' => $item->total_price,
                     'discount' => $item->discount,
                     'discount_in_percentage' => $item->discount_in_percentage,
