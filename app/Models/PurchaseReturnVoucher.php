@@ -17,6 +17,8 @@ class PurchaseReturnVoucher extends Model
         'voucher_amount',
         'status',
         'payment_method',
+        'bank_transaction_type',
+        'description',
         'cheque_no',
         'cheque_date',
         'voucher_date',
