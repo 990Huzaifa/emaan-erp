@@ -11,12 +11,14 @@ use App\Models\PurchaseInvoice;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseQuotation;
 use App\Models\PurchaseReturn;
+use App\Models\PurchaseReturnVoucher;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
 use App\Models\SaleQuotation;
 use App\Models\SaleReceipt;
 use App\Models\SaleReceiptItem;
 use App\Models\SaleReturn;
+use App\Models\SaleReturnVoucher;
 use App\Models\SaleVoucher;
 use Carbon\Carbon;
 use Exception;
@@ -819,14 +821,14 @@ class DashboardController extends Controller
                     ->where('sale_vouchers.business_id', $businessId)->where('sale_vouchers.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve purchase return voucher')) {
-                    $purchaseReturnVoucher = PurchaseVoucher::join('vendors', 'purchase_vouchers.vendor_id', '=', 'vendors.id')
-                    ->select('purchase_vouchers.*', 'vendors.name as vendor')
-                    ->where('purchase_vouchers.business_id', $businessId)->where('purchase_vouchers.status', 0)->get();
+                    $purchaseReturnVoucher = PurchaseReturnVoucher::join('vendors', 'purchase_return_vouchers.vendor_id', '=', 'vendors.id')
+                    ->select('purchase_return_vouchers.*', 'vendors.name as vendor')
+                    ->where('purchase_return_vouchers.business_id', $businessId)->where('purchase_return_vouchers.status', 0)->get();
                 }
                 if ($user->hasBusinessPermission($businessId, 'approve sale return voucher')) {
-                    $saleReturnVoucher = SaleVoucher::join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
-                    ->select('sale_vouchers.*', 'customers.name as customer')
-                    ->where('sale_vouchers.business_id', $businessId)->where('sale_vouchers.status', 0)->get();
+                    $saleReturnVoucher = SaleReturnVoucher::join('customers', 'sale_return_vouchers.customer_id', '=', 'customers.id')
+                    ->select('sale_return_vouchers.*', 'customers.name as customer')
+                    ->where('sale_return_vouchers.business_id', $businessId)->where('sale_return_vouchers.status', 0)->get();
                 }
 
             }

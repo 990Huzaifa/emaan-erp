@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Sale;
 
 use App\Models\Customer;
 use App\Models\Log;
-use App\Models\OpeningBalance;
 use App\Models\SaleVoucher;
 use App\Models\Transaction;
 use Carbon\Carbon;
