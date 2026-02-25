@@ -228,8 +228,9 @@ class ExpenseVoucherController extends Controller
                         'expense_acc' => 'required|exists:chart_of_accounts,id',
                         'asset_acc' => 'required|exists:chart_of_accounts,id',
                         "payment_method" => 'required|string|in:CASH,BANK,OTHER',
-                        'cheque_no' => 'required_if:payment_method,BANK|string',
-                        'cheque_date' => 'required_if:payment_method,BANK|date',
+                        'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                        'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                        'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                         'voucher_date' => 'required',                    
                         'voucher_amount' => 'required|numeric',
                     ],
@@ -242,8 +243,14 @@ class ExpenseVoucherController extends Controller
                         'asset_acc.required' => 'Asset account is required',
                         'asset_acc.exists' => 'Asset account does not exist',
     
-                        'cheque_no.required_if' => 'Cheque number is required',
-                        'cheque_date.required_if' => 'Cheque date is required',
+                        'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                        'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                        'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                        'cheque_no.string' => 'The cheque number must be a string.',
+
+                        'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                        'cheque_date.date' => 'The cheque date must be a valid date.',
     
                         'voucher_amount.required' => 'Voucher amount is required',
                         'voucher_amount.numeric' => 'Voucher amount is not valid',
@@ -254,10 +261,21 @@ class ExpenseVoucherController extends Controller
                 $data = ExpenseVoucher::find($id);
                 if (empty($data)) throw new Exception('No data found', 404);
                 if ($data->status == 1) throw new Exception('voucher already paid', 404);
+                $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($request->description) && !empty($request->description)){
+                    $description = $request->description . ' | ' . $description;
+                }
                 $data->update([
                     'asset_acc_id' => $request->asset_acc,
                     'expense_acc_id' => $request->expense_acc,
                     'business_id' => $businessId,
+                    'bank_transaction_type' => $request->bank_transaction_type,
+                    'description' => $description,
                     'payment_method' => $request->payment_method,
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
