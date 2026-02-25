@@ -16,7 +16,6 @@ use App\Models\PurchaseVoucher;
 use App\Models\SaleOrder;
 use App\Models\SaleQuotation;
 use App\Models\SaleReceipt;
-use App\Models\SaleReceiptItem;
 use App\Models\SaleReturn;
 use App\Models\SaleReturnVoucher;
 use App\Models\SaleVoucher;

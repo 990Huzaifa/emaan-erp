@@ -88,8 +88,9 @@ class SaleReturnVoucherController extends Controller
                 $request->all(),[
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
-                    'cheque_no' => 'required_if:payment_method,BANK|string',
-                    'cheque_date' => 'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'voucher_date' => 'required',
                     'data' => 'required|array',
                     'data.*.customer_id' => 'required|exists:customers,id',
@@ -101,10 +102,13 @@ class SaleReturnVoucherController extends Controller
                     'payment_method.required' => 'The payment method field is required.',
                     'payment_method.in' => 'The selected payment method is invalid.',
 
-                    'cheque_no.required_if' => 'The cheque number field is required.',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
                     'cheque_no.string' => 'The cheque number must be a string.',
 
-                    'cheque_date.required_if' => 'The cheque date field is required.',
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
                     'cheque_date.date' => 'The cheque date must be a valid date.',
 
                     'voucher_date.required' => 'The voucher date field is required.',
@@ -123,13 +127,23 @@ class SaleReturnVoucherController extends Controller
                 do {
                     $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (SaleReturnVoucher::where('voucher_code', $voucher_code)->exists());
+                $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($item['description']) && !empty($item['description'])){
+                    $description = $item['description'] . ' | ' . $description;
+                }
                 $data[] = [
                     'voucher_code' => $voucher_code,
                     'customer_id' => $item['customer_id'],
                     'acc_id' => $request->acc_id,
                     'payment_method' => $request->payment_method,
-                    'cheque_no' => $request->cheque_no,
-                    'cheque_date' => $request->cheque_date,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'description' => $description,
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'voucher_amount' => $item['voucher_amount'],
                     'business_id' => $user->login_business,
@@ -224,7 +238,7 @@ class SaleReturnVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $customer_acc,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Payment made by customer: ' . $customer->name,
+                    'description' => $data->description,
                     'credit' => 0.00, // Money credited to customer
                     'debit' => $total_billed, // No money deducted from customer's side
                     'current_balance' => $c_cb // Updated balance for customer account
@@ -235,7 +249,7 @@ class SaleReturnVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Payment received from customer: ' . $customer->name,
+                    'description' => $data->description,
                     'debit' => 0.00, // Money debited from business account
                     'credit' => $total_billed, // No money credited to business account
                     'current_balance' => $b_cb
