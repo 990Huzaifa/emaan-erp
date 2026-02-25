@@ -131,11 +131,15 @@ class SaleVoucherController extends Controller
                     $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
                 
-                $default_description = $request->payment_method == 'CASH' 
+                $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
                     : ($request->bank_transaction_type == 'CHEQUE' 
                         ? 'Cheque Payment' 
                         : 'Online Bank Transfer');
+
+                if(isset($item['description']) && !empty($item['description'])){
+                    $description = $item['description'] . ' | ' . $description;
+                }
                 $data[] = [
                     'voucher_code' => $voucher_code,
                     'acc_id' => $request->acc_id,
@@ -144,7 +148,7 @@ class SaleVoucherController extends Controller
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
                     'customer_id' => $item['customer_id'],
-                    'description' => $item['description'] ? $item['description'] . ' | ' . $default_description : $default_description,
+                    'description' => $description,
                     'voucher_amount' => $item['voucher_amount'],
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'business_id' => $user->login_business,

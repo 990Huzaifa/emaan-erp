@@ -127,11 +127,15 @@ class PurchaseVoucherController extends Controller
                 do {
                     $voucher_code = 'PV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (PurchaseVoucher::where('voucher_code', $voucher_code)->exists());
-                $default_description = $request->payment_method == 'CASH' 
+                $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
                     : ($request->bank_transaction_type == 'CHEQUE' 
                         ? 'Cheque Payment' 
                         : 'Online Bank Transfer');
+
+                if(isset($item['description']) && !empty($item['description'])){
+                    $description = $item['description'] . ' | ' . $description;
+                }
                 $data[] = [
                     'acc_id' => $request->acc_id,
                     'business_id' => $businessId,
@@ -141,7 +145,7 @@ class PurchaseVoucherController extends Controller
                     'cheque_date' => $request->cheque_date ?? null,
                     'voucher_code' => $voucher_code, 
                     'vendor_id' => $item['vendor_id'],
-                    'description' => $item['description'] ? $item['description'] . ' | ' . $default_description : $default_description,
+                    'description' => $description,
                     'voucher_amount' => $item['voucher_amount'],
                     'status' => 0, // 0 un paid, 1 paid
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),

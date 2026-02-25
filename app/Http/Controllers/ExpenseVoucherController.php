@@ -138,11 +138,15 @@ class ExpenseVoucherController extends Controller
                 do {
                     $voucher_code = 'EV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (ExpenseVoucher::where('voucher_code', $voucher_code)->exists());
-                $default_description = $request->payment_method == 'CASH' 
+                $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
                     : ($request->bank_transaction_type == 'CHEQUE' 
                         ? 'Cheque Payment' 
                         : 'Online Bank Transfer');
+
+                if(isset($item['description']) && !empty($item['description'])){
+                    $description = $item['description'] . ' | ' . $description;
+                }
                 $data[] = [
                     'asset_acc_id' => $request->asset_acc,
                     'expense_acc_id' => $item['expense_acc'],
@@ -152,7 +156,7 @@ class ExpenseVoucherController extends Controller
                     'bank_transaction_type' => $request->bank_transaction_type ?? null,
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
-                    'description' => $item['description'] ? $item['description'] . ' | ' . $default_description : $default_description,
+                    'description' => $description,
                     'voucher_amount' => $item['voucher_amount'],
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status' => 0,
