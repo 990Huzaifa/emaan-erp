@@ -145,7 +145,7 @@ class SaleVoucherController extends Controller
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
                     'customer_id' => $item['customer_id'],
-                    'description' => $item['description'] . ' | ' . $default_description,
+                    'description' => $item['description'] ? $item['description'] . ' | ' . $default_description : $default_description,
                     'voucher_amount' => $item['voucher_amount'],
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'business_id' => $user->login_business,

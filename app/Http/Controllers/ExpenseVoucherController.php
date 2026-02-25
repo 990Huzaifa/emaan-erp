@@ -152,7 +152,7 @@ class ExpenseVoucherController extends Controller
                     'bank_transaction_type' => $request->bank_transaction_type ?? null,
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
-                    'description' => $item['description'] . ' | ' . $default_description,
+                    'description' => $item['description'] ? $item['description'] . ' | ' . $default_description : $default_description,
                     'voucher_amount' => $item['voucher_amount'],
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status' => 0,

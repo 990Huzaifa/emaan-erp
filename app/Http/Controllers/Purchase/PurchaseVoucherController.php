@@ -141,7 +141,7 @@ class PurchaseVoucherController extends Controller
                     'cheque_date' => $request->cheque_date ?? null,
                     'voucher_code' => $voucher_code, 
                     'vendor_id' => $item['vendor_id'],
-                    'description' => $item['description'] . ' | ' . $default_description,
+                    'description' => $item['description'] ? $item['description'] . ' | ' . $default_description : $default_description,
                     'voucher_amount' => $item['voucher_amount'],
                     'status' => 0, // 0 un paid, 1 paid
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
