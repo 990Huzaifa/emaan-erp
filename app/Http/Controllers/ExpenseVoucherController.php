@@ -96,9 +96,9 @@ class ExpenseVoucherController extends Controller
                 $request->all(),[
                     'asset_acc' => 'required|exists:chart_of_accounts,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
-                    'cheque_no' => 'required_if:payment_method,BANK|string',
-                    'cheque_date' => 'required_if:payment_method,BANK|date',
-                    'voucher_date' => 'required',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'data' => 'required|array',
                     'data.*.expense_acc' => 'required|exists:chart_of_accounts,id',
                     'data.*.voucher_amount' => 'required|numeric',
@@ -115,10 +115,15 @@ class ExpenseVoucherController extends Controller
                     'payment_method.required' => 'Payment method is required',
                     'payment_method.in' => 'Payment method is invalid',
 
-                    'cheque_no.required_if' => 'Cheque number is required',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
 
-                    'cheque_date.required_if' => 'Cheque date is required',
-                    
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
+
                     'data.required' => 'Data is required',
                     'data.*.expense_acc.required' => 'Expense account is required',
                     'data.*.expense_acc.exists' => 'Expense account does not exist',
@@ -133,14 +138,21 @@ class ExpenseVoucherController extends Controller
                 do {
                     $voucher_code = 'EV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (ExpenseVoucher::where('voucher_code', $voucher_code)->exists());
+                $default_description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
                 $data[] = [
                     'asset_acc_id' => $request->asset_acc,
                     'expense_acc_id' => $item['expense_acc'],
                     'business_id' => $businessId,
                     'voucher_code' => $voucher_code,
                     'payment_method' => $request->payment_method,
+                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
+                    'description' => $item['description'] . ' | ' . $default_description,
                     'voucher_amount' => $item['voucher_amount'],
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status' => 0,
@@ -298,7 +310,7 @@ class ExpenseVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $asset_acc,
                     'transaction_type' => 2, // 2 -> Expense
-                    'description' => 'Payment for expense voucher.',
+                    'description' => $data->description,
                     'debit' => 0.00, // No money added to the asset account
                     'credit' => $total_billed, // Money leaving the asset account
                     'current_balance' => $a_cb // Updated balance for the asset account
@@ -309,7 +321,7 @@ class ExpenseVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $expense_acc,
                     'transaction_type' => 2, // 2 -> Expense
-                    'description' => 'Recording expense payment.',
+                    'description' => $data->description,
                     'debit' => $total_billed, // Money recorded as an expense
                     'credit' => 0.00, // No money leaving the expense account
                     'current_balance' => $e_cb // Updated balance for the expense account

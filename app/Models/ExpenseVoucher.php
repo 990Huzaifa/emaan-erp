@@ -17,6 +17,8 @@ class ExpenseVoucher extends Model
         'payment_method',
         'cheque_no',
         'cheque_date',
+        'bank_transaction_type',
+        'description',
         'voucher_amount',
         'voucher_date',
         'approve_date',
