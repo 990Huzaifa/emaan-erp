@@ -91,8 +91,9 @@ class SaleVoucherController extends Controller
                 $request->all(),[
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
-                    'cheque_no' => 'required_if:payment_method,BANK|string',
-                    'cheque_date' => 'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'voucher_date' => 'required',
                     'data' => 'required|array',
                     'data.*.customer_id' => 'required|exists:customers,id',
@@ -104,10 +105,13 @@ class SaleVoucherController extends Controller
                     'payment_method.required' => 'The payment method field is required.',
                     'payment_method.in' => 'The selected payment method is invalid.',
 
-                    'cheque_no.required_if' => 'The cheque number field is required.',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
                     'cheque_no.string' => 'The cheque number must be a string.',
 
-                    'cheque_date.required_if' => 'The cheque date field is required.',
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
                     'cheque_date.date' => 'The cheque date must be a valid date.',
 
                     'voucher_date.required' => 'The voucher date field is required.',
@@ -132,8 +136,9 @@ class SaleVoucherController extends Controller
                     'customer_id' => $item['customer_id'],
                     'acc_id' => $request->acc_id,
                     'payment_method' => $request->payment_method,
-                    'cheque_no' => $request->cheque_no,
-                    'cheque_date' => $request->cheque_date,
+                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'voucher_amount' => $item['voucher_amount'],
                     'business_id' => $user->login_business,
