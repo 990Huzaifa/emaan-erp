@@ -461,7 +461,7 @@ class DeliveryNoteController extends Controller
                     'business_id' => $businessId,
                     'acc_id' => $customer->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'debit amount to customer account by DN with the SO is '.$data->sale_order->order_code,
+                    'description' => 'SO no: '.$data->sale_order->order_code,
                     'link' => $link,
                     'debit' => $total_amount_dn, // FIXED
                     'credit' => 0.00, // FIXED
@@ -690,7 +690,7 @@ class DeliveryNoteController extends Controller
                     'business_id' => $so->business_id,
                     'acc_id' => $customer->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'debit amount to customer account by DN with the SO is '.$so->order_code,
+                    'description' => 'SO no: '.$so->order_code,
                     'link' => $link,
                     'debit' => $total_amount_dn, // FIXED
                     'credit' => 0.00, // FIXED

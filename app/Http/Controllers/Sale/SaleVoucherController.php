@@ -98,6 +98,7 @@ class SaleVoucherController extends Controller
                     'data' => 'required|array',
                     'data.*.customer_id' => 'required|exists:customers,id',
                     'data.*.voucher_amount' => 'required|numeric',
+                    'data.*.description' => 'required|string',
                 ], [                    
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -121,6 +122,8 @@ class SaleVoucherController extends Controller
                     'data.*.customer_id.exists' => 'The selected Customer is invalid.',
                     'data.*.voucher_amount.required' => 'The voucher amount field is required.',
                     'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
+                    'data.*.description.required' => 'The description field is required.',
+                    'data.*.description.string' => 'The description must be a string.',
                 ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
@@ -131,16 +134,23 @@ class SaleVoucherController extends Controller
                 do {
                     $voucher_code = 'SV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (SaleVoucher::where('voucher_code', $voucher_code)->exists());
+                
+                $default_description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
                 $data[] = [
                     'voucher_code' => $voucher_code,
-                    'customer_id' => $item['customer_id'],
                     'acc_id' => $request->acc_id,
                     'payment_method' => $request->payment_method,
                     'bank_transaction_type' => $request->bank_transaction_type ?? null,
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
-                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
+                    'customer_id' => $item['customer_id'],
+                    'description' => $item['description'] . ' | ' . $default_description,
                     'voucher_amount' => $item['voucher_amount'],
+                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'business_id' => $user->login_business,
                     'created_by' => $user->id,
                 ];
@@ -245,7 +255,7 @@ class SaleVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $customer_acc,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Payment made by customer: ' . $customer->name,
+                    'description' => $data->description,
                     'debit' => 0.00, // No money deducted from customer's side
                     'credit' => $total_billed, // Money credited to customer
                     'current_balance' => $c_cb // Updated balance for customer account
@@ -256,7 +266,7 @@ class SaleVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'Payment received from customer: ' . $customer->name,
+                    'description' => $data->description,
                     'credit' => 0.00, // No money credited to business account
                     'debit' => $total_billed, // Money debited from business account
                     'current_balance' => $b_cb

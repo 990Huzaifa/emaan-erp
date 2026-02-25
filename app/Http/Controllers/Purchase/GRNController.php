@@ -541,7 +541,7 @@ class GRNController extends Controller
                     'business_id' => $businessId,
                     'acc_id' => $vendor->acc_id,
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'credit amount to vendor account by GRN with the PO is '. $data->purchase_order->order_code,
+                    'description' => 'PO no: '. $data->purchase_order->order_code,
                     'link' => $link,
                     'credit' => $total_amount_grn, // Money credited to business account
                     'debit' => 0.00, // No money debited from business account
@@ -780,7 +780,7 @@ class GRNController extends Controller
                 'business_id' => $po->business_id,
                 'acc_id' => $vendor->acc_id,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                'description' => 'credit amount to vendor account by GRN with the PO is '. $GRN->purchase_order->order_code,
+                'description' => 'PO no: '. $GRN->purchase_order->order_code,
                 'link' => $link,
                 'credit' => $total_amount_grn, // Money credited to business account
                 'debit' => 0.00, // No money debited from business account

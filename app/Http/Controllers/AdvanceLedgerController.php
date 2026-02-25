@@ -183,7 +183,7 @@ class AdvanceLedgerController extends Controller
                 $results = ChartOfAccount::select('id','name','code')->where('parent_code', $parent_code)->get();
             }
             else{
-                 throw new Exception('Invalid Account', 400);
+                throw new Exception('Invalid Account', 400);
             }
 
             return response()->json($results,200);
