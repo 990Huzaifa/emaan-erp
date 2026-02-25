@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
             $table->string('voucher_code')->unique();
             $table->enum('payment_method', ['CASH', 'BANK'])->default('CASH');
+            $table->enum('bank_transaction_type', ['CHEQUE', 'ONLINE'])->nullable();
             $table->string('cheque_no')->nullable();
             $table->date('cheque_date')->nullable();
             $table->decimal('voucher_amount', 35, 2);
