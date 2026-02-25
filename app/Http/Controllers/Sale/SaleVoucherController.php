@@ -98,7 +98,6 @@ class SaleVoucherController extends Controller
                     'data' => 'required|array',
                     'data.*.customer_id' => 'required|exists:customers,id',
                     'data.*.voucher_amount' => 'required|numeric',
-                    'data.*.description' => 'required|string',
                 ], [                    
                     'acc_id.required' => 'The Account field is required.',
                     'acc_id.exists' => 'The selected account is invalid.',
@@ -122,8 +121,6 @@ class SaleVoucherController extends Controller
                     'data.*.customer_id.exists' => 'The selected Customer is invalid.',
                     'data.*.voucher_amount.required' => 'The voucher amount field is required.',
                     'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
-                    'data.*.description.required' => 'The description field is required.',
-                    'data.*.description.string' => 'The description must be a string.',
                 ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
