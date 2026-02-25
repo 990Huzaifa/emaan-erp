@@ -308,6 +308,7 @@ class SaleReceiptController extends Controller
                 'total_tax'=> $DN->total_tax,
                 'total'=> $DN->total,
                 'receipt_date' => date('Y-m-d'),
+                'status' => 1, // Auto approve when created from DN
             ]);
 
             // Map DN items to PI items
