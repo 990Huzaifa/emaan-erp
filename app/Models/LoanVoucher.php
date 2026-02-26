@@ -16,6 +16,8 @@ class LoanVoucher extends Model
         'voucher_amount',
         'cheque_no',
         'cheque_date',
+        'bank_transaction_type',
+        'description',
         'payment_method',
         'business_id',
         'voucher_date',

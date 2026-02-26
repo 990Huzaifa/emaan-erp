@@ -84,8 +84,9 @@ class LoanVoucherController extends Controller
                     'voucher_date'=>'required',
                     'acc_id'=>'required|exists:chart_of_accounts,id',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
-                    'cheque_no'=>'required_if:payment_method,BANK|string',
-                    'cheque_date'=>'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'data' => 'required|array',
                     'data.*.employee_id' => 'required|exists:employees,id',
                     'data.*.voucher_amount' => 'required|numeric',
@@ -97,11 +98,14 @@ class LoanVoucherController extends Controller
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
                     
-                    'cheque_no.required_if'=>'Cheque No is Required',
-                    'cheque_no.string'=>'Cheque No must be a string',
-                    
-                    'cheque_date.required_if'=>'Cheque Date is Required',
-                    'cheque_date.date'=>'Cheque Date must be a date',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
                     
@@ -121,6 +125,15 @@ class LoanVoucherController extends Controller
                 do {
                     $voucher_code = 'LV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (LoanVoucher::where('voucher_code', $voucher_code)->exists());
+                $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($item['description']) && !empty($item['description'])){
+                    $description = $item['description'] . ' | ' . $description;
+                }
                 $data[] = [
                     'acc_id'=>$request->acc_id,
                     'voucher_code'=>$voucher_code,
@@ -128,8 +141,10 @@ class LoanVoucherController extends Controller
                     'employee_id'=>$item['employee_id'],
                     'voucher_amount'=>$item['voucher_amount'],
                     'payment_method'=>$request->payment_method,
-                    'cheque_no'=>$request->cheque_no,
-                    'cheque_date'=>$request->cheque_date,
+                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'description' => $description,
                     'voucher_date'=>$request->voucher_date,
                     'status'=>0,
                     'created_by'=>$user->id
@@ -198,8 +213,9 @@ class LoanVoucherController extends Controller
                     'employee_id'=>'required|exists:employees,id',
                     'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
-                    'cheque_no'=>'required_if:payment_method,BANK|string',
-                    'cheque_date'=>'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                 ],[
                     
                     'acc_id.required'=>'Account is Required',
@@ -214,11 +230,14 @@ class LoanVoucherController extends Controller
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
                     
-                    'cheque_no.required_if'=>'Cheque No is Required',
-                    'cheque_no.string'=>'Cheque No must be a string',
-                    
-                    'cheque_date.required_if'=>'Cheque Date is Required',
-                    'cheque_date.date'=>'Cheque Date must be a date',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
                     'voucher_date.date'=>'Voucher Date must be a date',
@@ -231,13 +250,24 @@ class LoanVoucherController extends Controller
             $loanVoucher = LoanVoucher::find($id);
             if (empty($loanVoucher)) throw new Exception('No data found', 404);
             if ($loanVoucher->status == 1) throw new Exception('voucher already paid', 404);
+            $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($request->description) && !empty($request->description)){
+                    $description = $request->description . ' | ' . $description;
+                }
             $loanVoucher->update([
                 'acc_id'=>$request->acc_id,
                 'employee_id'=>$request->employee_id,
                 'voucher_amount'=>$request->voucher_amount,
                 'payment_method'=>$request->payment_method,
+                'bank_transaction_type'=>$request->bank_transaction_type ?? null,
                 'cheque_no'=>$request->cheque_no  ?? null,
                 'cheque_date'=>$request->cheque_date ?? null,
+                'description'=>$description,
                 'voucher_date'=>$request->voucher_date,
             ]);
             DB::commit();
@@ -293,7 +323,7 @@ class LoanVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $acc_id,
                     'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'loan sent to employee',
+                    'description' => $data->description,
                     'debit' => 0.00,
                     'credit' => $total_amount,
                     'current_balance' => $a_cb
@@ -304,7 +334,7 @@ class LoanVoucherController extends Controller
                     'business_id' => $data->business_id,
                     'acc_id' => $employee_acc_id,
                     'transaction_type' => 2, // 0->purchase, 1->sale, 2->expense, 3->income
-                    'description' => 'loan received by employee',
+                    'description' => $data->description,
                     'debit' => $total_amount,
                     'credit' => 0.00,
                     'current_balance' => $e_cb
