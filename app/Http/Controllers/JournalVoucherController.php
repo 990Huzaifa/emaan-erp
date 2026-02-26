@@ -85,8 +85,9 @@ class JournalVoucherController extends Controller
                     'acc_id'=>'required|exists:chart_of_accounts,id',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
                     'type'=>'required|string|in:WITHDRAW,DEPOSIT',
-                    'cheque_no'=>'required_if:payment_method,BANK|string',
-                    'cheque_date'=>'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'data'=>'required|array',
                     'data.*.partner_id'=>'required|exists:partners,id',
                     'data.*.voucher_amount'=>'required|numeric',
@@ -98,11 +99,14 @@ class JournalVoucherController extends Controller
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
                     
-                    'cheque_no.required_if'=>'Cheque No is Required',
-                    'cheque_no.string'=>'Cheque No must be a string',
-                    
-                    'cheque_date.required_if'=>'Cheque Date is Required',
-                    'cheque_date.date'=>'Cheque Date must be a date',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
 
@@ -125,6 +129,15 @@ class JournalVoucherController extends Controller
                 do {
                     $voucher_code = 'JV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
+                $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($item['description']) && !empty($item['description'])){
+                    $description = $item['description'] . ' | ' . $description;
+                }
                 $data[]=[
                     'acc_id'=>$request->acc_id,
                     'voucher_code'=>$voucher_code,
@@ -132,9 +145,11 @@ class JournalVoucherController extends Controller
                     'partner_id'=>$item['partner_id'],
                     'voucher_amount'=>$item['voucher_amount'],
                     'payment_method'=>$request->payment_method,
+                    'bank_transaction_type'=>$request->bank_transaction_type,
+                    'description'=>$description,
                     'type'=>$request->type,
-                    'cheque_no'=>$request->cheque_no,
-                    'cheque_date'=>$request->cheque_date,
+                    'cheque_no'=>$request->cheque_no ?? null,
+                    'cheque_date'=>$request->cheque_date ?? null,
                     'voucher_date'=>Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status'=>0,
                     'created_by'=>$user->id
@@ -204,8 +219,9 @@ class JournalVoucherController extends Controller
                     'voucher_amount'=>'required|numeric',
                     'payment_method'=>'required|string|in:CASH,BANK,OTHER',
                     'type'=>'required|string|in:WITHDRAW,DEPOSIT',
-                    'cheque_no'=>'required_if:payment_method,BANK|string',
-                    'cheque_date'=>'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                 ],[
                     
                     'acc_id.required'=>'Account is Required',
@@ -220,11 +236,14 @@ class JournalVoucherController extends Controller
                     'payment_method.required'=>'Payment Method is Required',
                     'payment_method.in'=>'Payment Method is Invalid',
                     
-                    'cheque_no.required_if'=>'Cheque No is Required',
-                    'cheque_no.string'=>'Cheque No must be a string',
-                    
-                    'cheque_date.required_if'=>'Cheque Date is Required',
-                    'cheque_date.date'=>'Cheque Date must be a date',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'cheque_no.string' => 'The cheque number must be a string.',
+
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'cheque_date.date' => 'The cheque date must be a valid date.',
                     
                     'voucher_date.required'=>'Voucher Date is Required',
 
@@ -239,12 +258,23 @@ class JournalVoucherController extends Controller
             $data = JournalVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             if ($data->status == 1) throw new Exception('voucher already paid', 404);
+            $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($request->description) && !empty($request->description)){
+                    $description = $request->description . ' | ' . $description;
+                }
             $data->update([
                 'acc_id'=>$request->acc_id,
                 'partner_id'=>$request->partner_id,
                 'voucher_amount'=>$request->voucher_amount,
                 'payment_method'=>$request->payment_method,
                 'type'=>$request->type,
+                'bank_transaction_type'=>$request->bank_transaction_type,
+                'description'=>$description,
                 'cheque_no'=>$request->cheque_no  ?? null,
                 'cheque_date'=>$request->cheque_date ?? null,
                 'voucher_date'=>$request->voucher_date,
@@ -303,7 +333,7 @@ class JournalVoucherController extends Controller
                         'business_id' => $data->business_id,
                         'acc_id' => $acc_id,
                         'transaction_type' => 2, // Withdrawal
-                        'description' => 'Partner withdrawal.',
+                        'description' => $data->description,
                         'debit' => $total_amount,
                         'credit' => 0.00,
                         
@@ -315,7 +345,7 @@ class JournalVoucherController extends Controller
                         'business_id' => $data->business_id,
                         'acc_id' => $partner_acc_id,
                         'transaction_type' => 2, // Withdrawal
-                        'description' => 'Reduction in partner equity due to withdrawal.',
+                        'description' => $data->description,
                         'debit' => 0.00,
                         'credit' => $total_amount,
                         'current_balance' => $p_cb
@@ -330,7 +360,7 @@ class JournalVoucherController extends Controller
                         'business_id' => $data->business_id,
                         'acc_id' => $acc_id,
                         'transaction_type' => 1, // Contribution
-                        'description' => 'Partner contribution.',
+                        'description' => $data->description,
                         'debit' => 0.00,
                         'credit' => $total_amount,
                         'current_balance' => $a_cb
@@ -341,7 +371,7 @@ class JournalVoucherController extends Controller
                         'business_id' => $data->business_id,
                         'acc_id' => $partner_acc_id,
                         'transaction_type' => 1, // Contribution
-                        'description' => 'Increase in partner equity due to contribution.',
+                        'description' => $data->description,
                         'debit' => $total_amount,
                         'credit' => 0.00,
                         'current_balance' => $p_cb

@@ -18,6 +18,8 @@ class JournalVoucher extends Model
         'cheque_date',
         'payment_method',
         'type',
+        'bank_transaction_type',
+        'description',
         'business_id',
         'voucher_date',
         'approve_date',
