@@ -46,8 +46,13 @@ class ReportsController extends Controller
             }
 
             $perpage = $request->input('perpage', 10);
-            $startDate = $request->start_date ?? '1970-01-01';
-            $endDate = $request->end_date ?? now()->format('Y-m-d');
+            $startDate = $request->start_date
+            ? Carbon::parse($request->start_date)->startOfDay()
+            : Carbon::parse('1970-01-01')->startOfDay();
+
+            $endDate = $request->end_date
+                ? Carbon::parse($request->end_date)->endOfDay()
+                : now()->endOfDay();
 
             // Sum quantities of products from purchase orders (IN)
             $purchaseItems = GoodsReceiveNoteItem::select('product_id', DB::raw('SUM(receive) as total_in'))
@@ -152,12 +157,8 @@ class ReportsController extends Controller
                 }
             }
 
-            $start_date = $request->input('start_date', PurchaseVoucher::min('voucher_date')); // Default: earliest transaction date
-            $end_date = $request->input('end_date', Carbon::now()->toDateString()); // Default: today
-
-            // Ensure valid date format
-            $start_date = Carbon::parse($start_date)->startOfDay()->toDateTimeString();
-            $end_date = Carbon::parse($end_date)->endOfDay()->toDateTimeString();
+            $start_date = Carbon::parse($request->start_date)->startOfDay();
+            $end_date   = Carbon::parse($request->end_date)->endOfDay();
 
             // Query purchase vouchers with vendor names
             $query = PurchaseVoucher::select('purchase_vouchers.*', 'vendors.name as vendor_name')
@@ -962,11 +963,8 @@ class ReportsController extends Controller
                 }
             }
     
-            $start_date = $request->input('start_date');
-            $end_date = $request->input('end_date');
-    
-            $start_date = $start_date ? Carbon::parse($start_date) : null;
-            $end_date = $end_date ? Carbon::parse($end_date) : null;
+            $start_date = Carbon::parse($request->start_date)->startOfDay();
+            $end_date   = Carbon::parse($request->end_date)->endOfDay();
     
             // here is the logic code
     
