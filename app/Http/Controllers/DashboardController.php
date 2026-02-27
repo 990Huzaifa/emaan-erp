@@ -564,6 +564,7 @@ class DashboardController extends Controller
 
             // Return the response with the percentages
             return response()->json([
+                'total_count' => $totalCount,
                 'pending_percentage' => round($pendingPercentage,2),
                 'approved_percentage' => round($approvedPercentage,2),
                 'rejected_percentage' => round($rejectedPercentage,2),
@@ -629,6 +630,7 @@ class DashboardController extends Controller
 
             // Return the response with the percentages
             return response()->json([
+                'total_count' => $totalCount,
                 'pending_percentage' => round($pendingPercentage, 2),
                 'approved_percentage' => round($approvedPercentage, 2),
                 'rejected_percentage' => round($rejectedPercentage, 2),
