@@ -389,6 +389,48 @@ class DashboardController extends Controller
 
             // 2 new card for payable and receivable
 
+            $totalReceivable = DB::table('transactions as t')
+                ->selectRaw('SUM(t.current_balance) as total_receivable')
+                ->joinSub(
+                    DB::table('transactions')
+                        ->select('acc_id', DB::raw('MAX(created_at) as latest_date'))
+                        ->groupBy('acc_id'),
+                    'latest',
+                    function ($join) {
+                        $join->on('t.acc_id', '=', 'latest.acc_id')
+                            ->on('t.created_at', '=', 'latest.latest_date');
+                    }
+                )
+                ->join('chart_of_accounts as c', 'c.id', '=', 't.acc_id')
+                ->where('c.code', 'like', '1-4-1%') // Customers under AR
+                ->whereNotExists(function ($query) {
+                    $query->select(DB::raw(1))
+                        ->from('chart_of_accounts as child')
+                        ->whereColumn('child.parent_code', 'c.code');
+                })
+                ->value('total_receivable');
+
+                $totalPayable = DB::table('transactions as t')
+                    ->selectRaw('SUM(t.current_balance) as total_payable')
+                    ->joinSub(
+                        DB::table('transactions')
+                            ->select('acc_id', DB::raw('MAX(created_at) as latest_date'))
+                            ->groupBy('acc_id'),
+                        'latest',
+                        function ($join) {
+                            $join->on('t.acc_id', '=', 'latest.acc_id')
+                                ->on('t.created_at', '=', 'latest.latest_date');
+                        }
+                    )
+                    ->join('chart_of_accounts as c', 'c.id', '=', 't.acc_id')
+                    ->where('c.code', 'like', '2-1-1%') // Vendors under AP
+                    ->whereNotExists(function ($query) {
+                        $query->select(DB::raw(1))
+                            ->from('chart_of_accounts as child')
+                            ->whereColumn('child.parent_code', 'c.code');
+                    })
+                    ->value('total_payable');
+
             $data = [
                 'Customers' => [
                     'total' => $total_customers,
@@ -415,6 +457,12 @@ class DashboardController extends Controller
                     'total' => $total_amount_received,
                     'trend' => $trend_amount_received,
                     'ipc' => $ipc_amount_received
+                ],
+                'Receivable' => [
+                    'total' => $totalReceivable,
+                ],
+                'Payable' => [
+                    'total' => $totalPayable,
                 ]
             ];
 
