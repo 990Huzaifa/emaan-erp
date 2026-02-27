@@ -371,13 +371,23 @@ class DashboardController extends Controller
 
             $trend_sales  = $this->checkTrend($cm_sales, $lm_sales);
 
-            $total_purchases = PurchaseVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
+            $total_purchases = PurchaseInvoice::where('business_id',$businessId)->where('status',1)->sum('total');
 
-            $cm_purchase = PurchaseVoucher::where('business_id', $businessId)->where('status',1)->whereMonth('voucher_date', Carbon::now()->month)->whereYear('voucher_date', Carbon::now()->year)->sum('voucher_amount');
-            $lm_purchases = PurchaseVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
+            $cm_purchase = PurchaseInvoice::where('business_id', $businessId)->where('status',1)->whereMonth('invoice_date', Carbon::now()->month)->whereYear('invoice_date', Carbon::now()->year)->sum('total');
+            $lm_purchases = PurchaseInvoice::where('business_id',$businessId)->where('status',1)->whereMonth('invoice_date', $last_month_date->month)->whereYear('invoice_date', $last_month_date->year)->sum('total');
             $ipc_purchases = ($lm_purchases > 0) ? (($cm_purchase - $lm_purchases) / $lm_purchases) * 100 : 0;
 
             $trend_purchases  = $this->checkTrend($cm_purchase, $lm_purchases);
+
+            $total_amount_received = SaleVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
+
+            $cm_amount_received = SaleVoucher::where('business_id', $businessId)->where('status',1)->whereMonth('voucher_date', Carbon::now()->month)->whereYear('voucher_date', Carbon::now()->year)->sum('voucher_amount');
+            $lm_amount_received = SaleVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
+            $ipc_amount_received = ($lm_amount_received > 0) ? (($cm_amount_received - $lm_amount_received) / $lm_amount_received) * 100 : 0;
+
+            $trend_amount_received  = $this->checkTrend($cm_amount_received, $lm_amount_received);
+
+            // 2 new card for payable and receivable
 
             $data = [
                 'Customers' => [
@@ -400,6 +410,11 @@ class DashboardController extends Controller
                     'total' => $total_purchases,
                     'trend' => $trend_purchases,
                     'ipc' => $ipc_purchases
+                ],
+                'Amount Received' => [
+                    'total' => $total_amount_received,
+                    'trend' => $trend_amount_received,
+                    'ipc' => $ipc_amount_received
                 ]
             ];
 
