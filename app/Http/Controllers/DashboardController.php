@@ -256,24 +256,24 @@ class DashboardController extends Controller
                 ->get();
 
             // Get the latest month from sales data in the given year
-            $latestMonth = SaleVoucher::where('status', 1)
+            $latestMonth = SaleReceipt::where('status', 1)
             ->where('business_id', $businessId)
-            ->whereYear('voucher_date', $year)
-            ->selectRaw('MAX(MONTH(voucher_date)) as latestMonth')
+            ->whereYear('receipt_date', $year)
+            ->selectRaw('MAX(MONTH(receipt_date)) as latestMonth')
             ->value('latestMonth');
 
             // Get total sales for the entire year (up to the latest month)
-            $totalYearSale = SaleVoucher::where('status', 1)
+            $totalYearSale = SaleReceipt::where('status', 1)
             ->where('business_id', $businessId)
-            ->whereYear('voucher_date', $year)
-            ->sum('voucher_amount');
+            ->whereYear('receipt_date', $year)
+            ->sum('total');
 
             // Get total sales for the previous month (if available)
-            $previousMonthTotalSale = SaleVoucher::where('status', 1)
+            $previousMonthTotalSale = SaleReceipt::where('status', 1)
             ->where('business_id', $businessId)
-            ->whereYear('voucher_date', $year)
-            ->whereMonth('voucher_date', $latestMonth - 1) // Previous month
-            ->sum('voucher_amount');
+            ->whereYear('receipt_date', $year)
+            ->whereMonth('receipt_date', $latestMonth - 1) // Previous month
+            ->sum('total');
 
             // Calculate percentage increase
             $percentageIncrease = ($previousMonthTotalSale > 0)
@@ -281,19 +281,19 @@ class DashboardController extends Controller
             : 0;
 
             // total of sales, current month sales, today sale, last month sales increase percentage
-            $totalSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->sum('voucher_amount');
+            $totalSale = SaleReceipt::where('status', 1)->where('business_id', $businessId)->sum('total');
 
             // Current month sales
             $currentMonth = Carbon::now()->month;
             $currentYear = Carbon::now()->year;
-            $currentMonthSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $currentMonth)->sum('voucher_amount');
+            $currentMonthSale = SaleReceipt::where('status', 1)->where('business_id', $businessId)->whereYear('receipt_date', $currentYear)->whereMonth('receipt_date', $currentMonth)->sum('total');
 
             // Today's sales
-            $todaySale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereDate('voucher_date', Carbon::now()->toDateString())->sum('voucher_amount');
+            $todaySale = SaleReceipt::where('status', 1)->where('business_id', $businessId)->whereDate('receipt_date', Carbon::now()->toDateString())->sum('total');
 
             // Last month's sales
             $lastMonth = Carbon::now()->subMonth()->month;
-            $lastMonthSale = SaleVoucher::where('status', 1)->where('business_id', $businessId)->whereYear('voucher_date', $currentYear)->whereMonth('voucher_date', $lastMonth)->sum('voucher_amount');
+            $lastMonthSale = SaleReceipt::where('status', 1)->where('business_id', $businessId)->whereYear('receipt_date', $currentYear)->whereMonth('receipt_date', $lastMonth)->sum('total');
 
             // Calculate percentage increase from last month
             $percentageInc = ($lastMonthSale > 0)
