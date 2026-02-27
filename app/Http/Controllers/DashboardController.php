@@ -363,10 +363,10 @@ class DashboardController extends Controller
 
             $trend_product = $this->checkTrend($cm_product,$lm_product);
 
-            $total_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->sum('voucher_amount');
+            $total_sales = SaleReceipt::where('business_id',$businessId)->where('status',1)->sum('total');
 
-            $cm_sales = SaleVoucher::where('business_id', $businessId)->where('status',1)->whereMonth('voucher_date', Carbon::now()->month)->whereYear('voucher_date', Carbon::now()->year)->sum('voucher_amount');
-            $lm_sales = SaleVoucher::where('business_id',$businessId)->where('status',1)->whereMonth('voucher_date', $last_month_date->month)->whereYear('voucher_date', $last_month_date->year)->sum('voucher_amount');
+            $cm_sales = SaleReceipt::where('business_id', $businessId)->where('status',1)->whereMonth('receipt_date', Carbon::now()->month)->whereYear('receipt_date', Carbon::now()->year)->sum('total');
+            $lm_sales = SaleReceipt::where('business_id',$businessId)->where('status',1)->whereMonth('receipt_date', $last_month_date->month)->whereYear('receipt_date', $last_month_date->year)->sum('total');
             $ipc_sale = ($lm_sales > 0) ? (($cm_sales - $lm_sales) / $lm_sales) * 100 : 0;
 
             $trend_sales  = $this->checkTrend($cm_sales, $lm_sales);
