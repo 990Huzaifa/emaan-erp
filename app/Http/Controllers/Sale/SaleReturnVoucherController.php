@@ -241,7 +241,8 @@ class SaleReturnVoucherController extends Controller
                     'description' => $data->description,
                     'credit' => 0.00, // Money credited to customer
                     'debit' => $total_billed, // No money deducted from customer's side
-                    'current_balance' => $c_cb // Updated balance for customer account
+                    'current_balance' => $c_cb, // Updated balance for customer account
+                    'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
 
                 // Credit amount from business's account
@@ -252,7 +253,8 @@ class SaleReturnVoucherController extends Controller
                     'description' => $data->description,
                     'debit' => 0.00, // Money debited from business account
                     'credit' => $total_billed, // No money credited to business account
-                    'current_balance' => $b_cb
+                    'current_balance' => $b_cb,
+                    'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
             }
             

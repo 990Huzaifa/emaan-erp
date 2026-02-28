@@ -18,6 +18,7 @@ class Transaction extends Model
         'debit',
         'credit',
         'current_balance',
+        'created_at',
     ];
     public function chartOfAccount()
     {

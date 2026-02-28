@@ -335,7 +335,8 @@ class ExpenseVoucherController extends Controller
                     'description' => $data->description,
                     'debit' => 0.00, // No money added to the asset account
                     'credit' => $total_billed, // Money leaving the asset account
-                    'current_balance' => $a_cb // Updated balance for the asset account
+                    'current_balance' => $a_cb, // Updated balance for the asset account
+                    'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
 
                 // Debit the expense account (money recorded as an expense)
@@ -346,7 +347,8 @@ class ExpenseVoucherController extends Controller
                     'description' => $data->description,
                     'debit' => $total_billed, // Money recorded as an expense
                     'credit' => 0.00, // No money leaving the expense account
-                    'current_balance' => $e_cb // Updated balance for the expense account
+                    'current_balance' => $e_cb, // Updated balance for the expense account
+                    'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
             }
             

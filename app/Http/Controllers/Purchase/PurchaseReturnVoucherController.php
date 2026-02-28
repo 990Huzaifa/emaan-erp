@@ -347,7 +347,8 @@ class PurchaseReturnVoucherController extends Controller
                         'description' => $data->description,
                         'debit' => 0.00, // No money credited to vendor's account
                         'credit' => $total_billed, // Money debited from vendor's account
-                        'current_balance' => $v_cb // Updated balance for vendor account
+                        'current_balance' => $v_cb, // Updated balance for vendor account
+                        'created_at' => $data->voucher_date, // Use voucher date for transaction record
                     ]);
 
                     // Debit amount from business's account
@@ -358,7 +359,8 @@ class PurchaseReturnVoucherController extends Controller
                         'description' => $data->description,
                         'credit' => 0.00, // No money debited to business account
                         'debit' => $total_billed, // Money credited from business account
-                        'current_balance' => $b_cb
+                        'current_balance' => $b_cb,
+                        'created_at' => $data->voucher_date, // Use voucher date for transaction record
                     ]);
 
                     Log::create([

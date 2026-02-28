@@ -258,7 +258,8 @@ class SaleVoucherController extends Controller
                     'description' => $data->description,
                     'debit' => 0.00, // No money deducted from customer's side
                     'credit' => $total_billed, // Money credited to customer
-                    'current_balance' => $c_cb // Updated balance for customer account
+                    'current_balance' => $c_cb, // Updated balance for customer account
+                    'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
 
                 // Debit amount from business's account
@@ -269,7 +270,8 @@ class SaleVoucherController extends Controller
                     'description' => $data->description,
                     'credit' => 0.00, // No money credited to business account
                     'debit' => $total_billed, // Money debited from business account
-                    'current_balance' => $b_cb
+                    'current_balance' => $b_cb,
+                    'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
                 Log::create([
                     'user_id' => $user->id,
