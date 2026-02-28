@@ -138,7 +138,11 @@ class SaleVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($item['description']) && !empty($item['description'])){
-                    $description = $item['description'] . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $item['description'] . ' | ' . $description;
+                    }else{
+                        $description = $item['description'];
+                    }
                 }
                 $data[] = [
                     'voucher_code' => $voucher_code,
@@ -313,8 +317,9 @@ class SaleVoucherController extends Controller
                     'customer_id' => 'required|exists:customers,id',
                     "payment_method" => 'required|string|in:CASH,BANK,OTHER',
                     'acc_id' => 'required|exists:chart_of_accounts,id',
-                    'cheque_no' => 'required_if:payment_method,BANK|string',
-                    'cheque_date' => 'required_if:payment_method,BANK|date',
+                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
+                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'voucher_date' => 'required',
                     'voucher_amount' => 'required|numeric',
                 ], [
@@ -327,12 +332,14 @@ class SaleVoucherController extends Controller
                     'payment_method.required' => 'The payment method field is required.',
                     'payment_method.in' => 'The selected payment method is invalid.',
 
-                    'cheque_no.required_if' => 'The cheque number field is required.',
+                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
                     'cheque_no.string' => 'The cheque number must be a string.',
-
-                    'cheque_date.required_if' => 'The cheque date field is required.',
+                    
+                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
                     'cheque_date.date' => 'The cheque date must be a valid date.',
-
                     'voucher_date.required' => 'The voucher date field is required.',
 
                     'voucher_amount.required' => 'The voucher amount field is required.',
@@ -344,10 +351,25 @@ class SaleVoucherController extends Controller
             $data = SaleVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             if ($data->status == 1) throw new Exception('voucher already paid', 404);
+            $description = $request->payment_method == 'CASH' 
+                    ? 'Cash Transfer' 
+                    : ($request->bank_transaction_type == 'CHEQUE' 
+                        ? 'Cheque Payment' 
+                        : 'Online Bank Transfer');
+
+                if(isset($request->description) && !empty($request->description)){
+                    if($request->payment_method == 'BANK'){
+                        $description = $request->description . ' | ' . $description;
+                    }else{
+                        $description = $request->description;
+                    }
+                }
             $data->update([
                 'customer_id' => $request->customer_id,
                 'acc_id' => $request->acc_id,
                 'business_id' => $businessId,
+                'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                'description' => $description,
                 'payment_method' => $request->payment_method,
                 'cheque_no' => $request->cheque_no ?? null,
                 'cheque_date' => $request->cheque_date ?? null,

@@ -134,7 +134,11 @@ class SaleReturnVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($item['description']) && !empty($item['description'])){
-                    $description = $item['description'] . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $item['description'] . ' | ' . $description;
+                    }else{
+                        $description = $item['description'];
+                    }
                 }
                 $data[] = [
                     'voucher_code' => $voucher_code,
@@ -338,7 +342,11 @@ class SaleReturnVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($request->description) && !empty($request->description)){
-                    $description = $request->description . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $request->description . ' | ' . $description;
+                    }else{
+                        $description = $request->description;
+                    }
                 }
             $data->update([
                 'customer_id' => $request->customer_id,

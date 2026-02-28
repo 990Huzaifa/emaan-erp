@@ -145,7 +145,11 @@ class ExpenseVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($item['description']) && !empty($item['description'])){
-                    $description = $item['description'] . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $item['description'] . ' | ' . $description;
+                    }else{
+                        $description = $item['description'];
+                    }
                 }
                 $data[] = [
                     'asset_acc_id' => $request->asset_acc,
@@ -268,7 +272,11 @@ class ExpenseVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($request->description) && !empty($request->description)){
-                    $description = $request->description . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $request->description . ' | ' . $description;
+                    }else{
+                        $description = $request->description;
+                    }
                 }
                 $data->update([
                     'asset_acc_id' => $request->asset_acc,

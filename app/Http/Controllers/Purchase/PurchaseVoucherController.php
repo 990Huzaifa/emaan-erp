@@ -134,18 +134,22 @@ class PurchaseVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($item['description']) && !empty($item['description'])){
-                    $description = $item['description'] . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $item['description'] . ' | ' . $description;
+                    }else{
+                        $description = $item['description'];
+                    }
                 }
                 $data[] = [
                     'acc_id' => $request->acc_id,
                     'business_id' => $businessId,
                     'payment_method' => $request->payment_method,
                     'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                    'description' => $description,
                     'cheque_no' => $request->cheque_no ?? null,
                     'cheque_date' => $request->cheque_date ?? null,
                     'voucher_code' => $voucher_code, 
                     'vendor_id' => $item['vendor_id'],
-                    'description' => $description,
                     'voucher_amount' => $item['voucher_amount'],
                     'status' => 0, // 0 un paid, 1 paid
                     'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
@@ -262,7 +266,11 @@ class PurchaseVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($request->description) && !empty($request->description)){
-                    $description = $request->description . ' | ' . $description;
+                    if($request->payment_method == 'BANK'){
+                        $description = $request->description . ' | ' . $description;
+                    }else{
+                        $description = $request->description;
+                    }
                 }
             $data->update([
                 'vendor_id' => $request->vendor_id,
