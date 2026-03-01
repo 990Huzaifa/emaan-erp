@@ -950,18 +950,10 @@ class ReportsController extends Controller
 
     // profit n lose
 
-    public function pnl(Request $request): JsonResponse
+    public function pnlOld(Request $request): JsonResponse
     {
         try {
-            $user = Auth::user();
-            if ($user->role != 'admin') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'pnl report')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
+            
     
             $start_date = Carbon::parse($request->start_date)->startOfDay();
             $end_date   = Carbon::parse($request->end_date)->endOfDay();
@@ -1020,6 +1012,87 @@ class ReportsController extends Controller
             return response()->json(['data' => $pnlData, 'summary' => $overall], 200);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function pnl(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+                if ($user->role != 'admin') {
+                    $businessId = $user->login_business;
+                    if (!$user->hasBusinessPermission($businessId, 'pnl report')) {
+                        return response()->json([
+                            'error' => 'User does not have the required permission.'
+                        ], 403);
+                    }
+                }
+            $start_date = Carbon::parse($request->start_date)->startOfDay();
+            $end_date   = Carbon::parse($request->end_date)->endOfDay();
+
+            // ---------------------------
+            // PURCHASE DATA
+            // ---------------------------
+            $purchaseData = GoodsReceiveNoteItem::whereHas('goodsReceiveNote', function ($q) use ($start_date, $end_date) {
+                $q->whereBetween('grn_date', [$start_date, $end_date]);
+            })
+            ->selectRaw('product_id,
+                        SUM(quantity) as total_purchase_qty,
+                        SUM(quantity * unit_price) as total_purchase_amount')
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
+
+            // ---------------------------
+            // SALE DATA
+            // ---------------------------
+            $saleData = DeliveryNoteItem::whereHas('deliveryNote', function ($q) use ($start_date, $end_date) {
+                $q->whereBetween('dn_date', [$start_date, $end_date]);
+            })
+            ->selectRaw('product_id,
+                        SUM(quantity) as total_sale_qty,
+                        SUM(quantity * unit_price) as total_sale_amount')
+            ->groupBy('product_id')
+            ->get();
+
+
+            $report = $saleData->map(function ($sale) use ($purchaseData) {
+
+                $productId = $sale->product_id;
+
+                $purchaseQty = $purchaseData[$productId]->total_purchase_qty ?? 0;
+                $purchaseAmount = $purchaseData[$productId]->total_purchase_amount ?? 0;
+
+                $avgPurchasePrice = $purchaseQty > 0 ? $purchaseAmount / $purchaseQty : 0;
+
+                $cogs = $avgPurchasePrice * $sale->total_sale_qty;
+
+                $profit = $sale->total_sale_amount - $cogs;
+
+                return [
+                    'product_id' => $productId,
+                    'quantity_sold' => $sale->total_sale_qty,
+                    'total_sale' => round($sale->total_sale_amount, 2),
+                    'avg_purchase_price' => round($avgPurchasePrice, 2),
+                    'cogs' => round($cogs, 2),
+                    'profit' => round($profit, 2),
+                ];
+            });
+
+            $summary = [
+                'total_sale' => $report->sum('total_sale'),
+                'total_cogs' => $report->sum('cogs'),
+                'total_profit' => $report->sum('profit'),
+            ];
+
+            return response()->json([
+                'data' => $report->values(),
+                'summary' => $summary
+            ]);
+
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
