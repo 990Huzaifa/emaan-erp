@@ -24,6 +24,11 @@ class GoodsReceiveNoteItem extends Model
         'tax',
     ];
 
+    public function goodsReceiveNote()
+    {
+        return $this->belongsTo(GoodsReceiveNote::class, 'goods_receive_note_id');
+    }
+
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_id');
