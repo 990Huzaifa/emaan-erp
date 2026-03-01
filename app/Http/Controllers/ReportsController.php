@@ -1062,6 +1062,7 @@ class ReportsController extends Controller
             $report = $saleData->map(function ($sale) use ($purchaseData) {
 
                 $productId = $sale->product_id;
+                $productName = optional($sale->product)->title;                
 
                 $purchaseQty = $purchaseData[$productId]->total_purchase_qty ?? 0;
                 $purchaseAmount = $purchaseData[$productId]->total_purchase_amount ?? 0;
@@ -1074,6 +1075,7 @@ class ReportsController extends Controller
 
                 return [
                     'product_id' => $productId,
+                    'product_name' => $productName,
                     'quantity_sold' => $sale->total_sale_qty,
                     'total_sale' => round($sale->total_sale_amount, 2),
                     'avg_purchase_price' => round($avgPurchasePrice, 2),
