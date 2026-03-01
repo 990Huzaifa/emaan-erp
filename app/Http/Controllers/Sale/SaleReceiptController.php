@@ -307,7 +307,7 @@ class SaleReceiptController extends Controller
                 'total_discount'=> $DN->total_discount,
                 'total_tax'=> $DN->total_tax,
                 'total'=> $DN->total,
-                'receipt_date' => date('Y-m-d'),
+                'receipt_date' => $DN->dn_date,
                 'status' => 1, // Auto approve when created from DN
             ]);
 

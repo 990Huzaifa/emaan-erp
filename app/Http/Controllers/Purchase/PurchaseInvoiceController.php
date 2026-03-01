@@ -335,7 +335,7 @@ class PurchaseInvoiceController extends Controller
                 'po_no' => $PO->order_code,
                 'delivery_cost' => $GRN->delivery_cost,
                 'invoice_no' => $invoice_no,
-                'invoice_date' => date('Y-m-d'),
+                'invoice_date' => $GRN->grn_date,
                 'business_id' => $businessId,
                 'grn_id' => $id,
                 'terms_of_payment' => $GRN->terms_of_payment,
