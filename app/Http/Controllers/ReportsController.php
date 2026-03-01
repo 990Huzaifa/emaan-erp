@@ -1040,7 +1040,7 @@ class ReportsController extends Controller
             })
             ->selectRaw('product_id,
                         SUM(quantity) as total_purchase_qty,
-                        SUM(quantity * unit_price) as total_purchase_amount')
+                        SUM(quantity * purchase_unit_price) as total_purchase_amount')
             ->groupBy('product_id')
             ->get()
             ->keyBy('product_id');
