@@ -1080,7 +1080,7 @@ class ReportsController extends Controller
                     'total_purchase' => round($purchaseAmount, 2),
                     'total_sale' => round($sale->total_sale_amount, 2),
                     'avg_purchase_price' => round($avgPurchasePrice, 2),
-                    // 'cogs' => round($cogs, 2),
+                    'cogs' => round($cogs, 2),
                     'profit' => round($profit, 2),
                 ];
             });
