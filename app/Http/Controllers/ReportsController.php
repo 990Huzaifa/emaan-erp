@@ -1087,7 +1087,7 @@ class ReportsController extends Controller
 
             $summary = [
                 'total_sale' => $report->sum('total_sale'),
-                'total_cogs' => $report->sum('cogs'),
+                'total_purchase' => $report->sum('cogs'),
                 'total_profit' => $report->sum('profit'),
             ];
 
