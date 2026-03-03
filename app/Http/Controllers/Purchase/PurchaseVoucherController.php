@@ -44,7 +44,7 @@ class PurchaseVoucherController extends Controller
             ->join('vendors','purchase_vouchers.vendor_id', '=', 'vendors.id')
             ->join('chart_of_accounts','purchase_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->where('purchase_vouchers.business_id',$businessId)
-            ->orderBy('id', 'desc');
+            ->orderBy('voucher_date', 'desc');
 
 
             if (!empty($request->query('start_date')) && !empty($request->query('end_date'))) {

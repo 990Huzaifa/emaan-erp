@@ -46,7 +46,7 @@ class SaleVoucherController extends Controller
             ->join('customers','sale_vouchers.customer_id', '=', 'customers.id')
             ->join('chart_of_accounts','sale_vouchers.acc_id', '=', 'chart_of_accounts.id')
             ->where('sale_vouchers.business_id',$user->login_business)
-            ->orderBy('id', 'desc');
+            ->orderBy('voucher_date', 'desc');
 
 
             if (!empty($request->query('start_date')) && !empty($request->query('end_date'))) {
