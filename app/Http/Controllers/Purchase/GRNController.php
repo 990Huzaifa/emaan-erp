@@ -522,7 +522,8 @@ class GRNController extends Controller
                     $check = InventoryDetail::where('product_id', $item->product_id)->first();
                     if ($check) {
                         $check->update([
-                            'stock' => $check->stock + $item->quantity
+                            'stock' => $check->stock + $item->quantity,
+                            'in_stock' => 1
                         ]);
                     }else{
                         InventoryDetail::create([
@@ -760,7 +761,8 @@ class GRNController extends Controller
                 $check = InventoryDetail::where('product_id', $item->product_id)->first();
                 if ($check) {
                     $check->update([
-                        'stock' => $check->stock + $item->quantity
+                        'stock' => $check->stock + $item->quantity,
+                        'in_stock' => 1
                     ]);
                 }else{
                     InventoryDetail::create([
