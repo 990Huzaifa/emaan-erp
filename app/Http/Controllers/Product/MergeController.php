@@ -111,7 +111,7 @@ class MergeController extends Controller
                 'purchase_unit_price' => $mergedPurchaseUnitPrice,
                 'sale_unit_price' => $request->resulting_product_data['sale_unit_price'],
                 'total_purchase_price' => $mergedPurchaseUnitPrice * $request->resulting_product_data['quantity'],
-                'total' => $mergedPurchaseUnitPrice * $request->resulting_product_data['quantity'],
+                'total_price' => $mergedPurchaseUnitPrice * $request->resulting_product_data['quantity'],
                 'source' => 'by_merge',
             ]);
             
