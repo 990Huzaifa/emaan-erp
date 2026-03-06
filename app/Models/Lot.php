@@ -20,5 +20,6 @@ class Lot extends Model
         'purchase_unit_price',
         'sale_unit_price',
         'total_price',
+        'source'
     ];
 }
