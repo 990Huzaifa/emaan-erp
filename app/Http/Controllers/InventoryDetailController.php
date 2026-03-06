@@ -119,7 +119,9 @@ class InventoryDetailController extends Controller
             if (!$productDetail) {
                 return response()->json(['error' => 'Product not found'], 404);
             }
+
             $searchQuery = $request->query('search');
+
             // Fetch paginated lot list with search filter on lot_code
             $query = Lot::select(
                     'lots.*',
@@ -129,9 +131,9 @@ class InventoryDetailController extends Controller
                     'lots.quantity'
                 )
                 ->where('lots.product_id', $id)
-                ->join('vendors', 'lots.vendor_id', '=', 'vendors.id')
-                ->join('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')
-                ->join('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id');
+                ->leftJoin('vendors', 'lots.vendor_id', '=', 'vendors.id')  // Use leftJoin instead of join
+                ->leftJoin('purchase_orders', 'lots.purchase_order_id', '=', 'purchase_orders.id')  // Use leftJoin instead of join
+                ->leftJoin('goods_receive_notes', 'lots.grn_id', '=', 'goods_receive_notes.id');  // Use leftJoin instead of join
 
             // Apply search filter if 'lot_code' parameter exists
             if (!empty($searchQuery)) {
