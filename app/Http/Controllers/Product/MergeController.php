@@ -94,9 +94,6 @@ class MergeController extends Controller
                 $oldProducts[] = $product;
             }
 
-            // Step 2: Calculate the new merged product's purchase unit price
-            $mergedPurchaseUnitPrice = $totalPurchasePrice / $totalQuantity;
-
             // Step 3: Add the resultant product (Product C) to the inventory
             $resultingProduct = Product::find($request->resulting_product_data['id']);
 
@@ -108,10 +105,9 @@ class MergeController extends Controller
                 'grn_id' => null, // Assuming no specific GRN for merged product
                 'lot_code' => 'MERGED-' . strtoupper(uniqid()), // Generate unique lot code
                 'quantity' => $request->resulting_product_data['quantity'],
-                'purchase_unit_price' => $mergedPurchaseUnitPrice,
+                'purchase_unit_price' => $request->resulting_product_data['purchase_unit_price'],
                 'sale_unit_price' => $request->resulting_product_data['sale_unit_price'],
-                'total_purchase_price' => $mergedPurchaseUnitPrice * $request->resulting_product_data['quantity'],
-                'total_price' => $mergedPurchaseUnitPrice * $request->resulting_product_data['quantity'],
+                'total_price' => $request->resulting_product_data['purchase_unit_price'] * $request->resulting_product_data['quantity'],
                 'source' => 'by_merge',
             ]);
             
