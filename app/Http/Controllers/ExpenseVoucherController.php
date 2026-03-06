@@ -94,82 +94,87 @@ class ExpenseVoucherController extends Controller
             }
             $validator = Validator::make(
                 $request->all(),[
-                    'asset_acc' => 'required|exists:chart_of_accounts,id',
-                    "payment_method" => 'required|string|in:CASH,BANK,OTHER',
-                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
-                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
-                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                     'data' => 'required|array',
                     'data.*.expense_acc' => 'required|exists:chart_of_accounts,id',
                     'data.*.voucher_amount' => 'required|numeric',
+                    'data.*.description' => 'nullable|string',
+                    'data.*.voucher_date' => 'required|date',
+                    'data.*.payment_method' => 'required|string|in:CASH,BANK,OTHER',
+                    'data.*.bank_transaction_type' => 'required_if:data.*.payment_method,BANK|string|in:CHEQUE,ONLINE',
+                    'data.*.cheque_no' => 'required_if:data.*.bank_transaction_type,CHEQUE|string',
+                    'data.*.cheque_date' => 'required_if:data.*.bank_transaction_type,CHEQUE|date',
+                    'data.*.asset_acc' => 'required|exists:chart_of_accounts,id',
                 ],
                 [
-                    'voucher_date.required' => 'Voucher date is required',
-
-                    'expense_acc.required' => 'Expense account is required',
-                    'expense_acc.exists' => 'Expense account does not exist',
-
-                    'asset_acc.required' => 'Asset account is required',
-                    'asset_acc.exists' => 'Asset account does not exist',
-
-                    'payment_method.required' => 'Payment method is required',
-                    'payment_method.in' => 'Payment method is invalid',
-
-                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
-                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
-
-                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
-                    'cheque_no.string' => 'The cheque number must be a string.',
-
-                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
-                    'cheque_date.date' => 'The cheque date must be a valid date.',
-
-                    'data.required' => 'Data is required',
-                    'data.*.expense_acc.required' => 'Expense account is required',
-                    'data.*.expense_acc.exists' => 'Expense account does not exist',
-                    'data.*.voucher_amount.required' => 'Voucher amount is required',
-                    'data.*.voucher_amount.numeric' => 'Voucher amount must be a number',
+                    'data.required' => 'Data array is required',
+                    'data.array' => 'Data must be an array',
+                    'data.*.expense_acc.required' => 'Expense account is required for each item',
+                    'data.*.expense_acc.exists' => 'Expense account does not exist for each item',
+                    'data.*.voucher_amount.required' => 'Voucher amount is required for each item',
+                    'data.*.voucher_amount.numeric' => 'Voucher amount must be numeric for each item',
+                    'data.*.voucher_date.required' => 'Voucher date is required for each item',
+                    'data.*.voucher_date.date' => 'Voucher date must be a valid date for each item',
+                    'data.*.payment_method.required' => 'Payment method is required for each item',
+                    'data.*.payment_method.string' => 'Payment method must be a string for each item',
+                    'data.*.payment_method.in' => 'Payment method must be one of CASH, BANK, or OTHER for each item',
+                    'data.*.bank_transaction_type.required_if' => 'Bank transaction type is required when payment method is BANK for each item',
+                    'data.*.bank_transaction_type.string' => 'Bank transaction type must be a string when payment method is BANK for each item',
+                    'data.*.bank_transaction_type.in' => 'Bank transaction type must be one of CHEQUE or ONLINE when payment method is BANK for each item',
+                    'data.*.cheque_no.required_if' => 'Cheque number is required when bank transaction type is CHEQUE for each item',
+                    'data.*.cheque_no.string' => 'Cheque number must be a string when bank transaction type is CHEQUE for each item',
+                    'data.*.cheque_date.required_if' => 'Cheque date is required when bank transaction type is CHEQUE for each item',
+                    'data.*.cheque_date.date' => 'Cheque date must be a valid date when bank transaction type is CHEQUE for each item',
+                    'data.*.asset_acc.required' => 'Asset account is required for each item',
+                    'data.*.asset_acc.exists' => 'Asset account does not exist for each item',
                 ]
             );
             if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
             DB::beginTransaction();
-            $data = [];
+            $insertData = [];
             foreach ($request->data as $item) {
                 do {
                     $voucher_code = 'EV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (ExpenseVoucher::where('voucher_code', $voucher_code)->exists());
-                $description = $request->payment_method == 'CASH' 
-                    ? 'Cash Transfer' 
-                    : ($request->bank_transaction_type == 'CHEQUE' 
-                        ? 'Cheque Payment' 
-                        : 'Online Bank Transfer');
+                // Default Description
+                $description = match ($item['payment_method']) {
+                    'CASH' => 'Cash Transfer',
+                    'BANK' => ($item['bank_transaction_type'] ?? '') === 'CHEQUE'
+                                ? 'Cheque Payment'
+                                : 'Online Bank Transfer',
+                    default => 'Other Payment'
+                };
 
-                if(isset($item['description']) && !empty($item['description'])){
-                    if($request->payment_method == 'BANK'){
+                // Append custom description
+                if (!empty($item['description'])) {
+                    if ($item['payment_method'] === 'BANK') {
                         $description = $item['description'] . ' | ' . $description;
-                    }else{
+                    } else {
                         $description = $item['description'];
                     }
                 }
-                $data[] = [
-                    'asset_acc_id' => $request->asset_acc,
+                $insertData[] = [
+                    'asset_acc_id' => $item['asset_acc'],
                     'expense_acc_id' => $item['expense_acc'],
                     'business_id' => $businessId,
                     'voucher_code' => $voucher_code,
-                    'payment_method' => $request->payment_method,
-                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
-                    'cheque_no' => $request->cheque_no ?? null,
-                    'cheque_date' => $request->cheque_date ?? null,
+                    'payment_method' => $item['payment_method'],
+                    'bank_transaction_type' => $item['bank_transaction_type'] ?? null,
+                    'cheque_no' => $item['cheque_no'] ?? null,
+                    'cheque_date' => $item['cheque_date'] ?? null,
                     'description' => $description,
                     'voucher_amount' => $item['voucher_amount'],
-                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
+                    'voucher_date' => Carbon::parse($item['voucher_date'])->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status' => 0,
                     'created_by' => $user->id
                 ];
             }
-            ExpenseVoucher::insert($data);
+            ExpenseVoucher::insert($insertData);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Expense Vouchers created successfully',
+            ]);
             DB::commit();
-            return response()->json($data, 200);
+            return response()->json($insertData, 200);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error'=>$e->getMessage()], 400);

@@ -84,81 +84,95 @@ class PurchaseVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    "payment_method" => 'required|string|in:CASH,BANK,OTHER',
-                    'acc_id' => 'required|exists:chart_of_accounts,id',
-                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
-                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
-                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
-                    'voucher_date' => 'required',
                     'data' => 'required|array',
                     'data.*.vendor_id' => 'required|exists:vendors,id',
                     'data.*.voucher_amount' => 'required|numeric',
+                    'data.*.description' => 'nullable|string',
+                    'data.*.voucher_date' => 'required|date',
+
+                    'data.*.payment_method' => 'required|string|in:CASH,BANK,OTHER',
+                    'data.*.acc_id' => 'required|exists:chart_of_accounts,id',
+
+                    'data.*.bank_transaction_type' => 'required_if:data.*.payment_method,BANK|nullable|in:CHEQUE,ONLINE',
+
+                    'data.*.cheque_no' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|string',
+                    'data.*.cheque_date' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|date',
                 ], [
                     
-                    'acc_id.required' => 'The Account field is required.',
-                    'acc_id.exists' => 'The selected account is invalid.',
-
-                    'payment_method.required' => 'The payment method field is required.',
-                    'payment_method.in' => 'The selected payment method is invalid.',
-
-                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
-                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
-
-                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
-                    'cheque_no.string' => 'The cheque number must be a string.',
-
-                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
-                    'cheque_date.date' => 'The cheque date must be a valid date.',
-
-                    'voucher_date.required' => 'The voucher date field is required.',
-
                     'data.required' => 'The data field is required.',
-                    'data.*.vendor_id.required' => 'The vendor field is required.',
-                    'data.*.vendor_id.exists' => 'The selected vendor is invalid.',
+                    'data.array' => 'The data field must be an array.',
+                    
+                    'data.*.vendor_id.required' => 'The Vendor field is required.',
+                    'data.*.vendor_id.exists' => 'The selected Vendor is invalid.',
 
                     'data.*.voucher_amount.required' => 'The voucher amount field is required.',
                     'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
+
+                    'data.*.payment_method.required' => 'The payment method field is required.',
+                    'data.*.payment_method.in' => 'The selected payment method is invalid.',
+
+                    'data.*.acc_id.required' => 'The Account field is required.',
+                    'data.*.acc_id.exists' => 'The selected account is invalid.',
+
+                    'data.*.bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'data.*.bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'data.*.cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'data.*.cheque_no.string' => 'The cheque number must be a string.',
+                    
+                    'data.*.cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'data.*.cheque_date.date' => 'The cheque date must be a valid date.',
+                    
+                    'data.*.voucher_date.required' => 'The voucher date field is required.',
                 ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
             DB::beginTransaction();
-            $data = [];
+            $insertData = [];
             foreach($request->data as $item){
                 do {
                     $voucher_code = 'PV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (PurchaseVoucher::where('voucher_code', $voucher_code)->exists());
-                $description = $request->payment_method == 'CASH' 
-                    ? 'Cash Transfer' 
-                    : ($request->bank_transaction_type == 'CHEQUE' 
-                        ? 'Cheque Payment' 
-                        : 'Online Bank Transfer');
+                // Default Description
+                $description = match ($item['payment_method']) {
+                    'CASH' => 'Cash Transfer',
+                    'BANK' => ($item['bank_transaction_type'] ?? '') === 'CHEQUE'
+                                ? 'Cheque Payment'
+                                : 'Online Bank Transfer',
+                    default => 'Other Payment'
+                };
 
-                if(isset($item['description']) && !empty($item['description'])){
-                    if($request->payment_method == 'BANK'){
+                // Append custom description
+                if (!empty($item['description'])) {
+                    if ($item['payment_method'] === 'BANK') {
                         $description = $item['description'] . ' | ' . $description;
-                    }else{
+                    } else {
                         $description = $item['description'];
                     }
                 }
-                $data[] = [
-                    'acc_id' => $request->acc_id,
+                $insertData[] = [
+                    'acc_id' => $item['acc_id'],
                     'business_id' => $businessId,
-                    'payment_method' => $request->payment_method,
-                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                    'payment_method' => $item['payment_method'],
+                    'bank_transaction_type' => $item['bank_transaction_type'] ?? null,
                     'description' => $description,
-                    'cheque_no' => $request->cheque_no ?? null,
-                    'cheque_date' => $request->cheque_date ?? null,
+                    'cheque_no' => $item['cheque_no'] ?? null,
+                    'cheque_date' => $item['cheque_date'] ?? null,
                     'voucher_code' => $voucher_code, 
                     'vendor_id' => $item['vendor_id'],
                     'voucher_amount' => $item['voucher_amount'],
                     'status' => 0, // 0 un paid, 1 paid
-                    'voucher_date' => Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
+                    'voucher_date' => Carbon::parse($item['voucher_date'])->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'created_by' => $user->id,
                 ];
             }
-            PurchaseVoucher::insert($data);
+            PurchaseVoucher::insert($insertData);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Purchase Vouchers created successfully',
+            ]);
             DB::commit();
-            return response()->json($data, 200);
+            return response()->json($insertData, 200);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
@@ -393,6 +407,4 @@ class PurchaseVoucherController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
-    
-    
 }
