@@ -383,6 +383,122 @@ class PurchaseVoucherController extends Controller
         }
     }
 
+    public function bulkUpdateStatus(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            // Permission check
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve purchase voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'voucher_ids' => 'required|array',
+                'voucher_ids.*' => 'exists:purchase_vouchers,id',
+                'status' => 'required|in:0,1'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+
+            DB::beginTransaction();
+
+            // Preload vouchers with related data
+            $vouchers = PurchaseVoucher::with('vendor')->whereIn('id', $request->voucher_ids)->get();
+            $transactions = [];
+            $logs = [];
+            $voucherUpdates = [];
+            $currentDateTime = Carbon::now();
+
+            foreach ($vouchers as $data) {
+                if ($data->status == 1) {
+                    continue; // Skip already paid vouchers
+                }
+
+                $vendor = $data->vendor;
+                $vendor_acc = $vendor->acc_id;
+                $total_billed = $data->voucher_amount;
+
+                $b_cb = calculateCreditBalance($data->acc_id, $total_billed); // Business account credit balance
+                $v_cb = calculateDebitBalance($vendor_acc, $total_billed); // Vendor account debit balance
+
+                // Voucher update data
+                $voucherUpdates[] = [
+                    'id' => $data->id,
+                    'approved_by' => $user->id,
+                    'approve_date' => $currentDateTime,
+                    'status' => 1
+                ];
+
+                // Add customer transaction (vendor debit)
+                $transactions[] = [
+                    'business_id' => $data->business_id,
+                    'acc_id' => $vendor_acc,
+                    'transaction_type' => 0, // 0->purchase
+                    'description' => $data->description,
+                    'debit' => $total_billed,
+                    'credit' => 0.00,
+                    'current_balance' => $v_cb,
+                    'created_at' => $data->voucher_date,
+                ];
+
+                // Add business transaction (business credit)
+                $transactions[] = [
+                    'business_id' => $data->business_id,
+                    'acc_id' => $data->acc_id,
+                    'transaction_type' => 0, // 0->purchase
+                    'description' => $data->description,
+                    'debit' => 0.00,
+                    'credit' => $total_billed,
+                    'current_balance' => $b_cb,
+                    'created_at' => $data->voucher_date,
+                ];
+
+                // Log data
+                $logs[] = [
+                    'user_id' => $user->id,
+                    'description' => 'Voucher status change to PAID and transaction done successfully. Code: ' . $data->code,
+                ];
+            }
+
+            // Update vouchers in bulk
+            PurchaseVoucher::whereIn('id', array_column($voucherUpdates, 'id'))
+                ->update(collect($voucherUpdates)->keyBy('id')->toArray());
+
+            // Insert transactions in bulk
+            if (count($transactions) > 0) {
+                Transaction::insert($transactions);
+            }
+
+            // Insert logs in bulk
+            if (count($logs) > 0) {
+                Log::insert($logs);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Bulk purchase voucher status updated successfully',
+                'total_processed' => count($vouchers)
+            ], 200);
+
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
     public function previousData(Request $request, string $grn_id): JsonResponse
     {
         try{

@@ -216,6 +216,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('purchase-voucher',PurchaseVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-voucher',[PurchaseVoucherController::class,'updateStatus']);
     Route::put('purchase-voucher/{grn_id}/previous',[PurchaseVoucherController::class,'previousData']);
+    Route::post('purchase-bulk-update',[PurchaseVoucherController::class,'bulkUpdateStatus']);
     
     Route::apiResource('purchase-return',PurchaseReturnController::class)->only('index','store','show','update');
     Route::put('status/{id}/purchase-return',[PurchaseReturnController::class,'updateStatus']);
@@ -250,6 +251,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('sale-voucher',SaleVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-voucher',[SaleVoucherController::class,'updateStatus']);
+    Route::post('sale-bulk-update',[SaleVoucherController::class,'bulkUpdateStatus']);
     
     Route::apiResource('sale-return',SaleReturnController::class)->only('index','store','show','update');
     Route::put('status/{id}/sale-return',[SaleReturnController::class,'updateStatus']);
@@ -268,7 +270,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::apiResource('expense-voucher',ExpenseVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/expense-voucher',[ExpenseVoucherController::class,'updateStatus']);
-    
+    Route::post('expense-bulk-update',[ExpenseVoucherController::class,'bulkUpdateStatus']);
+
     Route::apiResource('salary-voucher',SalaryVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/salary-voucher',[SalaryVoucherController::class,'updateStatus']);
     

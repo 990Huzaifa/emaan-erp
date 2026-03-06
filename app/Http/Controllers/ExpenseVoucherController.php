@@ -378,4 +378,124 @@ class ExpenseVoucherController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
+
+    public function bulkUpdateStatus(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+
+            // Permission check
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve expense voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // Validate request
+            $validator = Validator::make($request->all(), [
+                'voucher_ids' => 'required|array',
+                'voucher_ids.*' => 'exists:expense_vouchers,id',
+                'status' => 'required|in:0,1'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 422);
+            }
+
+            DB::beginTransaction();
+
+            // Preload vouchers with related data
+            $vouchers = ExpenseVoucher::with('assetAccount', 'expenseAccount')->whereIn('id', $request->voucher_ids)->get();
+            $transactions = [];
+            $logs = [];
+            $voucherUpdates = [];
+            $currentDateTime = Carbon::now();
+
+            foreach ($vouchers as $data) {
+                if ($data->status == 1) {
+                    continue; // Skip already paid vouchers
+                }
+
+                // Update voucher data
+                $voucherUpdates[] = [
+                    'id' => $data->id,
+                    'status' => $request->status,
+                    'approved_by' => $user->id,
+                    'approved_date' => $currentDateTime
+                ];
+
+                if ($request->status == 1) {
+                    // Prepare data for transactions
+                    $asset_acc = $data->assetAccount->id;
+                    $expense_acc = $data->expenseAccount->id;
+                    $total_billed = $data->voucher_amount;
+
+                    // Get updated balance after the transaction
+                    $a_cb = calculateBalance($asset_acc, $total_billed, true);  // Credit the asset account
+                    $e_cb = calculateBalance($expense_acc, $total_billed, false); // Debit the expense account
+
+                    // Credit the asset account (money leaving)
+                    $transactions[] = [
+                        'business_id' => $data->business_id,
+                        'acc_id' => $asset_acc,
+                        'transaction_type' => 2, // 2 -> Expense
+                        'description' => $data->description,
+                        'debit' => 0.00,
+                        'credit' => $total_billed,
+                        'current_balance' => $a_cb,
+                        'created_at' => $data->voucher_date,
+                    ];
+
+                    // Debit the expense account (money recorded as an expense)
+                    $transactions[] = [
+                        'business_id' => $data->business_id,
+                        'acc_id' => $expense_acc,
+                        'transaction_type' => 2, // 2 -> Expense
+                        'description' => $data->description,
+                        'debit' => $total_billed,
+                        'credit' => 0.00,
+                        'current_balance' => $e_cb,
+                        'created_at' => $data->voucher_date,
+                    ];
+
+                    // Prepare log entry
+                    $logs[] = [
+                        'user_id' => $user->id,
+                        'description' => 'Voucher status change to PAID and transaction done successfully. Code: ' . $data->code,
+                    ];
+                }
+            }
+
+            // Update vouchers in bulk
+            ExpenseVoucher::whereIn('id', array_column($voucherUpdates, 'id'))
+                ->update(collect($voucherUpdates)->keyBy('id')->toArray());
+
+            // Insert transactions in bulk
+            if (count($transactions) > 0) {
+                Transaction::insert($transactions);
+            }
+
+            // Insert logs in bulk
+            if (count($logs) > 0) {
+                Log::insert($logs);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Bulk expense voucher status updated successfully',
+                'total_processed' => count($vouchers)
+            ], 200);
+
+        } catch (QueryException $e) {
+            DB::rollBack();
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
 }
