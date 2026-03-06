@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\Product\MergeController;
 use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\AdvanceLedgerController;
 use App\Http\Controllers\DashboardController;
@@ -123,6 +124,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('partner',PartnerController::class)->only(['index', 'store', 'show', 'update']);
     Route::get('list/partner',[PartnerController::class,'list']);
     Route::post('partner-update/{id}',[PartnerController::class,'update']);
+
+    // Merge products
+    Route::post('merge-products',[MergeController::class,'store']);
+
 
     Route::apiResource('journal-voucher',JournalVoucherController::class)->only('index','store','show','update');
     Route::put('status/{id}/journal-voucher',[JournalVoucherController::class,'updateStatus']);
