@@ -78,7 +78,7 @@ class MergeController extends Controller
                 $product = Product::find($productData['id']);
                 
                 // Calculate total purchase price for merged product
-                $totalPurchasePrice += $product->purchase_unit_price * $productData['quantity'];
+                $totalPurchasePrice += $product->purchase_price * $productData['quantity'];
                 $totalQuantity += $productData['quantity'];
 
                 // Update inventory by subtracting the quantity of old products
