@@ -423,25 +423,25 @@ class DeliveryNoteController extends Controller
                 // Loop through each item in the delivery note
                 foreach ($data->items as $item) {
                     // Fetch available lots in FIFO order
-                    $lots = Lot::where('product_id', $item->product_id)
-                    ->where('quantity', '>', 0)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                    // $lots = Lot::where('product_id', $item->product_id)
+                    // ->where('quantity', '>', 0)
+                    // ->orderBy('created_at', 'asc')
+                    // ->get();
     
-                    $remainingQty = $item->quantity; // Total quantity to deduct from lots
+                    // $remainingQty = $item->quantity; // Total quantity to deduct from lots
                     
-                    // Deduct item quantity from lots one by one (FIFO)
-                    foreach ($lots as $lot) {
-                        if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
+                    // // Deduct item quantity from lots one by one (FIFO)
+                    // foreach ($lots as $lot) {
+                    //     if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
 
-                        $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
-                        // Update lot: reduce quantity and total_price based on unit price
-                        $lot->update([
-                            'quantity' => $lot->quantity - $deductQty,
-                            'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
-                        ]);
-                        $remainingQty -= $deductQty;
-                    }
+                    //     $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
+                    //     // Update lot: reduce quantity and total_price based on unit price
+                    //     $lot->update([
+                    //         'quantity' => $lot->quantity - $deductQty,
+                    //         'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
+                    //     ]);
+                    //     $remainingQty -= $deductQty;
+                    // }
 
                     // Update overall inventory stock for the product
                     $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();
@@ -652,25 +652,25 @@ class DeliveryNoteController extends Controller
 
             foreach ($deliveryNote->items as $item) {
                     // Fetch available lots in FIFO order
-                    $lots = Lot::where('product_id', $item->product_id)
-                    ->where('quantity', '>', 0)
-                    ->orderBy('created_at', 'asc')
-                    ->get();
+                    // $lots = Lot::where('product_id', $item->product_id)
+                    // ->where('quantity', '>', 0)
+                    // ->orderBy('created_at', 'asc')
+                    // ->get();
     
-                    $remainingQty = $item->quantity; // Total quantity to deduct from lots
+                    // $remainingQty = $item->quantity; // Total quantity to deduct from lots
                     
-                    // Deduct item quantity from lots one by one (FIFO)
-                    foreach ($lots as $lot) {
-                        if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
+                    // // Deduct item quantity from lots one by one (FIFO)
+                    // foreach ($lots as $lot) {
+                    //     if ($remainingQty <= 0) break; // Stop if we've deducted the required quantity
 
-                        $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
-                        // Update lot: reduce quantity and total_price based on unit price
-                        $lot->update([
-                            'quantity' => $lot->quantity - $deductQty,
-                            'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
-                        ]);
-                        $remainingQty -= $deductQty;
-                    }
+                    //     $deductQty = min($lot->quantity, $remainingQty); // Take only what we need from this lot
+                    //     // Update lot: reduce quantity and total_price based on unit price
+                    //     $lot->update([
+                    //         'quantity' => $lot->quantity - $deductQty,
+                    //         'total_price' => $lot->total_price - ($deductQty * $item->unit_price),
+                    //     ]);
+                    //     $remainingQty -= $deductQty;
+                    // }
 
                     // Update overall inventory stock for the product
                     $inventory_details = InventoryDetail::where('product_id', $item->product_id)->first();

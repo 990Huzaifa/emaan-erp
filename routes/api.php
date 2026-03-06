@@ -13,7 +13,6 @@ use App\Http\Controllers\Hr\PaySlipController;
 use App\Http\Controllers\Purchase\PurchaseReturnVoucherController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\Sale\SaleReturnVoucherController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Purchase\GRNController;
 use App\Http\Controllers\COAController;
