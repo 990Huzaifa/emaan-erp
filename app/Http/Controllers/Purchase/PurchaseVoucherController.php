@@ -94,9 +94,8 @@ class PurchaseVoucherController extends Controller
                     'data.*.acc_id' => 'required|exists:chart_of_accounts,id',
 
                     'data.*.bank_transaction_type' => 'required_if:data.*.payment_method,BANK|nullable|in:CHEQUE,ONLINE',
-
                     'data.*.cheque_no' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|string',
-                    'data.*.cheque_date' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|date',
+                'data.*.cheque_date' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|date',
                 ], [
                     
                     'data.required' => 'The data field is required.',
