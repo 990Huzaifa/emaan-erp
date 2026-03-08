@@ -82,7 +82,7 @@ class LedgerController extends Controller
             }
 
             // Paginate the results
-            $results = $query->paginate($perPage);
+            $results = $query->orderBy('created_at', 'asc')->paginate($perPage);
 
             $totalDebit = $results->sum('debit');
             $totalCredit = $results->sum('credit');
