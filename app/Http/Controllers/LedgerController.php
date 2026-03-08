@@ -40,6 +40,7 @@ class LedgerController extends Controller
                         DB::raw('COALESCE(SUM(t.credit), 0) as total_credits'),
                         DB::raw('(ob.amount + COALESCE(SUM(t.debit), 0) - COALESCE(SUM(t.credit), 0)) as current_balance'))
                 ->groupBy('ob.acc_id', 'ob.created_at','ob.amount', 'coa.name')  // Added `ob.created_at` to GROUP BY
+                ->orderBy('t.created_at', 'asc')
                 ->paginate($perPage);
 
             return response()->json($results);
