@@ -194,7 +194,9 @@ class InventoryDetailController extends Controller
                 'inventory_details.stock as quantity',
                 'inventory_details.in_stock',
                 'measurement_units.name as measurement_unit',
-                DB::raw('COALESCE(AVG(CASE WHEN inventory_details.stock != 0 THEN lots.sale_unit_price END), 0) as sale_price')
+                DB::raw('COALESCE(AVG(CASE WHEN inventory_details.stock != 0 THEN lots.sale_unit_price END), 0) as sale_price'),
+                // purchase price
+                DB::raw('COALESCE(AVG(CASE WHEN inventory_details.stock != 0 THEN lots.purchase_unit_price END), 0) as purchase_price')
             )
             ->where('inventory_details.in_stock', '!=', 0)
             ->groupBy(
