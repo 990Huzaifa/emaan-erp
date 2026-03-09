@@ -60,6 +60,7 @@ class PurchaseOrderUpdateService
                 throw new Exception('Vendor account is missing.', 400);
             }
             Log::info('vendor: '. $vendor);
+            return "test done";
             /*
             |--------------------------------------------------------------------------
             | STORE OLD VALUES FOR LOT / LEDGER RECALC
