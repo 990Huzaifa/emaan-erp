@@ -57,7 +57,6 @@ class PurchaseOrderUpdateService
             if (!$vendor->acc_id) {
                 throw new Exception('Vendor account is missing.', 400);
             }
-            return "test done";
             /*
             |--------------------------------------------------------------------------
             | STORE OLD VALUES FOR LOT / LEDGER RECALC
