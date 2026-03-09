@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class PurchaseOrderUpdateService
 {
-    public function updatePurchaseFlow(int $poId, array $data, int $businessId): array
+    public function updatePurchaseFlow(int $poId, array $data, int $businessId)
     {
         return DB::transaction(function () use ($poId, $data, $businessId) {
 
@@ -44,12 +44,10 @@ class PurchaseOrderUpdateService
             if (!$grn) {
                 throw new Exception('Connected GRN not found.', 404);
             }
-            Log::info('grn: '. $grn);
 
             if (!$invoice) {
                 throw new Exception('Connected Purchase Invoice not found.', 404);
             }
-            Log::info('invoice: '.$invoice);
 
             $vendor = $po->vendor;
             if (!$vendor) {
@@ -59,7 +57,6 @@ class PurchaseOrderUpdateService
             if (!$vendor->acc_id) {
                 throw new Exception('Vendor account is missing.', 400);
             }
-            Log::info('vendor: '. $vendor);
             return "test done";
             /*
             |--------------------------------------------------------------------------
@@ -73,6 +70,9 @@ class PurchaseOrderUpdateService
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('product_id');
+            Log::info('Old Lots: ' . $oldLots);
+
+            return "test done";
 
             /*
             |--------------------------------------------------------------------------
