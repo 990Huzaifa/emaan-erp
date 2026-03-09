@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Purchase;
 
+use App\Services\PurchaseOrderUpdateService;
 use App\Services\WhatsAppService;
 use DB;
 use Exception;
@@ -267,6 +268,16 @@ class PurchaseOrderController extends Controller
                     ], 403);
                 }
             }
+
+
+
+            $updateFlow = new PurchaseOrderUpdateService();
+            $res = $updateFlow->updatePurchaseFlow($id, $request->all(), $user->login_business);
+            return response()->json(['message' => 'Purchase Order updated successfully.', 'result' => $res], 200);
+
+
+
+            // end here for test now
             $validator = Validator::make(
                 $request->all(),
                 [
