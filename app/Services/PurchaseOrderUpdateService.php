@@ -33,24 +33,25 @@ class PurchaseOrderUpdateService
             ])
                 ->lockForUpdate()
                 ->find($poId);
-            Log::info('Fetched Purchase Order for update', ['po_id' => $poId, 'po_data' => $po]);
-            return json_encode($po);
             if (!$po) {
                 throw new Exception('Purchase Order not found.', 404);
             }
 
-            $grn = $po->goodsReceiveNote();
+            $grn = $po->goodsReceiveNote;
+
             $invoice = PurchaseInvoice::with('items')->where('grn_id',$grn->id)->first();
 
             if (!$grn) {
                 throw new Exception('Connected GRN not found.', 404);
             }
+            Log::info('grn: '. $grn);
 
             if (!$invoice) {
                 throw new Exception('Connected Purchase Invoice not found.', 404);
             }
+            Log::info('invoice: '.$invoice);
 
-            $vendor = $po->vendor();
+            $vendor = $po->vendor;
             if (!$vendor) {
                 throw new Exception('Vendor not found against this Purchase Order.', 404);
             }
@@ -58,7 +59,7 @@ class PurchaseOrderUpdateService
             if (!$vendor->acc_id) {
                 throw new Exception('Vendor account is missing.', 400);
             }
-
+            Log::info('vendor: '. $vendor);
             /*
             |--------------------------------------------------------------------------
             | STORE OLD VALUES FOR LOT / LEDGER RECALC
