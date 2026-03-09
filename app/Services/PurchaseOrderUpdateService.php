@@ -32,7 +32,7 @@ class PurchaseOrderUpdateService
             ])
                 ->lockForUpdate()
                 ->find($poId);
-            return $po;
+            return json_encode($po);
             if (!$po) {
                 throw new Exception('Purchase Order not found.', 404);
             }
