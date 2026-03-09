@@ -64,8 +64,9 @@ class PurchaseOrderUpdateService
             */
             $oldGrnTotal = (float) $grn->total_amount;
 
-            $oldLots = Lot::where('po_id', $po->id)
+            $oldLots = Lot::where('purchase_order_id', $po->id)
                 ->where('grn_id', $grn->id)
+                ->where('vendor_id', $po->vendor_id)
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('product_id');
