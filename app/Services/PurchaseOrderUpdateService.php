@@ -13,6 +13,7 @@ use App\Models\InventoryDetail;
 use App\Models\Transaction;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PurchaseOrderUpdateService
 {
@@ -32,6 +33,7 @@ class PurchaseOrderUpdateService
             ])
                 ->lockForUpdate()
                 ->find($poId);
+            Log::info('Fetched Purchase Order for update', ['po_id' => $poId, 'po_data' => $po]);
             return json_encode($po);
             if (!$po) {
                 throw new Exception('Purchase Order not found.', 404);
