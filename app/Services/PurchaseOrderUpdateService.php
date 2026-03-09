@@ -28,7 +28,7 @@ class PurchaseOrderUpdateService
             $po = PurchaseOrder::with([
                 'purchase_order_items',
                 'vendor',
-                'goodsReceiveNote.goods_receive_note_items',
+                'goodsReceiveNote.items',
             ])
                 ->lockForUpdate()
                 ->find($poId);
