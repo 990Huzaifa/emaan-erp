@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\OpeningBalance;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
 use App\Models\GoodsReceiveNote;
@@ -57,6 +58,13 @@ class PurchaseOrderUpdateService
             if (!$vendor->acc_id) {
                 throw new Exception('Vendor account is missing.', 400);
             }
+
+            // validate if PO can be edited with the new quantities
+            $validate = $this->validatePurchaseOrderEditable($poId, $data['items']);
+            if($validate['success'] === false){
+                return $validate;
+            }
+
             /*
             |--------------------------------------------------------------------------
             | STORE OLD VALUES FOR LOT / LEDGER RECALC
@@ -67,12 +75,13 @@ class PurchaseOrderUpdateService
             $oldLots = Lot::where('purchase_order_id', $po->id)
                 ->where('grn_id', $grn->id)
                 ->where('vendor_id', $po->vendor_id)
+                ->whereIn('product_id', $po->purchase_order_items->pluck('product_id')->toArray())
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('product_id');
             Log::info('Old Lots: ' . $oldLots);
 
-            return "test done";
+            // return "test done";
 
             /*
             |--------------------------------------------------------------------------
@@ -108,20 +117,21 @@ class PurchaseOrderUpdateService
             |--------------------------------------------------------------------------
             */
             $updatedGrn = $grn->fresh();
-            $newGrnTotal = (float) $updatedGrn->total_amount;
+            $newGrnTotal = (float) $updatedGrn->total;
 
             $targetTransaction = $this->findTargetTransaction(
                 accId: $vendor->acc_id,
                 oldAmount: $oldGrnTotal,
                 poCode: $po->order_code
             );
-
+            // Log::info('Target Transaction: ' . $targetTransaction);
+            // return "test done";
             if (!$targetTransaction) {
                 throw new Exception('Target transaction not found for ledger update.', 404);
             }
 
-            $targetTransaction->debit = $newGrnTotal;
-            $targetTransaction->description = 'credit amount to vendor account by GRN with the PO is ' . $po->order_code;
+            $targetTransaction->credit = $newGrnTotal;
+            $targetTransaction->description = 'by edit: credit amount to vendor account by GRN with the PO is ' . $po->order_code;
             $targetTransaction->save();
 
             /*
@@ -130,8 +140,7 @@ class PurchaseOrderUpdateService
             |--------------------------------------------------------------------------
             */
             $this->recalculateVendorLedger($vendor->acc_id, $targetTransaction->id);
-
-            return [
+            $res = [
                 'success' => true,
                 'message' => 'Purchase flow updated successfully.',
                 'po_id' => $po->id,
@@ -139,19 +148,19 @@ class PurchaseOrderUpdateService
                 'invoice_id' => $invoice->id,
                 'transaction_id' => $targetTransaction->id
             ];
+            Log::info($res);
+            return $res;
         });
     }
 
     private function updatePurchaseOrder(PurchaseOrder $po, array $data): void
     {
         $po->update([
-            'vendor_id' => $data['vendor_id'] ?? $po->vendor_id,
             'order_date' => $data['order_date'] ?? $po->order_date,
             'remarks' => $data['remarks'] ?? $po->remarks,
-            'total_amount' => $data['total_amount'] ?? $po->total_amount,
-            'discount' => $data['discount'] ?? $po->discount,
-            'tax_amount' => $data['tax_amount'] ?? $po->tax_amount,
-            'net_amount' => $data['net_amount'] ?? $po->net_amount,
+            'total_discount' => $data['total_discount'] ?? $po->total_discount,
+            'total_tax' => $data['total_tax'] ?? $po->total_tax,
+            'total' => $data['total'] ?? $po->total,
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
@@ -162,7 +171,11 @@ class PurchaseOrderUpdateService
                     'purchase_order_id' => $po->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'unit_price' => $item['unit_price'],
+                    'tax' => $item['tax'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
+                    'discount' => $item['discount'],
                     'total_price' => $item['quantity'] * $item['unit_price'],
                 ]);
             }
@@ -172,10 +185,9 @@ class PurchaseOrderUpdateService
     private function updateGrn(GoodsReceiveNote $grn, array $data, PurchaseOrder $po): void
     {
         $grn->update([
-            'vendor_id' => $data['vendor_id'] ?? $grn->vendor_id,
             'grn_date' => $data['grn_date'] ?? $grn->grn_date,
             'remarks' => $data['remarks'] ?? $grn->remarks,
-            'total_amount' => $data['total_amount'] ?? $grn->total_amount,
+            'total' => $data['total'] ?? $grn->total_amount,
             'purchase_order_id' => $po->id,
         ]);
 
@@ -183,12 +195,20 @@ class PurchaseOrderUpdateService
             GoodsReceiveNoteItem::where('goods_receive_note_id', $grn->id)->delete();
 
             foreach ($data['items'] as $item) {
+                $billed = $item['quantity'] * $item['unit_price'];
                 GoodsReceiveNoteItem::create([
                     'goods_receive_note_id' => $grn->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
+                    'receive' => $item['quantity'],
+                    'billed' => $billed,
                     'purchase_unit_price' => $item['unit_price'],
-                    'total_price' => $item['quantity'] * $item['unit_price'],
+                    'sale_unit_price' => $item['unit_price'],
+                    'discount' => $item['discount'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
+                    'tax' => $item['tax'],
+                    'total_price' => $item['total_price'],
                 ]);
             }
         }
@@ -197,12 +217,9 @@ class PurchaseOrderUpdateService
     private function updatePurchaseInvoice(PurchaseInvoice $invoice, array $data, PurchaseOrder $po, GoodsReceiveNote $grn): void
     {
         $invoice->update([
-            'vendor_id' => $data['vendor_id'] ?? $invoice->vendor_id,
             'invoice_date' => $data['invoice_date'] ?? $invoice->invoice_date,
             'remarks' => $data['remarks'] ?? $invoice->remarks,
-            'total_amount' => $data['total_amount'] ?? $invoice->total_amount,
-            'purchase_order_id' => $po->id,
-            'grn_id' => $grn->id,
+            'total' => $data['total'] ?? $invoice->total_amount,
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
@@ -212,9 +229,13 @@ class PurchaseOrderUpdateService
                 PurchaseInvoiceItem::create([
                     'purchase_invoice_id' => $invoice->id,
                     'product_id' => $item['product_id'],
+                    'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'total_price' => $item['quantity'] * $item['unit_price'],
+                    'total' => $item['total_price'],
+                    'discount_in_percentage' => $item['discount_in_percentage'],
+                    'discount' => $item['discount'],
+                    'tax' => $item['tax'],
                 ]);
             }
         }
@@ -237,8 +258,7 @@ class PurchaseOrderUpdateService
         |--------------------------------------------------------------------------
         */
         foreach ($oldLots as $productId => $oldLot) {
-            $inventory = InventoryDetail::where('business_id', $businessId)
-                ->where('product_id', $productId)
+            $inventory = InventoryDetail::where('product_id', $productId)
                 ->lockForUpdate()
                 ->first();
 
@@ -260,19 +280,22 @@ class PurchaseOrderUpdateService
         | SECOND: UPDATE / RECREATE LOTS
         |--------------------------------------------------------------------------
         */
-        Lot::where('po_id', $po->id)
+        Lot::where('purchase_order_id', $po->id)
             ->where('grn_id', $grn->id)
             ->delete();
 
         foreach ($data['items'] as $item) {
+            do {
+                $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
+            } while (Lot::where('lot_code', $lot_code)->exists());
             $lot = Lot::create([
                 'product_id' => $item['product_id'],
-                'po_id' => $po->id,
+                'purchase_order_id' => $po->id,
                 'grn_id' => $grn->id,
                 'quantity' => $item['quantity'],
                 'purchase_unit_price' => $item['unit_price'] ?? 0,
                 'sale_unit_price' => $item['sale_unit_price'] ?? 0,
-                'lot_code' => $item['lot_code'] ?? null,
+                'lot_code' => $lot_code,
                 'expiry_date' => $item['expiry_date'] ?? null,
             ]);
 
@@ -281,14 +304,12 @@ class PurchaseOrderUpdateService
             | THIRD: ADD NEW LOT EFFECT IN INVENTORY
             |--------------------------------------------------------------------------
             */
-            $inventory = InventoryDetail::where('business_id', $businessId)
-                ->where('product_id', $item['product_id'])
+            $inventory = InventoryDetail::where('product_id', $item['product_id'])
                 ->lockForUpdate()
                 ->first();
 
             if (!$inventory) {
                 $inventory = InventoryDetail::create([
-                    'business_id' => $businessId,
                     'product_id' => $item['product_id'],
                     'stock' => 0,
                 ]);
@@ -321,7 +342,11 @@ class PurchaseOrderUpdateService
             ->lockForUpdate()
             ->first();
 
-        $runningBalance = $previousTransaction ? (float) $previousTransaction->current_balance : 0;
+        $openingBalance = OpeningBalance::where('acc_id', $accId)->value('amount') ?? 0;
+
+        $runningBalance = $previousTransaction
+            ? (float)$previousTransaction->current_balance
+            : (float)$openingBalance;
 
         $transactions = Transaction::where('acc_id', $accId)
             ->where('id', '>=', $fromTransactionId)
@@ -330,10 +355,51 @@ class PurchaseOrderUpdateService
             ->get();
 
         foreach ($transactions as $trx) {
-            $runningBalance = $runningBalance + (float) $trx->debit - (float) $trx->credit;
+
+            // YOUR SYSTEM FORMULA
+            $runningBalance = $runningBalance - (float)$trx->debit + (float)$trx->credit;
 
             $trx->current_balance = $runningBalance;
             $trx->save();
+        }
+    }
+
+    private function validatePurchaseOrderEditable(int $poId, array $items)
+    {
+        $lots = Lot::where('po_id', $poId)
+            ->get()
+            ->keyBy('product_id');
+
+        foreach ($items as $item) {
+
+            $productId = $item['product_id'];
+            $newQty = $item['quantity'];
+
+            if (!isset($lots[$productId])) {
+                continue;
+            }
+
+            $lotQty = (float)$lots[$productId]->quantity;
+
+            $inventoryStock = InventoryDetail::where('product_id', $productId)
+                ->value('stock') ?? 0;
+
+            $usedQty = $lotQty - $inventoryStock;
+
+            /*
+            Example
+            lot = 100
+            stock = 40
+            used = 60
+            */
+
+            if ($newQty < $usedQty) {
+
+                return [
+                    'success' => false,
+                    'message' => "Cannot reduce quantity for product ID {$productId} below {$usedQty} because it has already been used in transactions."
+                ];
+            }
         }
     }
 }

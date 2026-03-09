@@ -273,6 +273,9 @@ class PurchaseOrderController extends Controller
 
             $updateFlow = new PurchaseOrderUpdateService();
             $res = $updateFlow->updatePurchaseFlow($id, $request->all(), $user->login_business);
+            if(isset($res['success']) && $res['success'] === false){
+                return response()->json(['error' => $res['message']], 400);
+            }
             return response()->json(['message' => 'Purchase Order updated successfully.', 'result' => $res], 200);
 
 
