@@ -51,6 +51,7 @@ class PurchaseOrderUpdateService
             }
 
             $vendor = $po->vendor;
+            
             if (!$vendor) {
                 throw new Exception('Vendor not found against this Purchase Order.', 404);
             }
@@ -63,8 +64,9 @@ class PurchaseOrderUpdateService
             $validate = $this->validatePurchaseOrderEditable($poId, $data['items']);
             Log::info('Validation failed: ' . $validate['message']);
             // return $validate;
-            // if($validate['success'] === false){
-            // }
+            if($validate['success'] === false){
+                return $validate;
+            }
 
             /*
             |--------------------------------------------------------------------------
@@ -105,12 +107,6 @@ class PurchaseOrderUpdateService
             */
             $this->updatePurchaseInvoice($invoice, $data, $po, $grn);
 
-            /*
-            |--------------------------------------------------------------------------
-            | STEP 5: UPDATE LOTS + INVENTORY
-            |--------------------------------------------------------------------------
-            */
-            $this->updateLotsAndInventory($po, $grn, $data, $businessId, $oldLots);
 
             /*
             |--------------------------------------------------------------------------
@@ -242,87 +238,6 @@ class PurchaseOrderUpdateService
         }
     }
 
-    private function updateLotsAndInventory(
-        PurchaseOrder $po,
-        GoodsReceiveNote $grn,
-        array $data,
-        int $businessId,
-        $oldLots
-    ): void {
-        if (empty($data['items']) || !is_array($data['items'])) {
-            return;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | FIRST: REMOVE OLD LOT EFFECT FROM INVENTORY
-        |--------------------------------------------------------------------------
-        */
-        Log::info('Old Lots: in sub func' . $oldLots);
-        foreach ($oldLots as $productId => $oldLot) {
-            $inventory = InventoryDetail::where('product_id', $productId)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$inventory) {
-                throw new Exception("Inventory detail not found for product ID {$productId}", 404);
-            }
-
-            $inventory->stock = $inventory->stock - $oldLot->quantity;
-
-            if ($inventory->stock < 0) {
-                throw new Exception("Inventory stock would become negative for product ID {$productId}", 400);
-            }
-
-            $inventory->save();
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | SECOND: UPDATE / RECREATE LOTS
-        |--------------------------------------------------------------------------
-        */
-        Lot::where('purchase_order_id', $po->id)
-            ->where('grn_id', $grn->id)
-            ->delete();
-
-        foreach ($data['items'] as $item) {
-            do {
-                $lot_code = 'LOT-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
-            } while (Lot::where('lot_code', $lot_code)->exists());
-            $lot = Lot::create([
-                'vendor_id' => $po->vendor_id,
-                'product_id' => $item['product_id'],
-                'purchase_order_id' => $po->id,
-                'grn_id' => $grn->id,
-                'quantity' => $item['quantity'],
-                'purchase_unit_price' => $item['unit_price'] ?? 0,
-                'sale_unit_price' => $item['unit_price'] ?? 0,
-                'total_price' => $item['unit_price'] * $item['quantity'],
-                'lot_code' => $lot_code,
-                'expiry_date' => $item['expiry_date'] ?? null,
-            ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | THIRD: ADD NEW LOT EFFECT IN INVENTORY
-            |--------------------------------------------------------------------------
-            */
-            $inventory = InventoryDetail::where('product_id', $item['product_id'])
-                ->lockForUpdate()
-                ->first();
-
-            if (!$inventory) {
-                $inventory = InventoryDetail::create([
-                    'product_id' => $item['product_id'],
-                    'stock' => 0,
-                ]);
-            }
-
-            $inventory->stock = (float) $inventory->stock + (float) $lot->quantity;
-            $inventory->save();
-        }
-    }
 
     private function findTargetTransaction(int $accId, float $oldAmount, string $poCode): ?Transaction
     {
@@ -368,35 +283,4 @@ class PurchaseOrderUpdateService
         }
     }
 
-    private function validatePurchaseOrderEditable(int $poId, array $items)
-    {
-        $lots = Lot::where('purchase_order_id', $poId)
-            ->get()
-            ->keyBy('product_id');
-
-        foreach ($items as $item) {
-
-            $productId = $item['product_id'];
-            $newQty = $item['quantity'];
-
-            if (!isset($lots[$productId])) {
-                continue;
-            }
-
-            $lotQty = (float)$lots[$productId]->quantity;
-
-            if ($newQty < $lotQty) {
-
-                return [
-                    'success' => false,
-                    'message' => "Cannot reduce quantity for product ID {$productId} below {$lotQty} because it has already been used in transactions."
-                ];
-            }else{
-                return [
-                    'success' => true,
-                    'message' => "Validation passed for product ID {$productId}. New quantity: {$newQty}, Old Lot quantity: {$lotQty}."
-                ];
-            }
-        }
-    }
 }
