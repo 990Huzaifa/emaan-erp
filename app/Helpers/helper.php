@@ -259,7 +259,7 @@ function updateChildAccounts($parentAcc, $oldParentCode, $newParentCode)
 
 function calculateBalance($acc_id, $change, $isDebit = true): float
 {
-    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('created_at', 'desc')->first();
     if ($lastTransaction) {
         return $isDebit ? $lastTransaction->current_balance + $change : $lastTransaction->current_balance - $change;
     }
@@ -273,10 +273,10 @@ function currentBalance($acc_id, $date = null)
     if($date){
         $lastTransaction = Transaction::where('acc_id', $acc_id)
             ->whereDate('created_at', '<=', $date)
-            ->orderBy('id', 'desc')
+            ->orderBy('created_at', 'desc')
             ->first();
     }else{
-        $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
+        $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('created_at', 'desc')->first();
     }
     if (!empty($lastTransaction)) {
         return $lastTransaction->current_balance;

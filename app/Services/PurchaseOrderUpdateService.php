@@ -257,7 +257,7 @@ class PurchaseOrderUpdateService
     {
         $previousTransaction = Transaction::where('acc_id', $accId)
             ->where('id', '<', $fromTransactionId)
-            ->orderBy('id', 'desc')
+            ->orderBy('created_at', 'desc')
             ->lockForUpdate()
             ->first();
 
@@ -269,7 +269,7 @@ class PurchaseOrderUpdateService
 
         $transactions = Transaction::where('acc_id', $accId)
             ->where('id', '>=', $fromTransactionId)
-            ->orderBy('id')
+            ->orderBy('created_at', 'asc')
             ->lockForUpdate()
             ->get();
 
