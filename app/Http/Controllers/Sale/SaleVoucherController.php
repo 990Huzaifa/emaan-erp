@@ -257,8 +257,8 @@ class SaleVoucherController extends Controller
                 // for products
                 $total_billed = $data->voucher_amount;
 
-                $c_cb = calculateCreditBalance($customer_acc, $total_billed); // Credit customer's account
-                $b_cb = calculateDebitBalance($data->acc_id, $total_billed);  // Debit business's account
+                $c_cb = calculateCreditBalance($customer_acc, $total_billed, $data->voucher_date); // Credit customer's account
+                $b_cb = calculateDebitBalance($data->acc_id, $total_billed, $data->voucher_date);  // Debit business's account
                 
                 // Credit amount to customer's account
                 Transaction::create([
@@ -288,6 +288,10 @@ class SaleVoucherController extends Controller
                     'description' => 'Voucher status change to PAID and trnsaction done successfully. Code: ' . $data->voucher_code,   
                 ]);
             }
+
+            recalculateAccountTransactions($data->acc_id);
+            recalculateAccountTransactions($customer_acc);
+
             
 
             DB::commit();
