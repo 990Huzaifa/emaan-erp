@@ -257,15 +257,15 @@ function updateChildAccounts($parentAcc, $oldParentCode, $newParentCode)
 }
 
 
-function calculateBalance($acc_id, $change, $isDebit = true): float
-{
-    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('created_at', 'desc')->first();
-    if ($lastTransaction) {
-        return $isDebit ? $lastTransaction->current_balance + $change : $lastTransaction->current_balance - $change;
-    }
-    $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
-    return $isDebit ? $openingBalance + $change : $openingBalance - $change;
-}
+// function calculateBalance($acc_id, $change, $isDebit = true): float
+// {
+//     $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('created_at', 'desc')->first();
+//     if ($lastTransaction) {
+//         return $isDebit ? $lastTransaction->current_balance + $change : $lastTransaction->current_balance - $change;
+//     }
+//     $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
+//     return $isDebit ? $openingBalance + $change : $openingBalance - $change;
+// }
 
 
 function currentBalance($acc_id, $date = null)
@@ -466,53 +466,6 @@ function convertNumberToWords($number)
         return trim($result);
     }
 
-
-function calculateDebitBalance($acc_id, $debit_amount, $created_at): float
-{
-    // Get last transaction BEFORE this entry (date-wise)
-    $lastTransaction = Transaction::where('acc_id', $acc_id)
-        ->where('created_at', '<=', $created_at)
-        ->orderBy('created_at', 'desc')
-        ->orderBy('id', 'desc')
-        ->first();
-
-    $currentBalance = $lastTransaction 
-        ? $lastTransaction->current_balance 
-        : (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
-
-    $majorType = getAccountMajorType($acc_id);
-
-    // Debit logic
-    if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
-        return $currentBalance + $debit_amount;
-    } else {
-        return $currentBalance - $debit_amount;
-    }
-}
-
-function calculateCreditBalance($acc_id, $credit_amount, $created_at): float
-{
-    // Get last transaction BEFORE this entry (date-wise)
-    $lastTransaction = Transaction::where('acc_id', $acc_id)
-        ->where('created_at', '<=', $created_at)
-        ->orderBy('created_at', 'desc')
-        ->orderBy('id', 'desc')
-        ->first();
-
-    $currentBalance = $lastTransaction 
-        ? $lastTransaction->current_balance 
-        : (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
-
-    $majorType = getAccountMajorType($acc_id);
-
-    // Credit logic
-    if (in_array($majorType, ['LIABILITY', 'EQUITY', 'REVENUE'])) {
-        return $currentBalance + $credit_amount;
-    } else {
-        return $currentBalance - $credit_amount;
-    }
-}
-
 function getAccountMajorType($acc_id): string
 {
     // Fetch the account entry
@@ -556,6 +509,28 @@ function getRevenueAccount($businessId){
     return  $acc->id;
 }
 
+
+function calculateBalance($acc_id, $debit, $credit, $created_at): float
+{
+    $lastTransaction = Transaction::where('acc_id', $acc_id)
+        ->where('created_at', '<=', $created_at)
+        ->orderBy('created_at', 'desc')
+        ->orderBy('id', 'desc')
+        ->first();
+
+    $currentBalance = $lastTransaction 
+        ? $lastTransaction->current_balance 
+        : (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+
+    $majorType = getAccountMajorType($acc_id);
+
+    // 🔥 FINAL LOGIC
+    if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
+        return $currentBalance + $debit - $credit;
+    } else {
+        return $currentBalance - $debit + $credit;
+    }
+}
 
 function recalculateAccountTransactions($acc_id)
 {

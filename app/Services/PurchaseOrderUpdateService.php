@@ -255,10 +255,22 @@ class PurchaseOrderUpdateService
 
     private function recalculateVendorLedger(int $accId, int $fromTransactionId): void
     {
+        $currentTransaction = Transaction::find($fromTransactionId);
+        if (!$currentTransaction) return;
+
+        $createdAt = $currentTransaction->created_at;
+
+        // ✅ Get correct previous transaction (DATE + ID SAFE)
         $previousTransaction = Transaction::where('acc_id', $accId)
-            ->where('id', '<', $fromTransactionId)
+            ->where(function ($q) use ($createdAt, $fromTransactionId) {
+                $q->where('created_at', '<', $createdAt)
+                ->orWhere(function ($q2) use ($createdAt, $fromTransactionId) {
+                    $q2->where('created_at', $createdAt)
+                        ->where('id', '<', $fromTransactionId);
+                });
+            })
             ->orderBy('created_at', 'desc')
-            ->lockForUpdate()
+            ->orderBy('id', 'desc')
             ->first();
 
         $openingBalance = OpeningBalance::where('acc_id', $accId)->value('amount') ?? 0;
@@ -267,16 +279,25 @@ class PurchaseOrderUpdateService
             ? (float)$previousTransaction->current_balance
             : (float)$openingBalance;
 
+        // ✅ Get all affected transactions (DATE BASED)
         $transactions = Transaction::where('acc_id', $accId)
-            ->where('id', '>=', $fromTransactionId)
+            ->where(function ($q) use ($createdAt, $fromTransactionId) {
+                $q->where('created_at', '>', $createdAt)
+                ->orWhere(function ($q2) use ($createdAt, $fromTransactionId) {
+                    $q2->where('created_at', $createdAt)
+                        ->where('id', '>=', $fromTransactionId);
+                });
+            })
             ->orderBy('created_at', 'asc')
-            ->lockForUpdate()
+            ->orderBy('id', 'asc')
             ->get();
 
         foreach ($transactions as $trx) {
 
-            // YOUR SYSTEM FORMULA
-            $runningBalance = $runningBalance - (float)$trx->debit + (float)$trx->credit;
+            // ✅ YOUR SYSTEM (CREDIT BASED)
+            $runningBalance = $runningBalance 
+                - (float)$trx->debit 
+                + (float)$trx->credit;
 
             $trx->current_balance = $runningBalance;
             $trx->save();
