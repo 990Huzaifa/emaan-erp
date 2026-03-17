@@ -31,7 +31,7 @@ class TransactionController extends Controller
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
             $query = Transaction::where('business_id',$businessId)->join('chart_of_accounts', 'transactions.acc_id', '=', 'chart_of_accounts.id')// Join with vendors
-            ->select('transactions.*', 'chart_of_accounts.name as acc_name')->orderBy('transactions.id', 'desc');
+            ->select('transactions.*', 'chart_of_accounts.name as acc_name')->orderBy('transactions.created_at', 'asc');
             
             if (!empty($searchQuery)) {
             $query->where(function ($q) use ($searchQuery) {
