@@ -467,41 +467,49 @@ function convertNumberToWords($number)
     }
 
 
-function calculateDebitBalance($acc_id, $debit_amount): float
+function calculateDebitBalance($acc_id, $debit_amount, $created_at): float
 {
-    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
-    $currentBalance = $lastTransaction ? $lastTransaction->current_balance : 
-                        (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+    // Get last transaction BEFORE this entry (date-wise)
+    $lastTransaction = Transaction::where('acc_id', $acc_id)
+        ->where('created_at', '<=', $created_at)
+        ->orderBy('created_at', 'desc')
+        ->orderBy('id', 'desc')
+        ->first();
 
-    // Determine the nature of the account using the helper
-    $majorType = getAccountMajorType($acc_id); 
+    $currentBalance = $lastTransaction 
+        ? $lastTransaction->current_balance 
+        : (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
 
-    // Rule: ASSET/EXPENSE have a Debit balance, so Debit increases the balance.
-    // Rule: LIABILITY/EQUITY/REVENUE have a Credit balance, so Debit decreases the balance.
-    
+    $majorType = getAccountMajorType($acc_id);
+
+    // Debit logic
     if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
-        return $currentBalance + $debit_amount; // Debit ADD
-    } else { 
-        return $currentBalance - $debit_amount; // Debit SUBTRACT
+        return $currentBalance + $debit_amount;
+    } else {
+        return $currentBalance - $debit_amount;
     }
 }
 
-function calculateCreditBalance($acc_id, $credit_amount): float
+function calculateCreditBalance($acc_id, $credit_amount, $created_at): float
 {
-    $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('id', 'desc')->first();
-    $currentBalance = $lastTransaction ? $lastTransaction->current_balance : 
-                        (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+    // Get last transaction BEFORE this entry (date-wise)
+    $lastTransaction = Transaction::where('acc_id', $acc_id)
+        ->where('created_at', '<=', $created_at)
+        ->orderBy('created_at', 'desc')
+        ->orderBy('id', 'desc')
+        ->first();
 
-    // Determine the nature of the account using the helper
-    $majorType = getAccountMajorType($acc_id); 
+    $currentBalance = $lastTransaction 
+        ? $lastTransaction->current_balance 
+        : (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
 
-    // Rule: LIABILITY/EQUITY/REVENUE have a Credit balance, so Credit increases the balance.
-    // Rule: ASSET/EXPENSE have a Debit balance, so Credit decreases the balance.
+    $majorType = getAccountMajorType($acc_id);
 
+    // Credit logic
     if (in_array($majorType, ['LIABILITY', 'EQUITY', 'REVENUE'])) {
-        return $currentBalance + $credit_amount; // Credit ADD
+        return $currentBalance + $credit_amount;
     } else {
-        return $currentBalance - $credit_amount; // Credit SUBTRACT
+        return $currentBalance - $credit_amount;
     }
 }
 
@@ -546,4 +554,43 @@ function getRevenueAccount($businessId){
     ->where('name','SALES REVENUE')
     ->whereIn('id', $businessAccs)->first();
     return  $acc->id;
+}
+
+
+function recalculateAccountTransactions($acc_id)
+{
+    $transactions = Transaction::where('acc_id', $acc_id)
+        ->orderBy('created_at', 'asc')
+        ->orderBy('id', 'asc')
+        ->get();
+
+    $openingBalance = OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0;
+
+    $runningBalance = $openingBalance;
+
+    $majorType = getAccountMajorType($acc_id);
+
+    foreach ($transactions as $txn) {
+
+        if ($txn->debit > 0) {
+            if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
+                $runningBalance += $txn->debit;
+            } else {
+                $runningBalance -= $txn->debit;
+            }
+        }
+
+        if ($txn->credit > 0) {
+            if (in_array($majorType, ['LIABILITY', 'EQUITY', 'REVENUE'])) {
+                $runningBalance += $txn->credit;
+            } else {
+                $runningBalance -= $txn->credit;
+            }
+        }
+
+        // Update each row
+        $txn->update([
+            'current_balance' => $runningBalance
+        ]);
+    }
 }

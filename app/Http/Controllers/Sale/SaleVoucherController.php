@@ -360,9 +360,9 @@ class SaleVoucherController extends Controller
                     $total_billed = $data->voucher_amount;
 
                     // Customer credit
-                    $c_cb = calculateCreditBalance($customerAccounts[$data->customer_id], $total_billed);
+                    $c_cb = calculateCreditBalance($customerAccounts[$data->customer_id], $total_billed,$data->voucher_date);
                     // Business debit
-                    $b_cb = calculateDebitBalance($data->acc_id, $total_billed);
+                    $b_cb = calculateDebitBalance($data->acc_id, $total_billed,$data->voucher_date);
 
                     // Add customer transaction
                     $transactions[] = [
@@ -409,6 +409,10 @@ class SaleVoucherController extends Controller
             if (count($logs) > 0) {
                 Log::insert($logs);
             }
+
+            recalculateAccountTransactions($data->acc_id);
+
+            recalculateAccountTransactions($customerAccounts[$data->customer_id]);
 
             DB::commit();
 
