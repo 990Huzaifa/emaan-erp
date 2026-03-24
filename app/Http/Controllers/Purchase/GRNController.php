@@ -786,7 +786,8 @@ class GRNController extends Controller
                 'link' => $link,
                 'credit' => $total_amount_grn, // Money credited to business account
                 'debit' => 0.00, // No money debited from business account
-                'current_balance' => $v_cb
+                'current_balance' => $v_cb,
+                'created_at' => $GRN->grn_date
             ]);
 
 
