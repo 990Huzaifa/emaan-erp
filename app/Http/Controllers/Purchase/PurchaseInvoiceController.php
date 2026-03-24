@@ -307,7 +307,7 @@ class PurchaseInvoiceController extends Controller
 
             // CURRENT INVOICE TRANSACTION
             $currentTransaction = Transaction::where('acc_id', $acc_id)
-                ->where('credit', '=', $data->total_amount)
+                ->where('credit', '=', $data->total)
                 ->first();
 
             $previous_balance = 0;
