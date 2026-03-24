@@ -473,6 +473,8 @@ class DeliveryNoteController extends Controller
                     'current_balance' => $c_cb,
                     'created_at' => $data->dn_date
                 ]);
+                
+                recalculateAccountTransactions($customer->acc_id);
 
                 // create sale receipt 
                 $srObj = new SaleReceiptController();
@@ -689,7 +691,7 @@ class DeliveryNoteController extends Controller
                     $total_amount_dn += $item->charged;
                 }
                 
-                $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,true);
+                $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,0,$deliveryNote->dn_date);
                 $link =$soId;
                 // Debit amount to customer's account
                 Transaction::create([
@@ -700,8 +702,11 @@ class DeliveryNoteController extends Controller
                     'link' => $link,
                     'debit' => $total_amount_dn, // FIXED
                     'credit' => 0.00, // FIXED
-                    'current_balance' => $c_cb
+                    'current_balance' => $c_cb,
+                    'created_at' => $deliveryNote->dn_date
                 ]);
+                
+                recalculateAccountTransactions($customer->acc_id);
 
                 // create sale receipt 
                 $srObj = new SaleReceiptController();
