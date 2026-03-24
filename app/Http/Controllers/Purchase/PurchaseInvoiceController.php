@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Purchase;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChartOfAccount;
+use App\Models\OpeningBalance;
 use App\Models\Transaction;
 use App\Models\Vendor;
 use DB;
@@ -298,12 +299,34 @@ class PurchaseInvoiceController extends Controller
     
             $acc_id = Vendor::where('id',$data->vendor_id)->value('acc_id');
             
+            // CURRENT BALANCE (latest)
             $current_balance = Transaction::where('acc_id', $acc_id)
-            ->orderBy('id', 'desc')->value('current_balance');
+                ->orderBy('created_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->value('current_balance');
 
-            $previous_balance = Transaction::where('acc_id', $acc_id)
-            ->orderBy('id', 'desc')->skip(1)->value('current_balance') ?? 0.00;
+            // CURRENT INVOICE TRANSACTION
+            $currentTransaction = Transaction::where('acc_id', $acc_id)
+                ->where('link', $data->id) // assuming link = invoice id
+                ->where('transaction_type', 0) // purchase
+                ->first();
 
+            $previous_balance = 0;
+
+            if ($currentTransaction) {
+                $previous_balance = Transaction::where('acc_id', $acc_id)
+                    ->where(function ($q) use ($currentTransaction) {
+                        $q->where('created_at', '<', $currentTransaction->created_at)
+                        ->orWhere(function ($q2) use ($currentTransaction) {
+                            $q2->where('created_at', '=', $currentTransaction->created_at)
+                                ->where('id', '<', $currentTransaction->id);
+                        });
+                    })
+                    ->orderBy('created_at', 'desc')
+                    ->orderBy('id', 'desc')
+                    ->value('current_balance') ?? 
+                    (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
+            }     
             if (!$data) throw new Exception('Sale Receipt not found', 404);
             // return view('invoice.purchase-invoice', compact('data','current_balance'));
             return response()->json(['data' => $data, 'current_balance' => $current_balance, 'previous_balance' => $previous_balance], 200);
