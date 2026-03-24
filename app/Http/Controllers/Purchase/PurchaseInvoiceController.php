@@ -308,6 +308,7 @@ class PurchaseInvoiceController extends Controller
             // CURRENT INVOICE TRANSACTION
             $currentTransaction = Transaction::where('acc_id', $acc_id)
                 ->where('created_at', '>=', $data->created_at)
+                ->where('credit', '=', $data->total_amount)
                 ->where('transaction_type', 0) // purchase
                 ->first();
 
