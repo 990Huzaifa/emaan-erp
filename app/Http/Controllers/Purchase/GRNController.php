@@ -789,7 +789,8 @@ class GRNController extends Controller
                 'current_balance' => $v_cb,
                 'created_at' => $GRN->grn_date
             ]);
-
+            
+            recalculateAccountTransactions($vendor->acc_id);
 
             // create sale receipt 
             $invoiceObj = new PurchaseInvoiceController();
