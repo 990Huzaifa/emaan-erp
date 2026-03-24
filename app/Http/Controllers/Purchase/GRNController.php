@@ -535,7 +535,7 @@ class GRNController extends Controller
                     
                 }
                 // entry is credit but amount will be debited(sum)
-                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+                $v_cb = calculateBalance($vendor->acc_id,0,$total_amount_grn,$data->grn_date);
                 // Credit amount to Vendor's account
                 $link = $data->purhcase_order_id;
                 Transaction::create([
@@ -546,10 +546,11 @@ class GRNController extends Controller
                     'link' => $link,
                     'credit' => $total_amount_grn, // Money credited to business account
                     'debit' => 0.00, // No money debited from business account
-                    'current_balance' => $v_cb
+                    'current_balance' => $v_cb,
+                    'created_at' => $data->grn_date
                 ]);
 
-
+                recalculateAccountTransactions($vendor->acc_id);
                 // create sale receipt 
                 $invoiceObj = new PurchaseInvoiceController();
                 $invoice = $invoiceObj->createInvoice($id, $businessId);
