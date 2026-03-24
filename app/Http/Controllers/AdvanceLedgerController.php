@@ -49,7 +49,8 @@ class AdvanceLedgerController extends Controller
                     'transactions.created_at',
                     'transactions.updated_at',
                     'transactions.link as sale_order_id',
-                )->where('acc_id', $acc_id);
+                )->where('acc_id', $acc_id)
+                ->orderBy('created_at', 'asc');
 
                 // Apply date filters if provided
                 if (!empty($start_date)) {
@@ -104,7 +105,8 @@ class AdvanceLedgerController extends Controller
                     'transactions.created_at',
                     'transactions.updated_at',
                     'transactions.link as purchase_order_id',
-                )->where('acc_id', $acc_id);
+                )->where('acc_id', $acc_id)
+                ->orderBy('created_at', 'asc');
 
                 if (!empty($start_date)) {
                     $query->where('created_at', '>=', $start_date);
