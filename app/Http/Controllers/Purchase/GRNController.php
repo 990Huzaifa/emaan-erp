@@ -775,7 +775,7 @@ class GRNController extends Controller
             }
             // entry is credit but amount will be debited(sum)
             $vendor = Vendor::find($GRN->purchase_order->vendor_id);
-            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+            $v_cb = calculateBalance($vendor->acc_id,0,$total_amount_grn,$GRN->grn_date);
             // Credit amount to Vendor's account
             $link = $GRN->purchase_order_id;
             Transaction::create([
