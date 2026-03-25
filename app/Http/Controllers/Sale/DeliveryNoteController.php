@@ -50,7 +50,8 @@ class DeliveryNoteController extends Controller
             ->where('delivery_notes.business_id',$businessId)
             ->join('sale_orders','sale_orders.id','=','delivery_notes.sale_order_id')
             ->join('users', 'users.id', '=', 'delivery_notes.received_by') // Corrected join
-            ->select('delivery_notes.*', 'users.name as received_by', 'sale_orders.order_code as so_code')
+            ->join('customers', 'sale_orders.customer_id', '=', 'customers.id')
+            ->select('delivery_notes.*', 'users.name as received_by', 'sale_orders.order_code as so_code', 'customers.name as customer_name')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
@@ -170,6 +171,7 @@ class DeliveryNoteController extends Controller
                 'total' => $request->total,
             ]);
 
+            $total_amount_dn = $request->total;
             foreach($request->items as $item){
                 DeliveryNoteItem::create([
                     'delivery_note_id' => $deliveryNote->id,
@@ -185,6 +187,23 @@ class DeliveryNoteController extends Controller
                     'total_price' => $item['total_price'],
                 ]);
             }
+
+            // start aprovation
+
+            if($request->status == 1){
+                $customer = Customer::find($deliveryNote->sale_order->customer_id);
+
+                $c_cb = calculateBalance(
+                    $customer->acc_id,
+                    $total_amount_dn, // debit
+                    0,
+                    $deliveryNote->dn_date
+                );
+                $link =$deliveryNote->sale_order_id;
+            }
+
+
+            // end approvation
             $n_url ='view-delivery-notes/'.$deliveryNote->id;
             notifyUser($user->id, $businessId,'approve delivery notes', 'New Delivery note created',$n_url);
             Log::create([
