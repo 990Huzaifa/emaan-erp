@@ -28,7 +28,7 @@ class PurchaseOrderUpdateService
             |--------------------------------------------------------------------------
             */
             $po = PurchaseOrder::with([
-                'purchase_order_items',
+                'items',
                 'vendor',
                 'goodsReceiveNote.items',
             ])
@@ -78,7 +78,7 @@ class PurchaseOrderUpdateService
             $oldLots = Lot::where('purchase_order_id', $po->id)
                 ->where('grn_id', $grn->id)
                 ->where('vendor_id', $po->vendor_id)
-                ->whereIn('product_id', $po->purchase_order_items->pluck('product_id')->toArray())
+                ->whereIn('product_id', $po->items->pluck('product_id')->toArray())
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('product_id');

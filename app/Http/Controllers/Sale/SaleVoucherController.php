@@ -138,7 +138,7 @@ class SaleVoucherController extends Controller
                 // Append custom description
                 if (!empty($item['description'])) {
                     if ($item['payment_method'] === 'BANK') {
-                        $description = $item['description'] . ' | ' . $description;
+                        $description = $item['description'];
                     } else {
                         $description = $item['description'];
                     }
@@ -510,7 +510,7 @@ class SaleVoucherController extends Controller
 
                 if(isset($request->description) && !empty($request->description)){
                     if($request->payment_method == 'BANK'){
-                        $description = $request->description . ' | ' . $description;
+                        $description = $request->description;
                     }else{
                         $description = $request->description;
                     }

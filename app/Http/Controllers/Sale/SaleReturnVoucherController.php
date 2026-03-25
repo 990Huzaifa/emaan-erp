@@ -135,7 +135,7 @@ class SaleReturnVoucherController extends Controller
 
                 if(isset($item['description']) && !empty($item['description'])){
                     if($request->payment_method == 'BANK'){
-                        $description = $item['description'] . ' | ' . $description;
+                        $description = $item['description'];
                     }else{
                         $description = $item['description'];
                     }
@@ -343,7 +343,7 @@ class SaleReturnVoucherController extends Controller
 
                 if(isset($request->description) && !empty($request->description)){
                     if($request->payment_method == 'BANK'){
-                        $description = $request->description . ' | ' . $description;
+                        $description = $request->description;
                     }else{
                         $description = $request->description;
                     }

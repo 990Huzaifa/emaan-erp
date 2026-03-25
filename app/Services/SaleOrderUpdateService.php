@@ -18,27 +18,27 @@ use Illuminate\Support\Facades\Log;
 
 class SaleOrderUpdateService
 {
-    public function updatePurchaseFlow(int $poId, array $data, int $businessId)
+    public function updatePurchaseFlow(int $soId, array $data, int $businessId)
     {
-        return DB::transaction(function () use ($poId, $data, $businessId) {
+        return DB::transaction(function () use ($soId, $data, $businessId) {
 
             /*
             |--------------------------------------------------------------------------
-            | STEP 1: GET PO WITH RELATIONS
+            | STEP 1: GET so WITH RELATIONS
             |--------------------------------------------------------------------------
             */
-            $po = SaleOrder::with([
-                'purchase_order_items',
-                'vendor',
-                'DeliveryNote.items',
+            $so = SaleOrder::with([
+                'items',
+                'customer',
+                'deliveryNote.items',
             ])
                 ->lockForUpdate()
-                ->find($poId);
-            if (!$po) {
+                ->find($soId);
+            if (!$so) {
                 throw new Exception('Purchase Order not found.', 404);
             }
 
-            $grn = $po->deliveryNote;
+            $grn = $so->deliveryNote;
 
             $invoice = SaleReceipt::with('items')->where('grn_id',$grn->id)->first();
 
@@ -50,18 +50,18 @@ class SaleOrderUpdateService
                 throw new Exception('Connected Purchase Invoice not found.', 404);
             }
 
-            $vendor = $po->vendor;
+            $customer = $so->customer;
             
-            if (!$vendor) {
-                throw new Exception('Vendor not found against this Purchase Order.', 404);
+            if (!$customer) {
+                throw new Exception('customer not found against this Purchase Order.', 404);
             }
 
-            if (!$vendor->acc_id) {
-                throw new Exception('Vendor account is missing.', 400);
+            if (!$customer->acc_id) {
+                throw new Exception('customer account is missing.', 400);
             }
 
-            // validate if PO can be edited with the new quantities
-            $validate = $this->validateSaleOrderEditable($poId, $data['items']);
+            // validate if so can be edited with the new quantities
+            $validate = $this->validateSaleOrderEditable($soId, $data['items']);
             Log::info('Validation failed: ' . $validate['message']);
             // return $validate;
             if($validate['success'] === false){
@@ -75,10 +75,10 @@ class SaleOrderUpdateService
             */
             $oldGrnTotal = (float) $grn->total_amount;
 
-            $oldLots = Lot::where('purchase_order_id', $po->id)
+            $oldLots = Lot::where('purchase_order_id', $so->id)
                 ->where('grn_id', $grn->id)
-                ->where('vendor_id', $po->vendor_id)
-                ->whereIn('product_id', $po->purchase_order_items->pluck('product_id')->toArray())
+                ->where('customer_id', $so->customer_id)
+                ->whereIn('product_id', $so->purchase_order_items->pluck('product_id')->toArray())
                 ->lockForUpdate()
                 ->get()
                 ->keyBy('product_id');
@@ -91,21 +91,21 @@ class SaleOrderUpdateService
             | STEP 2: UPDATE PURCHASE ORDER
             |--------------------------------------------------------------------------
             */
-            $this->updateSaleOrder($po, $data);
+            $this->updateSaleOrder($so, $data);
 
             /*
             |--------------------------------------------------------------------------
             | STEP 3: UPDATE GRN
             |--------------------------------------------------------------------------
             */
-            $this->updateGrn($grn, $data, $po);
+            $this->updateGrn($grn, $data, $so);
 
             /*
             |--------------------------------------------------------------------------
             | STEP 4: UPDATE PURCHASE INVOICE
             |--------------------------------------------------------------------------
             */
-            $this->updateSaleReceipt($invoice, $data, $po, $grn);
+            $this->updateSaleReceipt($invoice, $data, $so, $grn);
 
 
             /*
@@ -117,9 +117,9 @@ class SaleOrderUpdateService
             $newGrnTotal = (float) $updatedGrn->total;
 
             $targetTransaction = $this->findTargetTransaction(
-                accId: $vendor->acc_id,
-                oldAmount: $oldGrnTotal,
-                poCode: $po->order_code
+                $customer->acc_id,
+                $oldGrnTotal,
+                $so->order_code
             );
             // Log::info('Target Transaction: ' . $targetTransaction);
             // return "test done";
@@ -128,7 +128,7 @@ class SaleOrderUpdateService
             }
 
             $targetTransaction->credit = $newGrnTotal;
-            $targetTransaction->description = 'by edit: credit amount to vendor account by GRN with the PO is ' . $po->order_code;
+            $targetTransaction->description = 'by edit: credit amount to customer account by GRN with the so is ' . $so->order_code;
             $targetTransaction->save();
 
             /*
@@ -136,11 +136,11 @@ class SaleOrderUpdateService
             | STEP 7: RECALCULATE CURRENT BALANCE FOR THIS + NEXT TRANSACTIONS
             |--------------------------------------------------------------------------
             */
-            $this->recalculateVendorLedger($vendor->acc_id, $targetTransaction->id);
+            $this->recalculatecustomerLedger($customer->acc_id, $targetTransaction->id);
             $res = [
                 'success' => true,
                 'message' => 'Purchase flow updated successfully.',
-                'po_id' => $po->id,
+                'so_id' => $so->id,
                 'grn_id' => $grn->id,
                 'invoice_id' => $invoice->id,
                 'transaction_id' => $targetTransaction->id
@@ -150,22 +150,22 @@ class SaleOrderUpdateService
         });
     }
 
-    private function updateSaleOrder(SaleOrder $po, array $data): void
+    private function updateSaleOrder(SaleOrder $so, array $data): void
     {
-        $po->update([
-            'order_date' => $data['order_date'] ?? $po->order_date,
-            'remarks' => $data['remarks'] ?? $po->remarks,
-            'total_discount' => $data['total_discount'] ?? $po->total_discount,
-            'total_tax' => $data['total_tax'] ?? $po->total_tax,
-            'total' => $data['total'] ?? $po->total,
+        $so->update([
+            'order_date' => $data['order_date'] ?? $so->order_date,
+            'remarks' => $data['remarks'] ?? $so->remarks,
+            'total_discount' => $data['total_discount'] ?? $so->total_discount,
+            'total_tax' => $data['total_tax'] ?? $so->total_tax,
+            'total' => $data['total'] ?? $so->total,
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
-            SaleOrderItem::where('purchase_order_id', $po->id)->delete();
+            SaleOrderItem::where('purchase_order_id', $so->id)->delete();
 
             foreach ($data['items'] as $item) {
                 SaleOrderItem::create([
-                    'purchase_order_id' => $po->id,
+                    'purchase_order_id' => $so->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'measurement_unit' => $item['measurement_unit'],
@@ -179,13 +179,13 @@ class SaleOrderUpdateService
         }
     }
 
-    private function updateGrn(DeliveryNote $grn, array $data, SaleOrder $po): void
+    private function updateGrn(DeliveryNote $grn, array $data, SaleOrder $so): void
     {
         $grn->update([
             'grn_date' => $data['grn_date'] ?? $grn->grn_date,
             'remarks' => $data['remarks'] ?? $grn->remarks,
             'total' => $data['total'] ?? $grn->total_amount,
-            'purchase_order_id' => $po->id,
+            'purchase_order_id' => $so->id,
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
@@ -211,7 +211,7 @@ class SaleOrderUpdateService
         }
     }
 
-    private function updateSaleReceipt(SaleReceipt $invoice, array $data, SaleOrder $po, DeliveryNote $grn): void
+    private function updateSaleReceipt(SaleReceipt $invoice, array $data, SaleOrder $so, DeliveryNote $grn): void
     {
         $invoice->update([
             'invoice_date' => $data['invoice_date'] ?? $invoice->invoice_date,
@@ -239,7 +239,7 @@ class SaleOrderUpdateService
     }
 
 
-    private function findTargetTransaction(int $accId, float $oldAmount, string $poCode): ?Transaction
+    private function findTargetTransaction(int $accId, float $oldAmount, string $soCode): ?Transaction
     {
         return Transaction::where('acc_id', $accId)
             ->where('transaction_type', 0)
@@ -247,13 +247,13 @@ class SaleOrderUpdateService
                 $q->where('debit', $oldAmount)
                     ->orWhere('credit', $oldAmount);
             })
-            ->where('description', 'like', '%' . $poCode . '%')
+            ->where('description', 'like', '%' . $soCode . '%')
             ->lockForUpdate()
             ->orderBy('id')
             ->first();
     }
 
-    private function recalculateVendorLedger(int $accId, int $fromTransactionId): void
+    private function recalculatecustomerLedger(int $accId, int $fromTransactionId): void
     {
         $currentTransaction = Transaction::find($fromTransactionId);
         if (!$currentTransaction) return;

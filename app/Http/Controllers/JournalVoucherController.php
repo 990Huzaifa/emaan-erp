@@ -136,7 +136,7 @@ class JournalVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($item['description']) && !empty($item['description'])){
-                    $description = $item['description'] . ' | ' . $description;
+                    $description = $item['description'];
                 }
                 $data[]=[
                     'acc_id'=>$request->acc_id,
@@ -265,7 +265,7 @@ class JournalVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($request->description) && !empty($request->description)){
-                    $description = $request->description . ' | ' . $description;
+                    $description = $request->description;
                 }
             $data->update([
                 'acc_id'=>$request->acc_id,

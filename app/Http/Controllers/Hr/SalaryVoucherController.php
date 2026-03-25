@@ -141,7 +141,7 @@ class SalaryVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($item['description']) && !empty($item['description'])){
-                    $description = $item['description'] . ' | ' . $description;
+                    $description = $item['description'];
                 }
                 $data[] = [
                     'employee_id' => $item['employee_id'],
@@ -277,7 +277,7 @@ class SalaryVoucherController extends Controller
                         : 'Online Bank Transfer');
 
                 if(isset($request->description) && !empty($request->description)){
-                    $description = $request->description . ' | ' . $description;
+                    $description = $request->description;
                 }
             $data->update([
                 'employee_id' => $request->employee_id,
