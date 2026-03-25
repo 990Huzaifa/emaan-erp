@@ -334,8 +334,19 @@ class ExpenseVoucherController extends Controller
                 $asset_acc = $data->asset_acc_id;
                 $expense_acc = $data->expense_acc_id;
                 $total_billed = $data->voucher_amount;
-                $a_cb = calculateBalance($asset_acc, $total_billed, true);
-                $e_cb = calculateBalance($expense_acc, $total_billed, false);
+
+                $a_cb = calculateBalance(
+                    $asset_acc,
+                    0,
+                    $total_billed,
+                    $data->voucher_date
+                );
+                $e_cb = calculateBalance(
+                    $expense_acc,
+                    $total_billed,
+                    0,
+                    $data->voucher_date
+                );
                 
 
                 // Credit the asset account (money is leaving)
@@ -361,6 +372,9 @@ class ExpenseVoucherController extends Controller
                     'current_balance' => $e_cb, // Updated balance for the expense account
                     'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
+
+                recalculateAccountTransactions($asset_acc);
+                recalculateAccountTransactions($expense_acc);
             }
             
             Log::create([
