@@ -51,7 +51,8 @@ class GRNController extends Controller
             ->where('goods_receive_notes.business_id',$businessId)
             ->join('purchase_orders','purchase_orders.id','=','goods_receive_notes.purchase_order_id')
             ->join('users', 'users.id', '=', 'goods_receive_notes.received_by') // Corrected join
-            ->select('goods_receive_notes.*', 'users.name as received_by', 'purchase_orders.order_code as po_code')
+            ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
+            ->select('goods_receive_notes.*', 'users.name as received_by', 'purchase_orders.order_code as po_code', 'vendors.name as vendor_name')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
                 $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
@@ -231,7 +232,7 @@ class GRNController extends Controller
                 }
                 // entry is credit but amount will be debited(sum)
                 $vendor = Vendor::find($GRN->purchase_order->vendor_id);
-                $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,true);
+                $v_cb = calculateBalance($vendor->acc_id,0,$total_amount_grn,$GRN->grn_date);
                 // Credit amount to Vendor's account
                 $link = $GRN->purchase_order_id;
                 Transaction::create([
@@ -242,9 +243,11 @@ class GRNController extends Controller
                     'link' => $link,
                     'credit' => $total_amount_grn, // Money credited to business account
                     'debit' => 0.00, // No money debited from business account
-                    'current_balance' => $v_cb
+                    'current_balance' => $v_cb,
+                    'created_at' => $GRN->grn_date
                 ]);
 
+                recalculateAccountTransactions($vendor->acc_id);
 
                 // create sale receipt 
                 $invoiceObj = new PurchaseInvoiceController();
@@ -308,6 +311,9 @@ class GRNController extends Controller
                     }
                 );
         }])
+        ->join('purchase_orders', 'purchase_orders.id', '=', 'goods_receive_notes.purchase_order_id')
+        ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
+        ->select('goods_receive_notes.*', 'purchase_orders.order_code as po_code', 'vendors.name as vendor_name')
         ->where('id', $id) // Filter by the specific GRN ID
         ->firstOrFail();
             return response()->json($data,200);
