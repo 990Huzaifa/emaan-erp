@@ -246,7 +246,7 @@ class SaleVoucherController extends Controller
                 'days' => $daysDifference,
                 'approved_by' => $user->id,
                 'approve_date' => $currentDateTime,
-                'status'=>$request->status
+                'status'=> $request->status
                 ]);
 
             if ($request->status == 1) {
@@ -297,10 +297,12 @@ class SaleVoucherController extends Controller
                     'user_id' => $user->id,
                     'description' => 'Voucher status change to PAID and trnsaction done successfully. Code: ' . $data->voucher_code,   
                 ]);
+
+                recalculateAccountTransactions($data->acc_id);
+                recalculateAccountTransactions($customer_acc);
             }
 
-            recalculateAccountTransactions($data->acc_id);
-            recalculateAccountTransactions($customer_acc);
+            
 
             
 
