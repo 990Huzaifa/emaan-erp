@@ -283,7 +283,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('ledger/{acc_id}',[LedgerController::class,'list']);
     Route::get('advance-ledger/{acc_id}/{acc_type}',[AdvanceLedgerController::class,'list']);
     Route::get('fetch-accounts',[LedgerController::class,'listAccounts']);
-
+    Route::get('opening-balance',[LedgerController::class,'openingBalance']);
 
     // Reports
 

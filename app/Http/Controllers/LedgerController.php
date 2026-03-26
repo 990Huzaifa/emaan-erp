@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OpeningBalance;
 use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -164,6 +165,135 @@ class LedgerController extends Controller
             return response()->json(['error' => $e->getMessage()], 400);
         }
         
+    }
+
+    public function openingBalance(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            $businessId = $user->login_business;
+
+            // Permission check
+            if ($user->role != 'admin') {
+                if (!$user->hasBusinessPermission($businessId, 'list ledger')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $name = $request->query('name');
+            if (empty($name)) {
+                throw new Exception('Account type (name) is required', 400);
+            }
+
+            $parent_code = null;
+            $accounts = collect();
+
+            // ---------------- TYPES ----------------
+
+            if ($name === 'CUSTOMERS') {
+                $parent_code = ChartOfAccount::where('name', $name)->value('code');
+
+                $accounts = ChartOfAccount::select(
+                        'chart_of_accounts.id',
+                        'chart_of_accounts.name',
+                        'chart_of_accounts.code'
+                    )
+                    ->join('customers', 'chart_of_accounts.ref_id', '=', 'customers.id')
+                    ->where('customers.business_id', $businessId)
+                    ->where('parent_code', $parent_code)
+                    ->get();
+            }
+
+            elseif ($name === 'VENDORS') {
+                $parent_code = ChartOfAccount::where('name', $name)->value('code');
+
+                $accounts = ChartOfAccount::select('id', 'name', 'code')
+                    ->where('parent_code', $parent_code)
+                    ->get();
+            }
+
+            elseif ($name === 'EMPLOYEE_SALARY') {
+                $parent_code = ChartOfAccount::where('name', 'EMPLOYEES SALARY')->value('code');
+
+                $accounts = ChartOfAccount::select('id', 'name', 'code')
+                    ->where('parent_code', $parent_code)
+                    ->get();
+            }
+
+            elseif ($name === 'BUSINESS_EXPENSE') {
+                $parent_code = ChartOfAccount::where('name', 'BUSINESS EXPENSE')->value('code');
+
+                $accounts = ChartOfAccount::select(
+                        'chart_of_accounts.id',
+                        'chart_of_accounts.name',
+                        'chart_of_accounts.code'
+                    )
+                    ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                    ->where('business_has_accounts.business_id', $businessId)
+                    ->where('parent_code', $parent_code)
+                    ->get();
+            }
+
+            elseif ($name === 'BUSINESS_CASH') {
+                $parent_code = ChartOfAccount::where('name', 'CASH')->value('code');
+
+                $accounts = ChartOfAccount::select(
+                        'chart_of_accounts.id',
+                        'chart_of_accounts.name',
+                        'chart_of_accounts.code'
+                    )
+                    ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                    ->where('business_has_accounts.business_id', $businessId)
+                    ->where('parent_code', $parent_code)
+                    ->get();
+            }
+
+            elseif ($name === 'BUSINESS_BANK') {
+                $parent_code = ChartOfAccount::where('name', 'BANK')->value('code');
+
+                $accounts = ChartOfAccount::select(
+                        'chart_of_accounts.id',
+                        'chart_of_accounts.name',
+                        'chart_of_accounts.code'
+                    )
+                    ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                    ->where('business_has_accounts.business_id', $businessId)
+                    ->where('parent_code', $parent_code)
+                    ->get();
+            }
+
+            else {
+                throw new Exception('Invalid Account Type', 400);
+            }
+
+            // ---------------- OPENING BALANCE MAP ----------------
+
+            $result = $accounts->map(function ($account) {
+
+                $opening = OpeningBalance::where('acc_id', $account->id)->value('amount') ?? 0;
+
+                return [
+                    'account_id'   => $account->id,
+                    'account_name' => $account->name,
+                    'account_code' => $account->code,
+                    'opening_balance' => round($opening, 2),
+                ];
+            });
+
+            // ---------------- RESPONSE ----------------
+
+            return response()->json([
+                'type' => $name,
+                'data' => $result
+            ], 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
 }
