@@ -129,7 +129,7 @@ class JournalVoucherController extends Controller
                     $description = $item['description'];
                 }
                 $data[]=[
-                    'acc_id'=>$request->acc_id,
+                    'acc_id'=>$item['acc_id'],
                     'voucher_code'=>$voucher_code,
                     'business_id'=>$user->login_business,
                     'voucher_amount'=>$item['voucher_amount'],
