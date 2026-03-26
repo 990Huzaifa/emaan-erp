@@ -237,7 +237,12 @@ class SaleReturnController extends Controller
                     $total_amount_sr += $item->total_price;
                 }
 
-                $c_cb = calculateBalance($customer->acc_id, $total_amount_sr,false);
+                $c_cb = calculateBalance(
+                    $customer->acc_id,
+                    0,
+                    $total_amount_sr,
+                    $data->return_date
+                );
                 $link =$data->_id;
                 // Debit amount to customer's account
                 Transaction::create([
@@ -248,7 +253,8 @@ class SaleReturnController extends Controller
                     'link' => $link,
                     'credit' => $total_amount_sr, // FIXED
                     'debit' => 0.00, // FIXED
-                    'current_balance' => $c_cb
+                    'current_balance' => $c_cb,
+                    'created_at' => $data->return_date
                 ]);
             }
             

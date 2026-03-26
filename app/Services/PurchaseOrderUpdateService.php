@@ -128,7 +128,7 @@ class PurchaseOrderUpdateService
             }
 
             $targetTransaction->credit = $newGrnTotal;
-            $targetTransaction->description = 'by edit: credit amount to vendor account by GRN with the PO is ' . $po->order_code;
+            $targetTransaction->description = 'by edit: PO no ' . $po->order_code;
             $targetTransaction->save();
 
             /*

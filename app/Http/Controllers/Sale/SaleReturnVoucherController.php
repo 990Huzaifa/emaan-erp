@@ -234,8 +234,18 @@ class SaleReturnVoucherController extends Controller
                 // for products
                 $total_billed = $data->voucher_amount;
 
-                $c_cb = calculateBalance($customer_acc, $total_billed, true); // Debit customer's account
-                $b_cb = calculateBalance($data->acc_id, $total_billed, false);  // Credit business's account
+                $c_cb = calculateBalance(
+                    $customer_acc,
+                    $total_billed,
+                    0,
+                    $data->voucher_date
+                    ); // Debit customer's account
+                $b_cb = calculateBalance(
+                    $data->acc_id,
+                    0,
+                    $total_billed,
+                    $data->voucher_date
+                );
                 
                 // Debit amount to customer's account
                 Transaction::create([
@@ -261,7 +271,10 @@ class SaleReturnVoucherController extends Controller
                     'created_at' => $data->voucher_date, // Use voucher date for transaction record
                 ]);
             }
-            
+
+            recalculateAccountTransactions($data->acc_id);
+            recalculateAccountTransactions($customer_acc);
+
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'Voucher status change to PAID and trnsaction done successfully.',   

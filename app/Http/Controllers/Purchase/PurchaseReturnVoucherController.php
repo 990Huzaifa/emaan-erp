@@ -332,49 +332,60 @@ class PurchaseReturnVoucherController extends Controller
                 'approved_by' => $user->id,
                 'approved_date' => Carbon::now(),
                 'status'=> 1
-                ]);
-            
+            ]);
+        
 
-                    // transaction
-                    $vendor = Vendor::find($data->vendor_id);
-                    $vendor_acc = $vendor->acc_id;
-                    // for products
-                    $total_billed = $data->voucher_amount;
+            // transaction
+            $vendor = Vendor::find($data->vendor_id);
+            $vendor_acc = $vendor->acc_id;
+            // for products
+            $total_billed = $data->voucher_amount;
 
-                    // Calculate Cash/Bank Account Current Balance (Post-Credit)
-                    $b_cb = calculateBalance($data->acc_id, $total_billed, true); // Cash account is credited (reduced)
+            // Calculate Cash/Bank Account Current Balance (Post-Credit)
+            $b_cb = calculateBalance(
+                $data->acc_id,
+                $total_billed,
+                0,
+                $data->voucher_date
+            );
 
-                    // Calculate Vendor Account Current Balance (Post-Debit)
-                    $v_cb = calculateBalance($vendor_acc, $total_billed, false); // Vendor account is debited
+            // Calculate Vendor Account Current Balance (Post-Debit)
+            $v_cb = calculateBalance(
+                $vendor_acc,
+                0,
+                $total_billed,
+                $data->voucher_date
+            ); // Vendor account is debited
                     
-                    // Credit amount to vendor's account
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $vendor_acc,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => $data->description,
-                        'debit' => 0.00, // No money credited to vendor's account
-                        'credit' => $total_billed, // Money debited from vendor's account
-                        'current_balance' => $v_cb, // Updated balance for vendor account
-                        'created_at' => $data->voucher_date, // Use voucher date for transaction record
-                    ]);
+            // Credit amount to vendor's account
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $vendor_acc,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => $data->description,
+                'debit' => 0.00, // No money credited to vendor's account
+                'credit' => $total_billed, // Money debited from vendor's account
+                'current_balance' => $v_cb, // Updated balance for vendor account
+                'created_at' => $data->voucher_date, // Use voucher date for transaction record
+            ]);
 
-                    // Debit amount from business's account
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $data->acc_id,
-                        'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
-                        'description' => $data->description,
-                        'credit' => 0.00, // No money debited to business account
-                        'debit' => $total_billed, // Money credited from business account
-                        'current_balance' => $b_cb,
-                        'created_at' => $data->voucher_date, // Use voucher date for transaction record
-                    ]);
-
-                    Log::create([
-                        'user_id' => $user->id,
-                        'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->voucher_code,   
-                    ]);
+            // Debit amount from business's account
+            Transaction::create([
+                'business_id' => $data->business_id,
+                'acc_id' => $data->acc_id,
+                'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
+                'description' => $data->description,
+                'credit' => 0.00, // No money debited to business account
+                'debit' => $total_billed, // Money credited from business account
+                'current_balance' => $b_cb,
+                'created_at' => $data->voucher_date, // Use voucher date for transaction record
+            ]);
+            recalculateAccountTransactions($data->acc_id);
+            recalculateAccountTransactions($vendor_acc);
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'Voucher status change to PAID and trnsaction done successfully. code: '.$data->voucher_code,   
+            ]);
 
             
             
