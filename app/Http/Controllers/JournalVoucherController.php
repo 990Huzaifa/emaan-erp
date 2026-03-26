@@ -90,9 +90,6 @@ class JournalVoucherController extends Controller
                     'data.*.acc_id' => 'required|exists:chart_of_accounts,id',
                     'data.*.type'=>'required|string|in:WITHDRAW,DEPOSIT',
 
-                    'data.*.bank_transaction_type' => 'required_if:data.*.payment_method,BANK|nullable|in:CHEQUE,ONLINE',
-                    'data.*.cheque_no' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|string',
-                    'data.*.cheque_date' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|date',
                 ],[
                     'data.required' => 'The data field is required.',
                     'data.array' => 'The data field must be an array.',
@@ -108,15 +105,6 @@ class JournalVoucherController extends Controller
 
                     'data.*.acc_id.required' => 'The Account field is required.',
                     'data.*.acc_id.exists' => 'The selected account is invalid.',
-
-                    'data.*.bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
-                    'data.*.bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
-
-                    'data.*.cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
-                    'data.*.cheque_no.string' => 'The cheque number must be a string.',
-                    
-                    'data.*.cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
-                    'data.*.cheque_date.date' => 'The cheque date must be a valid date.',
                     
                     'data.*.voucher_date.required' => 'The voucher date field is required.',
                     
@@ -135,9 +123,7 @@ class JournalVoucherController extends Controller
                 } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
                 $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
-                    : ($request->bank_transaction_type == 'CHEQUE' 
-                        ? 'Cheque Payment' 
-                        : 'Online Bank Transfer');
+                    : 'Bank Transfer';
 
                 if(isset($item['description']) && !empty($item['description'])){
                     $description = $item['description'];
@@ -147,12 +133,8 @@ class JournalVoucherController extends Controller
                     'voucher_code'=>$voucher_code,
                     'business_id'=>$user->login_business,
                     'voucher_amount'=>$item['voucher_amount'],
-                    'payment_method'=>$request->payment_method,
-                    'bank_transaction_type'=>$request->bank_transaction_type,
                     'description'=>$description,
                     'type'=>$request->type,
-                    'cheque_no'=>$request->cheque_no ?? null,
-                    'cheque_date'=>$request->cheque_date ?? null,
                     'voucher_date'=>Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status'=>0,
                     'created_by'=>$user->id
