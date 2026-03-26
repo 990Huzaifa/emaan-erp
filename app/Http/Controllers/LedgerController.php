@@ -139,6 +139,20 @@ class LedgerController extends Controller
                 ->where('business_has_accounts.business_id', $businessId)
                 ->where('parent_code', $parent_code)->get();
             }
+            else if($name == 'BUSINESS_CASH'){
+                $parent_code = ChartOfAccount::select('code')->where('name','CASH')->value('code');
+                $results = ChartOfAccount::select('chart_of_accounts.id','chart_of_accounts.name','chart_of_accounts.code')
+                ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                ->where('business_has_accounts.business_id', $businessId)
+                ->where('parent_code', $parent_code)->get();
+            }
+            else if($name == 'BUSINESS_BANK'){
+                $parent_code = ChartOfAccount::select('code')->where('name','BANK')->value('code');
+                $results = ChartOfAccount::select('chart_of_accounts.id','chart_of_accounts.name','chart_of_accounts.code')
+                ->join('business_has_accounts', 'chart_of_accounts.id', '=', 'business_has_accounts.chart_of_account_id')
+                ->where('business_has_accounts.business_id', $businessId)
+                ->where('parent_code', $parent_code)->get();
+            }
             else{
                  throw new Exception('Invalid Account', 400);
             }
