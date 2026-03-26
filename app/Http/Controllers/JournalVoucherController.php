@@ -309,8 +309,8 @@ class JournalVoucherController extends Controller
                     // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
                     $a_cb = calculateBalance(
                         $acc_id,
-                        $total_amount,
                         0,
+                        $total_amount,
                         $data->voucher_date
                     );
         
@@ -329,8 +329,8 @@ class JournalVoucherController extends Controller
                     // Contribution: Debit Business Account, Credit Partner Account (money enters business, increases equity)
                     $a_cb = calculateBalance(
                         $acc_id,
-                        0,
                         $total_amount,
+                        0,
                         $data->voucher_date
                     );
         
