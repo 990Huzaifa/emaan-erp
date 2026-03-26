@@ -314,7 +314,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('pnl-report',[ReportsController::class,'pnl']);
 
-    Route::get('/profit-report', [ReportsController::class, 'profitReport']);
+    Route::get('profit-report', [ReportsController::class, 'profitReport']);
 
 
     // Dashboard
