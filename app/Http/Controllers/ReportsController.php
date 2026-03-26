@@ -18,6 +18,7 @@ use App\Models\PurchaseOrderItem;
 use App\Models\PurchaseVoucher;
 use App\Models\SaleOrderItem;
 use App\Models\SaleReceipt;
+use App\Models\SaleReceiptItem;
 use App\Models\SaleVoucher;
 use App\Models\Vendor;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
@@ -1101,6 +1102,114 @@ class ReportsController extends Controller
         }
     }
 
-    
+    public function profitReport(Request $request)
+    {
+        $type = $request->type ?? 'product'; // invoice | product | customer
+        $withTax = $request->with_tax ?? false;
+
+        // Step 1: Get avg costs (optimized)
+        $avgCosts = $this->getAvgCosts();
+
+        // Step 2: Get base data
+        $data = $this->getBaseProfitData($avgCosts, $withTax, $request);
+
+        // Step 3: Group data
+        $grouped = $this->groupProfitData($data, $type);
+
+        return response()->json([
+            'status' => true,
+            'type' => $type,
+            'with_tax' => $withTax,
+            'data' => $grouped
+        ]);
+    }
+
+    // 🔥 Get all avg costs in one query
+    private function getAvgCosts()
+    {
+        return Lot::selectRaw('product_id, SUM(quantity * purchase_unit_price) as total_value, SUM(quantity) as total_qty')
+            ->groupBy('product_id')
+            ->get()
+            ->mapWithKeys(function ($row) {
+                return [
+                    $row->product_id => $row->total_qty > 0
+                        ? ($row->total_value / $row->total_qty)
+                        : 0
+                ];
+            });
+    }
+
+    // 🔥 Base dataset (core engine)
+    private function getBaseProfitData($avgCosts, $withTax, $request)
+    {
+        $query = SaleReceiptItem::with([
+            'receipt:id,customer_id,created_at',
+            'product:id,title',
+            'receipt.customer:id,name'
+        ]);
+
+        // Filters...
+
+        $items = $query->get();
+
+        $result = [];
+
+        foreach ($items as $item) {
+
+            $avgCost = $avgCosts[$item->product_id] ?? 0;
+
+            $saleAmount = $item->quantity * $item->unit_price;
+            $tax = $item->tax ?? 0;
+
+            if ($withTax) {
+                $saleAmount += $tax;
+            }
+
+            $costAmount = $item->quantity * $avgCost;
+
+            $result[] = [
+                'invoice_id' => $item->sale_receipt_id,
+                'product_id' => $item->product_id,
+                'product_name' => $item->product->title ?? null,
+
+                'customer_id' => $item->receipt->customer_id,
+                'customer_name' => $item->receipt->customer->name ?? null,
+
+                'sale_amount' => $saleAmount,
+                'tax' => $tax,
+                'cost_amount' => $costAmount,
+                'profit' => $saleAmount - $costAmount,
+            ];
+        }
+
+        return $result;
+    }
+
+    // 🔥 Grouping engine (dynamic)
+    private function groupProfitData($data, $type)
+    {
+        $key = $type . '_id';
+
+        return collect($data)
+            ->filter(fn($item) => isset($item[$key])) // 🔥 safety
+            ->groupBy($key)
+            ->map(function ($items) use ($type, $key) {
+
+                $sale = collect($items)->sum('sale_amount');
+                $cost = collect($items)->sum('cost_amount');
+                $tax = collect($items)->sum('tax');
+
+                return [
+                    $key => $items->first()[$key],
+                    $type . '_name' => $items->first()[$type . '_name'] ?? null,
+
+                    'total_sale' => round($sale, 2),
+                    'total_cost' => round($cost, 2),
+                    'total_tax' => round($tax, 2),
+                    'profit' => round($sale - $cost, 2),
+                ];
+            })
+            ->values();
+    }
 
 }
