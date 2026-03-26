@@ -81,43 +81,47 @@ class JournalVoucherController extends Controller
 
             $validator = Validator::make(
                 $request->all(),[
-                    'voucher_date'=>'required',
-                    'acc_id'=>'required|exists:chart_of_accounts,id',
-                    'payment_method'=>'required|string|in:CASH,BANK,OTHER',
-                    'type'=>'required|string|in:WITHDRAW,DEPOSIT',
-                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
-                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
-                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
-                    'data'=>'required|array',
-                    'data.*.partner_id'=>'required|exists:partners,id',
-                    'data.*.voucher_amount'=>'required|numeric',
+                    'data' => 'required|array',
+                    'data.*.voucher_amount' => 'required|numeric',
+                    'data.*.description' => 'nullable|string',
+                    'data.*.voucher_date' => 'required|date',
+                    
+                    'data.*.payment_method' => 'required|string|in:CASH,BANK,OTHER',
+                    'data.*.acc_id' => 'required|exists:chart_of_accounts,id',
+                    'data.*.type'=>'required|string|in:WITHDRAW,DEPOSIT',
+
+                    'data.*.bank_transaction_type' => 'required_if:data.*.payment_method,BANK|nullable|in:CHEQUE,ONLINE',
+                    'data.*.cheque_no' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|string',
+                    'data.*.cheque_date' => 'required_if:data.*.bank_transaction_type,CHEQUE|nullable|date',
                 ],[
+                    'data.required' => 'The data field is required.',
+                    'data.array' => 'The data field must be an array.',
                     
-                    'acc_id.required'=>'Account is Required',
-                    'acc_id.exists'=>'Account is Invalid',
+                    'data.*.vendor_id.required' => 'The Vendor field is required.',
+                    'data.*.vendor_id.exists' => 'The selected Vendor is invalid.',
+
+                    'data.*.voucher_amount.required' => 'The voucher amount field is required.',
+                    'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
+
+                    'data.*.payment_method.required' => 'The payment method field is required.',
+                    'data.*.payment_method.in' => 'The selected payment method is invalid.',
+
+                    'data.*.acc_id.required' => 'The Account field is required.',
+                    'data.*.acc_id.exists' => 'The selected account is invalid.',
+
+                    'data.*.bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
+                    'data.*.bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
+
+                    'data.*.cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
+                    'data.*.cheque_no.string' => 'The cheque number must be a string.',
                     
-                    'payment_method.required'=>'Payment Method is Required',
-                    'payment_method.in'=>'Payment Method is Invalid',
+                    'data.*.cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
+                    'data.*.cheque_date.date' => 'The cheque date must be a valid date.',
                     
-                    'bank_transaction_type.required_if' => 'The bank transaction type field is required when payment method is BANK.',
-                    'bank_transaction_type.in' => 'The selected bank transaction type is invalid.',
-
-                    'cheque_no.required_if' => 'The cheque number field is required when bank transaction type is CHEQUE.',
-                    'cheque_no.string' => 'The cheque number must be a string.',
-
-                    'cheque_date.required_if' => 'The cheque date field is required when bank transaction type is CHEQUE.',
-                    'cheque_date.date' => 'The cheque date must be a valid date.',
+                    'data.*.voucher_date.required' => 'The voucher date field is required.',
                     
-                    'voucher_date.required'=>'Voucher Date is Required',
-
-                    'type.required'=>'Type is Required',
-                    'type.in'=>'Type is Invalid',
-
-                    'data.required'=>'Data is Required',
-                    'data.*.partner_id.required'=>'Partner is Required',
-                    'data.*.partner_id.exists'=>'Partner is Invalid',
-                    'data.*.voucher_amount.required'=>'Amount is Required',
-                    'data.*.voucher_amount.numeric'=>'Amount must be a number',
+                    'data.*.type.required'=>'Type is Required',
+                    'data.*.type.in'=>'Type is Invalid',
                 ]
             );
 
@@ -142,7 +146,6 @@ class JournalVoucherController extends Controller
                     'acc_id'=>$request->acc_id,
                     'voucher_code'=>$voucher_code,
                     'business_id'=>$user->login_business,
-                    'partner_id'=>$item['partner_id'],
                     'voucher_amount'=>$item['voucher_amount'],
                     'payment_method'=>$request->payment_method,
                     'bank_transaction_type'=>$request->bank_transaction_type,
@@ -320,13 +323,15 @@ class JournalVoucherController extends Controller
 
             if($data->status == 1){
                 $acc_id = $data->acc_id;
-                $partner_id = $data->partner_id;
-                $partner_acc_id = Partner::where('id', $partner_id)->first()->value('acc_id');
                 $total_amount = $data->voucher_amount;
                 if ($data->type === 'WITHDRAW') {
                     // Withdrawal: Debit Partner Account, Credit Business Account (money leaves business, reduces equity)
-                    $a_cb = calculateBalance($acc_id, $total_amount, false); // Business asset account
-                    $p_cb = calculateBalance($partner_acc_id, $total_amount, true); // Partner equity account
+                    $a_cb = calculateBalance(
+                        $acc_id,
+                        $total_amount,
+                        0,
+                        $data->voucher_date
+                    );
         
                     // Credit the asset account (money is leaving the business)
                     Transaction::create([
@@ -336,24 +341,17 @@ class JournalVoucherController extends Controller
                         'description' => $data->description,
                         'debit' => $total_amount,
                         'credit' => 0.00,
-                        
-                        'current_balance' => $a_cb
-                    ]);
-        
-                    // Debit the partner's equity account
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $partner_acc_id,
-                        'transaction_type' => 2, // Withdrawal
-                        'description' => $data->description,
-                        'debit' => 0.00,
-                        'credit' => $total_amount,
-                        'current_balance' => $p_cb
+                        'current_balance' => $a_cb,
+                        'created_at' => $data->voucher_date
                     ]);
                 } elseif ($data->type === 'DEPOSIT') {
                     // Contribution: Debit Business Account, Credit Partner Account (money enters business, increases equity)
-                    $a_cb = calculateBalance($acc_id, $total_amount, true); // Business asset account
-                    $p_cb = calculateBalance($partner_acc_id, $total_amount, false); // Partner equity account
+                    $a_cb = calculateBalance(
+                        $acc_id,
+                        0,
+                        $total_amount,
+                        $data->voucher_date
+                    );
         
                     // Debit the asset account (money is added to the business)
                     Transaction::create([
@@ -365,17 +363,8 @@ class JournalVoucherController extends Controller
                         'credit' => $total_amount,
                         'current_balance' => $a_cb
                     ]);
-        
-                    // Credit the partner's equity account
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $partner_acc_id,
-                        'transaction_type' => 1, // Contribution
-                        'description' => $data->description,
-                        'debit' => $total_amount,
-                        'credit' => 0.00,
-                        'current_balance' => $p_cb
-                    ]);
+
+                    recalculateAccountTransactions($acc_id);
                 } else {
                     throw new Exception('Invalid voucher type.');
                 }
