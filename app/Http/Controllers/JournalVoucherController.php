@@ -320,8 +320,8 @@ class JournalVoucherController extends Controller
                         'acc_id' => $acc_id,
                         'transaction_type' => 2, // Withdrawal
                         'description' => $data->description,
-                        'debit' => $total_amount,
-                        'credit' => 0.00,
+                        'credit' => $total_amount,
+                        'debit' => 0.00,
                         'current_balance' => $a_cb,
                         'created_at' => $data->voucher_date
                     ]);
@@ -340,9 +340,10 @@ class JournalVoucherController extends Controller
                         'acc_id' => $acc_id,
                         'transaction_type' => 1, // Contribution
                         'description' => $data->description,
-                        'debit' => 0.00,
-                        'credit' => $total_amount,
-                        'current_balance' => $a_cb
+                        'credit' => 0.00,
+                        'debit' => $total_amount,
+                        'current_balance' => $a_cb,
+                        'created_at' => $data->voucher_date
                     ]);
 
                     recalculateAccountTransactions($acc_id);
