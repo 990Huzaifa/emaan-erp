@@ -275,8 +275,8 @@ class SaleOrderUpdateService
 
             // ✅ YOUR SYSTEM (CREDIT BASED)
             $runningBalance = $runningBalance 
-                + (float)$trx->debit 
-                - (float)$trx->credit;
+                - (float)$trx->debit 
+                + (float)$trx->credit;
 
             $trx->current_balance = $runningBalance;
             $trx->save();
