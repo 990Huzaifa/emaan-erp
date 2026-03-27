@@ -175,7 +175,7 @@ class LedgerController extends Controller
 
             // Permission check
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($businessId, 'list ledger')) {
+                if (!$user->hasBusinessPermission($businessId, 'opening balance')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
