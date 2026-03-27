@@ -351,7 +351,12 @@ class PurchaseVoucherController extends Controller
                     );
 
                 // Calculate Vendor Account Current Balance (Post-Debit)
-                $v_cb = calculateBalance($vendor_acc, $total_billed, 0, $data->voucher_date); // Vendor account is debited
+                $v_cb = calculateBalance(
+                    $vendor_acc,
+                    $total_billed,
+                    0,
+                    $data->voucher_date
+                    ); // Vendor account is debited
                 
                 // Debit amount to vendor's account (minus)
                 Transaction::create([
