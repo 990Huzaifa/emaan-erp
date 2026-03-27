@@ -269,141 +269,141 @@ class PurchaseOrderController extends Controller
                 }
             }
 
+            $PO = PurchaseOrder::find($id);
+            if($PO->status == 1){
+                $updateFlow = new PurchaseOrderUpdateService();
+                $res = $updateFlow->updatePurchaseFlow($id, $request->all(), $user->login_business);
+                if(isset($res['success']) && $res['success'] === false){
+                    return response()->json(['error' => $res['message']], 400);
+                }
+                
+            }else{
+                // end here for test now
+                $validator = Validator::make(
+                    $request->all(),
+                    [
+                        'vendor_id' => 'required|exists:vendors,id',
+                        'order_date' => 'required',
+                        'due_date' => 'required',
+                        'delivery_cost' => 'required|numeric',
+                        'total' => 'required|numeric',
+                        'total_tax' => 'required|numeric',
+                        'total_discount' => 'required|numeric',
+                        'terms_of_payment' => 'nullable|string',
+                        'remarks' => 'nullable|string',
 
+                        'items' => 'required|array',
+                        'items.*.product_id' => 'required|exists:products,id',
+                        'items.*.quantity' => 'required|numeric',
+                        'items.*.measurement_unit' => 'required|string',
+                        'items.*.unit_price' => 'required|numeric',
+                        'items.*.total_price' => 'required|numeric',
+                        'items.*.discount' => 'required|numeric',
+                        'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
+                        'items.*.tax' => 'required|numeric',
 
-            $updateFlow = new PurchaseOrderUpdateService();
-            $res = $updateFlow->updatePurchaseFlow($id, $request->all(), $user->login_business);
-            if(isset($res['success']) && $res['success'] === false){
-                return response()->json(['error' => $res['message']], 400);
+                    ],
+                    [
+                        'vendor_id.required' => 'Vendor is required.',
+                        'vendor_id.exists' => 'Vendor does not exist.',
+
+                        'order_date.required' => 'Order date is required.',
+
+                        'due_date.required' => 'Due date is required.',
+
+                        'total.required' => 'Total is required.',
+                        'total.numeric' => 'Total must be a number.',
+
+                        'total_discount.required' => 'Total Discount is required.',
+                        'total_discount.numeric' => 'Total Discount must be a number.',
+
+                        'delivery_cost.required' => 'Delivery cost is required.',
+                        'delivery_cost.numeric' => 'Delivery cost must be a number.',
+
+                        'total_tax.required' => 'Total Tax is required.',
+                        'total_tax.numeric' => 'Total Tax must be a number.',
+
+                        'items.required' => 'Items are required.',
+
+                        'items.*.product_id.required' => 'Product is required.',
+                        'items.*.product_id.exists' => 'Product does not exist.',
+
+                        'items.*.measurement_unit.required' => 'Measurement unit is required.',
+                        'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
+
+                        'items.*.quantity.required' => 'Quantity is required.',
+                        'items.*.quantity.numeric' => 'Quantity must be a number.',
+
+                        'items.*.unit_price.required' => 'Unit price is required.',
+                        'items.*.unit_price.numeric' => 'Unit price must be a number.',
+
+                        'items.*.total_price.required' => 'Total price is required.',
+                        'items.*.total_price.numeric' => 'Total price must be a number.',
+
+                        'items.*.discount.required' => 'Discount is required.',
+                        'items.*.discount.numeric' => 'Discount must be a number.',
+
+                        'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
+                        'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
+                        'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
+
+                        'items.*.tax.required' => 'Tax is required.',
+                        'items.*.tax.numeric' => 'Tax must be a number.',
+                    ]
+                );
+                if ($validator->fails())
+                    throw new Exception($validator->errors()->first(), 400);
+                $data = PurchaseOrder::find($id);
+                if (empty($data))
+                    throw new Exception('No PO found', 404);
+                $data->update([
+                    'vendor_id' => $request->vendor_id,
+                    'order_date' => $request->order_date,
+                    'due_date' => $request->due_date,
+                    'total' => $request->total,
+                    'total_tax' => $request->total_tax,
+                    'total_discount' => $request->total_discount,
+                    'delivery_cost' => $request->delivery_cost,
+                    'terms_of_payment' => $request->terms_of_payment,
+                    'remarks' => $request->remarks ?? $data->remarks,
+                    'status' => 0,
+                ]);
+                $existingItems = PurchaseOrderItem::where('purchase_order_id', $id)->get()->keyBy('id');
+                $requestItemIds = [];
+                foreach ($request->items as $item) {
+                    if (isset($item['id']) && isset($existingItems[$item['id']])) {
+                        // Update existing item
+                        $existingItems[$item['id']]->update([
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['unit_price'],
+                            'total_price' => $item['total_price'],
+                            'tax' => $item['tax'],
+                        ]);
+                        $requestItemIds[] = $item['id'];  // Keep track of updated items
+                    } else {
+                        // Create new item
+                        PurchaseOrderItem::create([
+                            'purchase_order_id' => $id,
+                            'product_id' => $item['product_id'],
+                            'measurement_unit' => $item['measurement_unit'],
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['unit_price'],
+                            'total_price' => $item['total_price'],
+                            'tax' => $item['tax'],
+                        ]);
+                    }
+                }
+                $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
+                PurchaseOrderItem::destroy($itemsToDelete);
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Update Purchase Order. code: ' . $data->order_code,
+                ]);
+                $n_url = 'view-purchase-order/' . $id;
+                notifyUser($user->id, $businessId, 'view purchase orders', 'purchase order has been updated', $n_url);
+                return response()->json($data);
             }
             return response()->json(['message' => 'Purchase Order updated successfully.', 'result' => $res], 200);
-
-
-
-            // end here for test now
-            $validator = Validator::make(
-                $request->all(),
-                [
-                    'vendor_id' => 'required|exists:vendors,id',
-                    'order_date' => 'required',
-                    'due_date' => 'required',
-                    'delivery_cost' => 'required|numeric',
-                    'total' => 'required|numeric',
-                    'total_tax' => 'required|numeric',
-                    'total_discount' => 'required|numeric',
-                    'terms_of_payment' => 'nullable|string',
-                    'remarks' => 'nullable|string',
-
-                    'items' => 'required|array',
-                    'items.*.product_id' => 'required|exists:products,id',
-                    'items.*.quantity' => 'required|numeric',
-                    'items.*.measurement_unit' => 'required|string',
-                    'items.*.unit_price' => 'required|numeric',
-                    'items.*.total_price' => 'required|numeric',
-                    'items.*.discount' => 'required|numeric',
-                    'items.*.discount_in_percentage' => 'required|numeric|in:0,1',
-                    'items.*.tax' => 'required|numeric',
-
-                ],
-                [
-                    'vendor_id.required' => 'Vendor is required.',
-                    'vendor_id.exists' => 'Vendor does not exist.',
-
-                    'order_date.required' => 'Order date is required.',
-
-                    'due_date.required' => 'Due date is required.',
-
-                    'total.required' => 'Total is required.',
-                    'total.numeric' => 'Total must be a number.',
-
-                    'total_discount.required' => 'Total Discount is required.',
-                    'total_discount.numeric' => 'Total Discount must be a number.',
-
-                    'delivery_cost.required' => 'Delivery cost is required.',
-                    'delivery_cost.numeric' => 'Delivery cost must be a number.',
-
-                    'total_tax.required' => 'Total Tax is required.',
-                    'total_tax.numeric' => 'Total Tax must be a number.',
-
-                    'items.required' => 'Items are required.',
-
-                    'items.*.product_id.required' => 'Product is required.',
-                    'items.*.product_id.exists' => 'Product does not exist.',
-
-                    'items.*.measurement_unit.required' => 'Measurement unit is required.',
-                    'items.*.measurement_unit.string' => 'Measurement unit must be a string.',
-
-                    'items.*.quantity.required' => 'Quantity is required.',
-                    'items.*.quantity.numeric' => 'Quantity must be a number.',
-
-                    'items.*.unit_price.required' => 'Unit price is required.',
-                    'items.*.unit_price.numeric' => 'Unit price must be a number.',
-
-                    'items.*.total_price.required' => 'Total price is required.',
-                    'items.*.total_price.numeric' => 'Total price must be a number.',
-
-                    'items.*.discount.required' => 'Discount is required.',
-                    'items.*.discount.numeric' => 'Discount must be a number.',
-
-                    'items.*.discount_in_percentage.required' => 'Discount in percentage is required.',
-                    'items.*.discount_in_percentage.numeric' => 'Discount in percentage must be a number.',
-                    'items.*.discount_in_percentage.in' => 'Discount in percentage must be 0 or 1.',
-
-                    'items.*.tax.required' => 'Tax is required.',
-                    'items.*.tax.numeric' => 'Tax must be a number.',
-                ]
-            );
-            if ($validator->fails())
-                throw new Exception($validator->errors()->first(), 400);
-            $data = PurchaseOrder::find($id);
-            if (empty($data))
-                throw new Exception('No PO found', 404);
-            $data->update([
-                'vendor_id' => $request->vendor_id,
-                'order_date' => $request->order_date,
-                'due_date' => $request->due_date,
-                'total' => $request->total,
-                'total_tax' => $request->total_tax,
-                'total_discount' => $request->total_discount,
-                'delivery_cost' => $request->delivery_cost,
-                'terms_of_payment' => $request->terms_of_payment,
-                'remarks' => $request->remarks ?? $data->remarks,
-                'status' => 0,
-            ]);
-            $existingItems = PurchaseOrderItem::where('purchase_order_id', $id)->get()->keyBy('id');
-            $requestItemIds = [];
-            foreach ($request->items as $item) {
-                if (isset($item['id']) && isset($existingItems[$item['id']])) {
-                    // Update existing item
-                    $existingItems[$item['id']]->update([
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'total_price' => $item['total_price'],
-                        'tax' => $item['tax'],
-                    ]);
-                    $requestItemIds[] = $item['id'];  // Keep track of updated items
-                } else {
-                    // Create new item
-                    PurchaseOrderItem::create([
-                        'purchase_order_id' => $id,
-                        'product_id' => $item['product_id'],
-                        'measurement_unit' => $item['measurement_unit'],
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'total_price' => $item['total_price'],
-                        'tax' => $item['tax'],
-                    ]);
-                }
-            }
-            $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
-            PurchaseOrderItem::destroy($itemsToDelete);
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Update Purchase Order. code: ' . $data->order_code,
-            ]);
-            $n_url = 'view-purchase-order/' . $id;
-            notifyUser($user->id, $businessId, 'view purchase orders', 'purchase order has been updated', $n_url);
-            return response()->json($data);
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {

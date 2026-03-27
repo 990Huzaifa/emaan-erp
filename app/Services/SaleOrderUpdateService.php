@@ -10,7 +10,6 @@ use App\Models\DeliveryNoteItem;
 use App\Models\SaleReceipt;
 use App\Models\SaleReceiptItem;
 use App\Models\Lot;
-use App\Models\InventoryDetail;
 use App\Models\Transaction;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +17,7 @@ use Illuminate\Support\Facades\Log;
 
 class SaleOrderUpdateService
 {
-    public function updatePurchaseFlow(int $soId, array $data, int $businessId)
+    public function updateSaleFlow(int $soId, array $data, int $businessId)
     {
         return DB::transaction(function () use ($soId, $data, $businessId) {
 
@@ -35,37 +34,29 @@ class SaleOrderUpdateService
                 ->lockForUpdate()
                 ->find($soId);
             if (!$so) {
-                throw new Exception('Purchase Order not found.', 404);
+                throw new Exception('Sale Order not found.', 404);
             }
 
-            $grn = $so->deliveryNote;
+            $DN = $so->deliveryNote;
 
-            $invoice = SaleReceipt::with('items')->where('grn_id',$grn->id)->first();
+            $invoice = SaleReceipt::with('items')->where('DN_id',$DN->id)->first();
 
-            if (!$grn) {
-                throw new Exception('Connected GRN not found.', 404);
+            if (!$DN) {
+                throw new Exception('Connected DN not found.', 404);
             }
 
             if (!$invoice) {
-                throw new Exception('Connected Purchase Invoice not found.', 404);
+                throw new Exception('Connected Sale Invoice not found.', 404);
             }
 
             $customer = $so->customer;
             
             if (!$customer) {
-                throw new Exception('customer not found against this Purchase Order.', 404);
+                throw new Exception('customer not found against this Sale Order.', 404);
             }
 
             if (!$customer->acc_id) {
                 throw new Exception('customer account is missing.', 400);
-            }
-
-            // validate if so can be edited with the new quantities
-            $validate = $this->validateSaleOrderEditable($soId, $data['items']);
-            Log::info('Validation failed: ' . $validate['message']);
-            // return $validate;
-            if($validate['success'] === false){
-                return $validate;
             }
 
             /*
@@ -73,39 +64,29 @@ class SaleOrderUpdateService
             | STORE OLD VALUES FOR LOT / LEDGER RECALC
             |--------------------------------------------------------------------------
             */
-            $oldGrnTotal = (float) $grn->total_amount;
+            $oldDNTotal = (float) $DN->total_amount;
 
-            $oldLots = Lot::where('purchase_order_id', $so->id)
-                ->where('grn_id', $grn->id)
-                ->where('customer_id', $so->customer_id)
-                ->whereIn('product_id', $so->purchase_order_items->pluck('product_id')->toArray())
-                ->lockForUpdate()
-                ->get()
-                ->keyBy('product_id');
-            Log::info('Old Lots: ' . $oldLots);
-
-            // return "test done";
 
             /*
             |--------------------------------------------------------------------------
-            | STEP 2: UPDATE PURCHASE ORDER
+            | STEP 2: UPDATE SALE ORDER
             |--------------------------------------------------------------------------
             */
             $this->updateSaleOrder($so, $data);
 
             /*
             |--------------------------------------------------------------------------
-            | STEP 3: UPDATE GRN
+            | STEP 3: UPDATE DN
             |--------------------------------------------------------------------------
             */
-            $this->updateGrn($grn, $data, $so);
+            $this->updateDN($DN, $data, $so);
 
             /*
             |--------------------------------------------------------------------------
-            | STEP 4: UPDATE PURCHASE INVOICE
+            | STEP 4: UPDATE SALE INVOICE
             |--------------------------------------------------------------------------
             */
-            $this->updateSaleReceipt($invoice, $data, $so, $grn);
+            $this->updateSaleReceipt($invoice, $data, $so, $DN);
 
 
             /*
@@ -113,12 +94,12 @@ class SaleOrderUpdateService
             | STEP 6: UPDATE TARGETED TRANSACTION
             |--------------------------------------------------------------------------
             */
-            $updatedGrn = $grn->fresh();
-            $newGrnTotal = (float) $updatedGrn->total;
+            $updatedDN = $DN->fresh();
+            $newDNTotal = (float) $updatedDN->total;
 
             $targetTransaction = $this->findTargetTransaction(
                 $customer->acc_id,
-                $oldGrnTotal,
+                $oldDNTotal,
                 $so->order_code
             );
             // Log::info('Target Transaction: ' . $targetTransaction);
@@ -127,8 +108,8 @@ class SaleOrderUpdateService
                 throw new Exception('Target transaction not found for ledger update.', 404);
             }
 
-            $targetTransaction->credit = $newGrnTotal;
-            $targetTransaction->description = 'by edit: credit amount to customer account by GRN with the so is ' . $so->order_code;
+            $targetTransaction->credit = $newDNTotal;
+            $targetTransaction->description = 'by edit: credit amount to customer account by DN with the so is ' . $so->order_code;
             $targetTransaction->save();
 
             /*
@@ -139,13 +120,12 @@ class SaleOrderUpdateService
             $this->recalculatecustomerLedger($customer->acc_id, $targetTransaction->id);
             $res = [
                 'success' => true,
-                'message' => 'Purchase flow updated successfully.',
+                'message' => 'sale flow updated successfully.',
                 'so_id' => $so->id,
-                'grn_id' => $grn->id,
+                'dn_id' => $DN->id,
                 'invoice_id' => $invoice->id,
                 'transaction_id' => $targetTransaction->id
             ];
-            Log::info($res);
             return $res;
         });
     }
@@ -161,11 +141,11 @@ class SaleOrderUpdateService
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
-            SaleOrderItem::where('purchase_order_id', $so->id)->delete();
+            SaleOrderItem::where('sale_order_id', $so->id)->delete();
 
             foreach ($data['items'] as $item) {
                 SaleOrderItem::create([
-                    'purchase_order_id' => $so->id,
+                    'sale_order_id' => $so->id,
                     'product_id' => $item['product_id'],
                     'quantity' => $item['quantity'],
                     'measurement_unit' => $item['measurement_unit'],
@@ -179,29 +159,28 @@ class SaleOrderUpdateService
         }
     }
 
-    private function updateGrn(DeliveryNote $grn, array $data, SaleOrder $so): void
+    private function updateDN(DeliveryNote $DN, array $data, SaleOrder $so): void
     {
-        $grn->update([
-            'grn_date' => $data['grn_date'] ?? $grn->grn_date,
-            'remarks' => $data['remarks'] ?? $grn->remarks,
-            'total' => $data['total'] ?? $grn->total_amount,
-            'purchase_order_id' => $so->id,
+        $DN->update([
+            'dn_date' => $data['dn_date'] ?? $DN->DN_date,
+            'remarks' => $data['remarks'] ?? $DN->remarks,
+            'total' => $data['total'] ?? $DN->total_amount,
+            'sale_order_id' => $so->id,
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
-            DeliveryNoteItem::where('goods_receive_note_id', $grn->id)->delete();
+            DeliveryNoteItem::where('delivery_note_id', $DN->id)->delete();
 
             foreach ($data['items'] as $item) {
-                $billed = $item['quantity'] * $item['unit_price'];
+                $charged = $item['quantity'] * $item['unit_price'];
                 DeliveryNoteItem::create([
-                    'goods_receive_note_id' => $grn->id,
+                    'delivery_note_id' => $DN->id,
                     'product_id' => $item['product_id'],
                     'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],
-                    'receive' => $item['quantity'],
-                    'billed' => $billed,
-                    'purchase_unit_price' => $item['unit_price'],
-                    'sale_unit_price' => $item['unit_price'],
+                    'delivered' => $item['quantity'],
+                    'charged' => $charged,
+                    'unit_price' => $item['unit_price'],
                     'discount' => $item['discount'],
                     'discount_in_percentage' => $item['discount_in_percentage'],
                     'tax' => $item['tax'],
@@ -211,20 +190,20 @@ class SaleOrderUpdateService
         }
     }
 
-    private function updateSaleReceipt(SaleReceipt $invoice, array $data, SaleOrder $so, DeliveryNote $grn): void
+    private function updateSaleReceipt(SaleReceipt $receipt, array $data, SaleOrder $so, DeliveryNote $DN): void
     {
-        $invoice->update([
-            'invoice_date' => $data['invoice_date'] ?? $invoice->invoice_date,
-            'remarks' => $data['remarks'] ?? $invoice->remarks,
-            'total' => $data['total'] ?? $invoice->total_amount,
+        $receipt->update([
+            'receipt_date' => $data['receipt_date'] ?? $receipt->invoice_date,
+            'remarks' => $data['remarks'] ?? $receipt->remarks,
+            'total' => $data['total'] ?? $receipt->total_amount,
         ]);
 
         if (!empty($data['items']) && is_array($data['items'])) {
-            SaleReceiptItem::where('purchase_invoice_id', $invoice->id)->delete();
+            SaleReceiptItem::where('sale_receipt_id', $receipt->id)->delete();
 
             foreach ($data['items'] as $item) {
                 SaleReceiptItem::create([
-                    'purchase_invoice_id' => $invoice->id,
+                    'sale_receipt_id' => $receipt->id,
                     'product_id' => $item['product_id'],
                     'measurement_unit' => $item['measurement_unit'],
                     'quantity' => $item['quantity'],

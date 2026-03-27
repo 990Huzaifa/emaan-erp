@@ -60,13 +60,6 @@ class PurchaseOrderUpdateService
                 throw new Exception('Vendor account is missing.', 400);
             }
 
-            // validate if PO can be edited with the new quantities
-            $validate = $this->validatePurchaseOrderEditable($poId, $data['items']);
-            Log::info('Validation failed: ' . $validate['message']);
-            // return $validate;
-            if($validate['success'] === false){
-                return $validate;
-            }
 
             /*
             |--------------------------------------------------------------------------

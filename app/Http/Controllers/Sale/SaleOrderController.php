@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sale;
 
 use App\Models\SaleReceipt;
 use App\Models\SaleReceiptItem;
+use App\Services\SaleOrderUpdateService;
 use Exception;
 use App\Models\Log;
 use App\Models\SaleOrder;
@@ -237,7 +238,16 @@ class SaleOrderController extends Controller
                     ], 403);
                 }
             }
-            $validator = Validator::make(
+            $SO = SaleOrder::find($id);
+            if($SO->status == 1){
+                $updateFlow = new SaleOrderUpdateService();
+                $res = $updateFlow->updateSaleFlow($id, $request->all(), $user->login_business);
+                if(isset($res['success']) && $res['success'] === false){
+                    return response()->json(['error' => $res['message']], 400);
+                }
+
+            }else{
+                $validator = Validator::make(
                 $request->all(),[
                     'customer_id' => 'required|exists:customers,id',
                     'order_date'=>'required',
@@ -250,98 +260,100 @@ class SaleOrderController extends Controller
                     'remarks' => 'nullable|string',
                     'items' => 'required|array',
 
-            ],[
-                'customer_id.required' => 'Customer is required.',
-                'customer_id.exists' => 'Customer does not exist.',
+                ],[
+                    'customer_id.required' => 'Customer is required.',
+                    'customer_id.exists' => 'Customer does not exist.',
 
-                'order_date.required' => 'Order date is required.',
+                    'order_date.required' => 'Order date is required.',
 
-                'due_date.required' => 'Due date is required.',
+                    'due_date.required' => 'Due date is required.',
 
-                'total.required' => 'Total is required.',
-                'total.numeric' => 'Total must be a number.',
-                
-                'total_tax.required' => 'Total Tax is required.',
-                'total_tax.numeric' => 'Total Tax must be a number.',
+                    'total.required' => 'Total is required.',
+                    'total.numeric' => 'Total must be a number.',
+                    
+                    'total_tax.required' => 'Total Tax is required.',
+                    'total_tax.numeric' => 'Total Tax must be a number.',
 
-                'delivery_cost.required' => 'Delivery cost is required.',
-                'delivery_cost.numeric' => 'Delivery cost must be a number.',
+                    'delivery_cost.required' => 'Delivery cost is required.',
+                    'delivery_cost.numeric' => 'Delivery cost must be a number.',
 
-                'total_discount.required' => 'Total discount is required.',
-                'total_discount.numeric' => 'Total discount must be a number.',
-                
-                'items.required' => 'Items are required.',
-            ]);
-            if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
-            $data = saleOrder::find($id);
-            if (empty($data)) throw new Exception('No SO found', 404);
-            $data->update([
-                'customer_id'=>$request->customer_id,
-                'order_date' => $request->order_date,
-                'due_date' => $request->due_date,
-                'total' => $request->total,
-                'total_tax' => $request->total_tax,
-                'total_discount' => $request->total_discount,
-                'delivery_cost' => $request->delivery_cost,
-                'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
-                'remarks' => $request->remarks ?? $data->remarks,
-                'status' => 0,
-            ]);
-            $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
-            $requestItemIds = [];
-            $total_discount = 0;
-            foreach ($request->items as $item) {
-                $discount = 0;
+                    'total_discount.required' => 'Total discount is required.',
+                    'total_discount.numeric' => 'Total discount must be a number.',
+                    
+                    'items.required' => 'Items are required.',
+                ]);
+                if ($validator->fails()) throw new Exception($validator->errors()->first(), 400);
+                $data = saleOrder::find($id);
+                if (empty($data)) throw new Exception('No SO found', 404);
+                $data->update([
+                    'customer_id'=>$request->customer_id,
+                    'order_date' => $request->order_date,
+                    'due_date' => $request->due_date,
+                    'total' => $request->total,
+                    'total_tax' => $request->total_tax,
+                    'total_discount' => $request->total_discount,
+                    'delivery_cost' => $request->delivery_cost,
+                    'terms_of_payment' => $request->terms_of_payment ?? $data->terms_of_payment,
+                    'remarks' => $request->remarks ?? $data->remarks,
+                    'status' => 0,
+                ]);
+                $existingItems = SaleOrderItem::where('sale_order_id', $id)->get()->keyBy('id');
+                $requestItemIds = [];
+                $total_discount = 0;
+                foreach ($request->items as $item) {
+                    $discount = 0;
 
-                // Calculate discount amount
-                if (!empty($item['discount_in_percentage']) && $item['discount_in_percentage']) {
-                    $discount = round(($item['unit_price'] * $item['quantity']) * ($item['discount'] / 100));
-                } else {
-                    $discount = round($item['discount']); // Flat value
+                    // Calculate discount amount
+                    if (!empty($item['discount_in_percentage']) && $item['discount_in_percentage']) {
+                        $discount = round(($item['unit_price'] * $item['quantity']) * ($item['discount'] / 100));
+                    } else {
+                        $discount = round($item['discount']); // Flat value
+                    }
+
+                    $subtotal = round(($item['unit_price'] * $item['quantity']) - $discount);
+                    $total_discount += $discount;
+
+
+                    if (empty($item['id']) && isset($item['id']) && isset($existingItems[$item['id']])) {
+                        // Update existing item
+                        $existingItems[$item['id']]->update([
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['unit_price'],
+                            'total_price' => $item['total_price'],
+                            'discount' => $item['discount'],
+                            'discount_in_percentage' => $item['discount_in_percentage'],
+                            'tax' => $item['tax'],
+                        ]);
+                        $requestItemIds[] = $item['id'];  // Keep track of updated items
+                    } else {
+                        // Create new item
+                        SaleOrderItem::create([
+                            'sale_order_id' => $id,
+                            'product_id' => $item['product_id'],
+                            'measurement_unit' => $item['measurement_unit'],
+                            'quantity' => $item['quantity'],
+                            'unit_price' => $item['unit_price'],
+                            'total_price' => $item['total_price'],
+                            'discount' => $item['discount'],
+                            'discount_in_percentage' => $item['discount_in_percentage'],
+                            'tax' => $item['tax'],
+                        ]);
+                    }
                 }
-
-                $subtotal = round(($item['unit_price'] * $item['quantity']) - $discount);
-                $total_discount += $discount;
-
-
-                if (empty($item['id']) && isset($item['id']) && isset($existingItems[$item['id']])) {
-                    // Update existing item
-                    $existingItems[$item['id']]->update([
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'total_price' => $item['total_price'],
-                        'discount' => $item['discount'],
-                        'discount_in_percentage' => $item['discount_in_percentage'],
-                        'tax' => $item['tax'],
-                    ]);
-                    $requestItemIds[] = $item['id'];  // Keep track of updated items
-                } else {
-                    // Create new item
-                    SaleOrderItem::create([
-                        'sale_order_id' => $id,
-                        'product_id' => $item['product_id'],
-                        'measurement_unit' => $item['measurement_unit'],
-                        'quantity' => $item['quantity'],
-                        'unit_price' => $item['unit_price'],
-                        'total_price' => $item['total_price'],
-                        'discount' => $item['discount'],
-                        'discount_in_percentage' => $item['discount_in_percentage'],
-                        'tax' => $item['tax'],
-                    ]);
+                if (round($request->total_discount) != $total_discount) {
+                    throw new Exception('Total discount does not match calculated item discounts.'.$total_discount, 400);
                 }
+                $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
+                SaleOrderItem::destroy($itemsToDelete);
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Update Sale Order. Code:'. $data->order_code,
+                ]);
+                $n_url ='view-sale-order/'.$id;
+                notifyUser($user->id, $businessId,'view sale orders', 'sale order has been updated',$n_url);
+                return response()->json($data);
             }
-            if (round($request->total_discount) != $total_discount) {
-                throw new Exception('Total discount does not match calculated item discounts.'.$total_discount, 400);
-            }
-            $itemsToDelete = $existingItems->keys()->diff($requestItemIds);  // Find items not present in request
-            SaleOrderItem::destroy($itemsToDelete);
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Update Sale Order. Code:'. $data->order_code,
-            ]);
-            $n_url ='view-sale-order/'.$id;
-            notifyUser($user->id, $businessId,'view sale orders', 'sale order has been updated',$n_url);
-            return response()->json($data);
+            return response()->json(['message' => 'Sale Order updated successfully.', 'result' => $res], 200);
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
