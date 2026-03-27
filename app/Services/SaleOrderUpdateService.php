@@ -221,7 +221,7 @@ class SaleOrderUpdateService
     private function findTargetTransaction(int $accId, float $oldAmount, string $soCode): ?Transaction
     {
         return Transaction::where('acc_id', $accId)
-            ->where('transaction_type', 0)
+            ->where('transaction_type', 1)
             ->where(function ($q) use ($oldAmount) {
                 $q->where('debit', $oldAmount)
                     ->orWhere('credit', $oldAmount);
