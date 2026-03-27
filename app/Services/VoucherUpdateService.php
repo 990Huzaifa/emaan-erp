@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class VoucherUpdateService
 {
 
-    public function updateVoucherFlow(int $voucherId, $type)
+    public function updateVoucherFlow(int $voucherId, $type,array $data)
     {
         DB::beginTransaction();
 
@@ -118,6 +118,79 @@ class VoucherUpdateService
             DB::rollBack();
             throw $e;
         }
+    }
+
+    private function loadVoucher(int $voucherId, int $type)
+    {   
+        $voucher = null;
+        switch ($type) {
+                case 0: $voucher = PurchaseVoucher::with('vendor')->find($voucherId); break;
+                case 1: $voucher = SaleVoucher::with('customer')->find($voucherId); break;
+                case 2: $voucher = PurchaseReturnVoucher::with('vendor')->find($voucherId); break;
+                case 3: $voucher = SaleReturnVoucher::with('customer')->find($voucherId); break;
+                default: throw new Exception("Invalid type");
+            }
+
+        return $voucher;
+        
+    }
+
+    private function getVoucherRelations(int $type): array
+    {
+        return in_array($type, [0, 2]) ? ['vendor'] : ['customer'];
+    }
+
+    private function extractOldVoucherState($voucher, int $type): array
+    {
+        $partyAccId = in_array($type, [0, 2])
+            ? $voucher->vendor->acc_id
+            : $voucher->customer->acc_id;
+
+        return [
+            'amount' => (float) $voucher->voucher_amount,
+            'date' => $voucher->voucher_date,
+            'cash_acc_id' => (int) $voucher->acc_id,
+            'party_acc_id' => (int) $partyAccId,
+        ];
+    }
+
+    private function applyVoucherUpdates($voucher, int $type, array $data): void
+    {
+        switch ($type) {
+            case 0: // purchase
+            case 2: // purchase return
+                $voucher->vendor_id = $data['vendor_id'] ?? $voucher->vendor_id;
+                break;
+
+            case 1: // sale
+            case 3: // sale return
+                $voucher->customer_id = $data['customer_id'] ?? $voucher->customer_id;
+                break;
+        }
+
+        $voucher->acc_id = $data['acc_id'] ?? $voucher->acc_id;
+        $voucher->voucher_amount = $data['voucher_amount'] ?? $voucher->voucher_amount;
+        $voucher->voucher_date = $data['voucher_date'] ?? $voucher->voucher_date;
+
+        if (array_key_exists('description', $data)) {
+            $voucher->description = $data['description'];
+        }
+
+        $voucher->save();
+    }
+
+    private function extractNewVoucherState($voucher, int $type): array
+    {
+        $partyAccId = in_array($type, [0, 2])
+            ? $voucher->vendor->acc_id
+            : $voucher->customer->acc_id;
+
+        return [
+            'amount' => (float) $voucher->voucher_amount,
+            'date' => $voucher->voucher_date,
+            'cash_acc_id' => (int) $voucher->acc_id,
+            'party_acc_id' => (int) $partyAccId,
+        ];
     }
 
     private function findVoucherTransactions($voucher, $type)

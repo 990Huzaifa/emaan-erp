@@ -162,7 +162,7 @@ class SaleOrderUpdateService
     private function updateDN(DeliveryNote $DN, array $data, SaleOrder $so): void
     {
         $DN->update([
-            'dn_date' => $data['dn_date'] ?? $DN->DN_date,
+            'dn_date' => $data['order_date'] ?? $DN->dn_date,
             'remarks' => $data['remarks'] ?? $DN->remarks,
             'total' => $data['total'] ?? $DN->total_amount,
             'sale_order_id' => $so->id,
