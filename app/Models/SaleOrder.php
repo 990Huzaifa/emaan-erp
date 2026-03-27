@@ -40,6 +40,6 @@ class SaleOrder extends Model
 
     public function deliveryNote()
     {
-        return $this->hasOne(deliveryNote::class, 'sale_order_id');
+        return $this->hasOne(DeliveryNote::class, 'sale_order_id');
     }
 }
