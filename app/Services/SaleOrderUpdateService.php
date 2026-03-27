@@ -193,7 +193,7 @@ class SaleOrderUpdateService
     private function updateSaleReceipt(SaleReceipt $receipt, array $data, SaleOrder $so, DeliveryNote $DN): void
     {
         $receipt->update([
-            'receipt_date' => $data['receipt_date'] ?? $receipt->invoice_date,
+            'receipt_date' => $data['order_date'] ?? $receipt->receipt_date,
             'remarks' => $data['remarks'] ?? $receipt->remarks,
             'total' => $data['total'] ?? $receipt->total_amount,
         ]);
