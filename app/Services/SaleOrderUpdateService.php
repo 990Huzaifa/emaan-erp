@@ -64,7 +64,7 @@ class SaleOrderUpdateService
             | STORE OLD VALUES FOR LOT / LEDGER RECALC
             |--------------------------------------------------------------------------
             */
-            $oldDNTotal = (float) $DN->total_amount;
+            $oldDNTotal = (float) $invoice->total;
 
 
             /*
