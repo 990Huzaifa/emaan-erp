@@ -200,7 +200,6 @@ class PermissionController extends Controller
                     'edit salary voucher',
                     'approve salary voucher',
                 ],
-                "Voucher" => ['create voucher', 'view voucher', 'list voucher', 'edit voucher', 'approve voucher'],
                 "Partner"=>[
                     'list partner',
                     'view partner',
@@ -233,6 +232,7 @@ class PermissionController extends Controller
                     'vendor balance',
                     'cashnbank balance',
                     'employee balance',
+                    'opening balance'
                 ]
             ];
 
