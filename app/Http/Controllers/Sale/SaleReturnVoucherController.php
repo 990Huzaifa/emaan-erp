@@ -253,6 +253,7 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => $customer_acc,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => $data->description,
+                    'link' => $id,
                     'credit' => 0.00, // Money credited to customer
                     'debit' => $total_billed, // No money deducted from customer's side
                     'current_balance' => $c_cb, // Updated balance for customer account
@@ -265,6 +266,7 @@ class SaleReturnVoucherController extends Controller
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => $data->description,
+                    'link' => $id,
                     'debit' => 0.00, // Money debited from business account
                     'credit' => $total_billed, // No money credited to business account
                     'current_balance' => $b_cb,

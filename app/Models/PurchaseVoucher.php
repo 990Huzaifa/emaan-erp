@@ -26,4 +26,9 @@ class PurchaseVoucher extends Model
         'created_by',
         'approved_by',
     ];
+
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class, 'vendor_id');
+    }
 }

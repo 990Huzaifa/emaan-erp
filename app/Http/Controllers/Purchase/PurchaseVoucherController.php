@@ -272,6 +272,8 @@ class PurchaseVoucherController extends Controller
             $data = PurchaseVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
             if ($data->status == 1) throw new Exception('voucher already paid', 404);
+
+
             $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
                     : ($request->bank_transaction_type == 'CHEQUE' 
@@ -297,6 +299,8 @@ class PurchaseVoucherController extends Controller
                 'voucher_date' => $request->voucher_date,
                 'voucher_amount' => $request->voucher_amount,
             ]);
+
+
             DB::commit();
             return response()->json($data, 200);
         }catch(QueryException $e){
@@ -355,6 +359,7 @@ class PurchaseVoucherController extends Controller
                     'acc_id' => $vendor_acc,
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => $data->description,
+                    'link' => $id,
                     'debit' => $total_billed, // Money debited from vendor's account
                     'credit' => 0.00, // No money credited to vendor's account
                     'current_balance' => $v_cb, // Updated balance for vendor account
@@ -367,6 +372,7 @@ class PurchaseVoucherController extends Controller
                     'acc_id' => $data->acc_id,
                     'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => $data->description,
+                    'link' => $id,
                     'debit' => 0.00, // No money debited to business account
                     'credit' => $total_billed, // Money credited from business account
                     'current_balance' => $b_cb,

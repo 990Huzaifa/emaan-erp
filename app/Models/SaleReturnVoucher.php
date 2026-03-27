@@ -26,4 +26,10 @@ class SaleReturnVoucher extends Model
         'created_by',
         'approved_by',
     ];
+
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
+    }
 }

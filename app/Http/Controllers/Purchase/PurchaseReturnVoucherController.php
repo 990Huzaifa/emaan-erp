@@ -363,6 +363,7 @@ class PurchaseReturnVoucherController extends Controller
                 'acc_id' => $vendor_acc,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => $data->description,
+                'link' => $id,
                 'debit' => 0.00, // No money credited to vendor's account
                 'credit' => $total_billed, // Money debited from vendor's account
                 'current_balance' => $v_cb, // Updated balance for vendor account
@@ -375,6 +376,7 @@ class PurchaseReturnVoucherController extends Controller
                 'acc_id' => $data->acc_id,
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => $data->description,
+                'link' => $id,
                 'credit' => 0.00, // No money debited to business account
                 'debit' => $total_billed, // Money credited from business account
                 'current_balance' => $b_cb,
