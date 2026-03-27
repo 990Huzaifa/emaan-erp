@@ -108,7 +108,7 @@ class SaleOrderUpdateService
                 throw new Exception('Target transaction not found for ledger update.', 404);
             }
 
-            $targetTransaction->credit = $newDNTotal;
+            $targetTransaction->debit = $newDNTotal;
             $targetTransaction->description = 'by edit: credit amount to customer account by DN with the so is ' . $so->order_code;
             $targetTransaction->save();
 
