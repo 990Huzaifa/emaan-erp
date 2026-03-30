@@ -1169,7 +1169,7 @@ class ReportsController extends Controller
 
             $result[] = [
                 'invoice_id' => $item->sale_receipt_id,
-                'invoice_name' => $item->sale_receipt_no ?? null,
+                'invoice_name' => $item->receipt->receipt_no ?? null,
 
                 'product_id' => $item->product_id,
                 'product_name' => $item->product->title ?? null,
