@@ -1143,7 +1143,7 @@ class ReportsController extends Controller
     private function getBaseProfitData($avgCosts, $withTax, $request)
     {
         $query = SaleReceiptItem::with([
-            'receipt:id,customer_id,created_at',
+            'receipt:id,customer_id,created_at,receipt_no',
             'product:id,title',
             'receipt.customer:id,name'
         ]);
@@ -1169,6 +1169,8 @@ class ReportsController extends Controller
 
             $result[] = [
                 'invoice_id' => $item->sale_receipt_id,
+                'invoice_name' => $item->sale_receipt_no ?? null,
+
                 'product_id' => $item->product_id,
                 'product_name' => $item->product->title ?? null,
 
