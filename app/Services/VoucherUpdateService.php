@@ -30,8 +30,8 @@ class VoucherUpdateService
             }
 
             // 🔹 New values
-            $newAmount = $voucher->voucher_amount;
-            $newDate   = $voucher->voucher_date;
+            $newAmount = $data['voucher_amount'];
+            $newDate   = $data['voucher_date'];
 
             // 🔹 Get transactions (NO PAIRING NOW 🎯)
             $transactions = $this->findVoucherTransactions($voucher, $type);
