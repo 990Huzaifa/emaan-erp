@@ -219,7 +219,7 @@ class VoucherUpdateService
         Log::info("Query Data: type={$type}, amount={$amount}, date={$date}, cashAccId={$cashAccId}, partyAccId={$partyAccId}");
         // 🔹 Find both transactions
         $transactions = Transaction::where('transaction_type', $type)
-            ->where('created_at', $date)
+            ->orWhere('created_at', $date)
             ->where(function ($q) use ($amount) {
                 $q->where('debit', $amount)
                 ->orWhere('credit', $amount);
