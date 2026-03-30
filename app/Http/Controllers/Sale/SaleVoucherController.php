@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\Log;
 use App\Models\SaleVoucher;
 use App\Models\Transaction;
+use App\Services\VoucherUpdateService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -235,8 +236,8 @@ class SaleVoucherController extends Controller
 
             $data = SaleVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 400);
-            if ($data->status == 1) throw new Exception('Already Paid', 400);
             DB::beginTransaction();
+            if ($data->status == 1) throw new Exception('Already Paid', 400);
             
             $voucherDateTime = Carbon::parse($data->voucher_date);  // Parse the date from your model
             $currentDateTime = Carbon::now();  // Get the current date and time
@@ -503,8 +504,14 @@ class SaleVoucherController extends Controller
             DB::beginTransaction();
             $data = SaleVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
-            if ($data->status == 1) throw new Exception('voucher already paid', 404);
-            $description = $request->payment_method == 'CASH' 
+            if ($data->status == 1){
+                $updateFlow = new VoucherUpdateService();
+                $res = $updateFlow->updateVoucherFlow($id,1, $request->all());
+                if(isset($res['success']) && $res['success'] === false){
+                    return response()->json(['error' => $res['message']], 400);
+                }
+            }else{
+                $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
                     : ($request->bank_transaction_type == 'CHEQUE' 
                         ? 'Cheque Payment' 
@@ -517,26 +524,28 @@ class SaleVoucherController extends Controller
                         $description = $request->description;
                     }
                 }
-            $data->update([
-                'customer_id' => $request->customer_id,
-                'acc_id' => $request->acc_id,
-                'business_id' => $businessId,
-                'bank_transaction_type' => $request->bank_transaction_type ?? null,
-                'description' => $description,
-                'payment_method' => $request->payment_method,
-                'cheque_no' => $request->cheque_no ?? null,
-                'cheque_date' => $request->cheque_date ?? null,
-                'voucher_date' => $request->voucher_date,
-                'voucher_amount' => $request->voucher_amount,
-                'status' => 0, // 0 un paid, 1 paid
-            ]);
+                $data->update([
+                    'customer_id' => $request->customer_id,
+                    'acc_id' => $request->acc_id,
+                    'business_id' => $businessId,
+                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                    'description' => $description,
+                    'payment_method' => $request->payment_method,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'voucher_date' => $request->voucher_date,
+                    'voucher_amount' => $request->voucher_amount,
+                    'status' => 0, // 0 un paid, 1 paid
+                ]);
 
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'Voucher updated successfully. Code: ' . $data->voucher_code,   
-            ]);
+                Log::create([
+                    'user_id' => $user->id,
+                    'description' => 'Voucher updated successfully. Code: ' . $data->voucher_code,   
+                ]);
+            };
+            
             DB::commit();
-            return response()->json($data, 200);
+            return response()->json("Sale voucher updated successfully.", 200);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);
