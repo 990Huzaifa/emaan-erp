@@ -86,16 +86,26 @@ class VoucherUpdateService
             foreach ($transactions as $trx) {
 
                 if (!isset($entries[$trx->acc_id])) {
+                    Log::error("Transaction account {$trx->acc_id} does not match expected accounts for voucher {$voucher->id}");
                     throw new Exception("Transaction account mismatch.");
                 }
 
-                $entry = $entries[$trx->acc_id];
+                // $entry = $entries[$trx->acc_id];
 
-                $trx->debit  = $entry['debit'];
-                $trx->credit = $entry['credit'];
-                $trx->created_at = $newDate;
+                // $trx->debit  = $entry['debit'];
+                // $trx->credit = $entry['credit'];
+                // $trx->created_at = $newDate;
 
-                $trx->save();
+                // $trx->save();
+
+                Transaction::where('id', $trx->id)
+                    ->update([
+                        'debit' => $entries[$trx->acc_id]['debit'],
+                        'credit' => $entries[$trx->acc_id]['credit'],
+                        'created_at' => $newDate,
+                    ]);
+
+                    
             }
 
             // 🔹 Recalculate ledger
