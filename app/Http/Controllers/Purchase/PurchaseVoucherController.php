@@ -6,6 +6,7 @@ use App\Models\PurchaseVoucher;
 use App\Models\Transaction;
 use App\Models\Log;
 use App\Models\Vendor;
+use App\Services\VoucherUpdateService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -268,13 +269,18 @@ class PurchaseVoucherController extends Controller
                 ]);
 
             if ($validator->fails()) throw new Exception($validator->errors()->first());
-            DB::beginTransaction();
+            
             $data = PurchaseVoucher::find($id);
             if (empty($data)) throw new Exception('No data found', 404);
-            if ($data->status == 1) throw new Exception('voucher already paid', 404);
-
-
-            $description = $request->payment_method == 'CASH' 
+            if ($data->status == 1){
+                $updateFlow = new VoucherUpdateService();
+                $res = $updateFlow->updateVoucherFlow($id,0, $request->all());
+                if(isset($res['success']) && $res['success'] === false){
+                    return response()->json(['error' => $res['message']], 400);
+                }
+            }else{
+                DB::beginTransaction();
+                $description = $request->payment_method == 'CASH' 
                     ? 'Cash Transfer' 
                     : ($request->bank_transaction_type == 'CHEQUE' 
                         ? 'Cheque Payment' 
@@ -287,22 +293,27 @@ class PurchaseVoucherController extends Controller
                         $description = $request->description;
                     }
                 }
-            $data->update([
-                'vendor_id' => $request->vendor_id,
-                'acc_id' => $request->acc_id,
-                'business_id' => $businessId,
-                'bank_transaction_type' => $request->bank_transaction_type ?? null,
-                'description' => $description,
-                'payment_method' => $request->payment_method,
-                'cheque_no' => $request->cheque_no ?? null,
-                'cheque_date' => $request->cheque_date ?? null,
-                'voucher_date' => $request->voucher_date,
-                'voucher_amount' => $request->voucher_amount,
-            ]);
+                $data->update([
+                    'vendor_id' => $request->vendor_id,
+                    'acc_id' => $request->acc_id,
+                    'business_id' => $businessId,
+                    'bank_transaction_type' => $request->bank_transaction_type ?? null,
+                    'description' => $description,
+                    'payment_method' => $request->payment_method,
+                    'cheque_no' => $request->cheque_no ?? null,
+                    'cheque_date' => $request->cheque_date ?? null,
+                    'voucher_date' => $request->voucher_date,
+                    'voucher_amount' => $request->voucher_amount,
+                ]);
+                DB::commit();
+            }
 
 
-            DB::commit();
-            return response()->json($data, 200);
+            
+
+
+            
+            return response()->json("Purchase voucher updated successfully", 200);
         }catch(QueryException $e){
             DB::rollBack();
             return response()->json(['DB error' => $e->getMessage()], 400);

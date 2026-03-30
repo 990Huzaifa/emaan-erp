@@ -113,6 +113,7 @@ class VoucherUpdateService
             }
 
             DB::commit();
+            return ['success' => true, 'message' => 'Voucher and transactions updated successfully.'];
 
         } catch (Exception $e) {
             DB::rollBack();
