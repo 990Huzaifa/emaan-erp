@@ -11,6 +11,7 @@ use App\Models\SaleReturnVoucher;
 use App\Models\Transaction;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class VoucherUpdateService
 {
@@ -221,7 +222,7 @@ class VoucherUpdateService
             ->whereIn('acc_id', [$cashAccId, $partyAccId])
             ->lockForUpdate()
             ->get();
-
+                Log::info("Found transactions for voucher {$voucher->id}: " . json_encode($transactions));
         if ($transactions->count() !== 2) {
             throw new Exception('Exact voucher transactions not found.');
         }
