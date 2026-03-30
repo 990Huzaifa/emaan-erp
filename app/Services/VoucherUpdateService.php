@@ -18,18 +18,12 @@ class VoucherUpdateService
 
     public function updateVoucherFlow(int $voucherId, $type,array $data)
     {
-        DB::beginTransaction();
-
+        
         try {
+            DB::beginTransaction();
 
             // 🔹 Load Voucher
-            switch ($type) {
-                case 0: $voucher = PurchaseVoucher::with('vendor')->find($voucherId); break;
-                case 1: $voucher = SaleVoucher::with('customer')->find($voucherId); break;
-                case 2: $voucher = PurchaseReturnVoucher::with('vendor')->find($voucherId); break;
-                case 3: $voucher = SaleReturnVoucher::with('customer')->find($voucherId); break;
-                default: throw new Exception("Invalid type");
-            }
+            $voucher = $this->loadVoucher($voucherId, $type);
 
             if (!$voucher) {
                 throw new Exception("Voucher not found");
@@ -111,6 +105,7 @@ class VoucherUpdateService
 
             if ($cashAccId != $partyAccId) {
                 $this->recalculateLedger($partyAccId, $startId);
+                $this->applyVoucherUpdates($voucher, $type, $data);
             }
 
             DB::commit();
