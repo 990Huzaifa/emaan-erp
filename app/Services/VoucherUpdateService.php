@@ -211,7 +211,7 @@ class VoucherUpdateService
         } else { // sale / sale return
             $partyAccId = $voucher->customer->acc_id;
         }
-
+        Log::info("Query Data: type={$type}, amount={$amount}, date={$date}, cashAccId={$cashAccId}, partyAccId={$partyAccId}");
         // 🔹 Find both transactions
         $transactions = Transaction::where('transaction_type', $type)
             ->whereDate('created_at', $date)
