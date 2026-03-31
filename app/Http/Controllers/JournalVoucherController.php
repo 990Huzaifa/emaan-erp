@@ -83,7 +83,6 @@ class JournalVoucherController extends Controller
                     'data.*.description' => 'nullable|string',
                     'data.*.voucher_date' => 'required|date',
                     
-                    'data.*.payment_method' => 'required|string|in:CASH,BANK,OTHER',
                     'data.*.from_acc_id' => 'required|exists:chart_of_accounts,id',
                     'data.*.to_acc_id' => 'required|exists:chart_of_accounts,id',
                     'data.*.type'=>'required|string|in:WITHDRAW,DEPOSIT',
