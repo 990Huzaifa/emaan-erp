@@ -111,10 +111,10 @@ class VoucherUpdateService
             // 🔹 Recalculate ledger
             $startId = min($trx1->id, $trx2->id);
 
-            $this->recalculateLedger($cashAccId, $startId);
+            recalculateAccountTransactions($cashAccId);
 
             if ($cashAccId != $partyAccId) {
-                $this->recalculateLedger($partyAccId, $startId);
+                recalculateAccountTransactions($partyAccId);
                 $this->applyVoucherUpdates($voucher, $type, $data);
             }
 
@@ -235,67 +235,5 @@ class VoucherUpdateService
         return $transactions;
     }
 
-    private function recalculateLedger(int $accId, int $fromTransactionId): void
-    {
-        $currentTransaction = Transaction::find($fromTransactionId);
-        if (!$currentTransaction) return;
 
-        $createdAt = $currentTransaction->created_at;
-
-        $previousTransaction = Transaction::where('acc_id', $accId)
-            ->where(function ($q) use ($createdAt, $fromTransactionId) {
-                $q->where('created_at', '<', $createdAt)
-                ->orWhere(function ($q2) use ($createdAt, $fromTransactionId) {
-                    $q2->where('created_at', $createdAt)
-                        ->where('id', '<', $fromTransactionId);
-                });
-            })
-            ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $openingBalance = OpeningBalance::where('acc_id', $accId)->value('amount') ?? 0;
-
-        $runningBalance = $previousTransaction
-            ? (float)$previousTransaction->current_balance
-            : (float)$openingBalance;
-
-        $majorType = getAccountMajorType($accId); // ✅ ADD THIS
-
-        $transactions = Transaction::where('acc_id', $accId)
-            ->where(function ($q) use ($createdAt, $fromTransactionId) {
-                $q->where('created_at', '>', $createdAt)
-                ->orWhere(function ($q2) use ($createdAt, $fromTransactionId) {
-                    $q2->where('created_at', $createdAt)
-                        ->where('id', '>=', $fromTransactionId);
-                });
-            })
-            ->orderBy('created_at', 'asc')
-            ->orderBy('id', 'asc')
-            ->get();
-
-        foreach ($transactions as $trx) {
-
-            // ✅ SAME LOGIC AS APPROVE FUNCTION
-
-            if ($trx->debit > 0) {
-                if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
-                    $runningBalance += $trx->debit;
-                } else {
-                    $runningBalance -= $trx->debit;
-                }
-            }
-
-            if ($trx->credit > 0) {
-                if (in_array($majorType, ['LIABILITY', 'EQUITY', 'REVENUE'])) {
-                    $runningBalance += $trx->credit;
-                } else {
-                    $runningBalance -= $trx->credit;
-                }
-            }
-
-            $trx->current_balance = $runningBalance;
-            $trx->save();
-        }
-    }
 }
