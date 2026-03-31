@@ -242,7 +242,6 @@ class VoucherUpdateService
 
         $createdAt = $currentTransaction->created_at;
 
-        // ✅ Get correct previous transaction (DATE + ID SAFE)
         $previousTransaction = Transaction::where('acc_id', $accId)
             ->where(function ($q) use ($createdAt, $fromTransactionId) {
                 $q->where('created_at', '<', $createdAt)
@@ -261,7 +260,8 @@ class VoucherUpdateService
             ? (float)$previousTransaction->current_balance
             : (float)$openingBalance;
 
-        // ✅ Get all affected transactions (DATE BASED)
+        $majorType = getAccountMajorType($accId); // ✅ ADD THIS
+
         $transactions = Transaction::where('acc_id', $accId)
             ->where(function ($q) use ($createdAt, $fromTransactionId) {
                 $q->where('created_at', '>', $createdAt)
@@ -276,10 +276,23 @@ class VoucherUpdateService
 
         foreach ($transactions as $trx) {
 
-            // ✅ YOUR SYSTEM (CREDIT BASED)
-            $runningBalance = $runningBalance 
-                + (float)$trx->debit 
-                - (float)$trx->credit;
+            // ✅ SAME LOGIC AS APPROVE FUNCTION
+
+            if ($trx->debit > 0) {
+                if (in_array($majorType, ['ASSET', 'EXPENSE'])) {
+                    $runningBalance += $trx->debit;
+                } else {
+                    $runningBalance -= $trx->debit;
+                }
+            }
+
+            if ($trx->credit > 0) {
+                if (in_array($majorType, ['LIABILITY', 'EQUITY', 'REVENUE'])) {
+                    $runningBalance += $trx->credit;
+                } else {
+                    $runningBalance -= $trx->credit;
+                }
+            }
 
             $trx->current_balance = $runningBalance;
             $trx->save();
