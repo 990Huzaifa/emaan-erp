@@ -93,7 +93,6 @@ class JournalVoucherController extends Controller
                     
                     'data.*.from_acc_id' => 'required|exists:chart_of_accounts,id',
                     'data.*.to_acc_id' => 'required|exists:chart_of_accounts,id',
-                    'data.*.type'=>'required|string|in:WITHDRAW,DEPOSIT',
 
                 ],[
                     'data.required' => 'The data field is required.',
@@ -112,9 +111,6 @@ class JournalVoucherController extends Controller
                     'data.*.to_acc_id.exists' => 'The selected to account is invalid.',
 
                     'data.*.voucher_date.required' => 'The voucher date field is required.',
-                    
-                    'data.*.type.required'=>'Type is Required',
-                    'data.*.type.in'=>'Type is Invalid',
                 ]
             );
 
@@ -140,7 +136,6 @@ class JournalVoucherController extends Controller
                     'business_id'=>$user->login_business,
                     'voucher_amount'=>$item['voucher_amount'],
                     'description'=>$description,
-                    'type'=>$item['type'],
                     'voucher_date'=>Carbon::parse($request->voucher_date)->format('Y-m-d') . ' ' . Carbon::now()->format('H:i:s'),
                     'status'=>0,
                     'created_by'=>$user->id
@@ -213,11 +208,6 @@ class JournalVoucherController extends Controller
                     'acc_id'=>'required|exists:chart_of_accounts,id',
                     'partner_id'=>'required|exists:partners,id',
                     'voucher_amount'=>'required|numeric',
-                    'payment_method'=>'required|string|in:CASH,BANK,OTHER',
-                    'type'=>'required|string|in:WITHDRAW,DEPOSIT',
-                    'bank_transaction_type' => 'required_if:payment_method,BANK|string|in:CHEQUE,ONLINE',
-                    'cheque_no' => 'required_if:bank_transaction_type,CHEQUE|string',
-                    'cheque_date' => 'required_if:bank_transaction_type,CHEQUE|date',
                 ],[
                     
                     'acc_id.required'=>'Account is Required',
@@ -406,77 +396,36 @@ class JournalVoucherController extends Controller
                 $to_acc   = $data->to_acc_id;
                 $amount   = $data->voucher_amount;
 
-                // =========================
-                // WITHDRAW
-                // =========================
-                if ($data->type === 'WITHDRAW') {
 
-                    // FROM ACCOUNT → CREDIT
-                    $from_cb = calculateBalance($from_acc, 0, $amount, $data->voucher_date);
+                // FROM ACCOUNT → CREDIT
+                $from_cb = calculateBalance($from_acc, 0, $amount, $data->voucher_date);
 
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $from_acc,
-                        'transaction_type' => 2,
-                        'description' => $data->description,
-                        'credit' => $amount,
-                        'debit' => 0,
-                        'current_balance' => $from_cb,
-                        'created_at' => $data->voucher_date
-                    ]);
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $from_acc,
+                    'transaction_type' => 2,
+                    'description' => $data->description,
+                    'credit' => $amount,
+                    'debit' => 0,
+                    'current_balance' => $from_cb,
+                    'created_at' => $data->voucher_date
+                ]);
 
-                    // TO ACCOUNT → DEBIT
-                    $to_cb = calculateBalance($to_acc, $amount, 0, $data->voucher_date);
+                // TO ACCOUNT → DEBIT
+                $to_cb = calculateBalance($to_acc, $amount, 0, $data->voucher_date);
 
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $to_acc,
-                        'transaction_type' => 2,
-                        'description' => $data->description,
-                        'credit' => 0,
-                        'debit' => $amount,
-                        'current_balance' => $to_cb,
-                        'created_at' => $data->voucher_date
-                    ]);
-                }
+                Transaction::create([
+                    'business_id' => $data->business_id,
+                    'acc_id' => $to_acc,
+                    'transaction_type' => 2,
+                    'description' => $data->description,
+                    'credit' => 0,
+                    'debit' => $amount,
+                    'current_balance' => $to_cb,
+                    'created_at' => $data->voucher_date
+                ]);
 
-                // =========================
-                // DEPOSIT
-                // =========================
-                elseif ($data->type === 'DEPOSIT') {
 
-                    // FROM ACCOUNT → DEBIT
-                    $from_cb = calculateBalance($from_acc, $amount, 0, $data->voucher_date);
-
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $from_acc,
-                        'transaction_type' => 1,
-                        'description' => $data->description,
-                        'credit' => 0,
-                        'debit' => $amount,
-                        'current_balance' => $from_cb,
-                        'created_at' => $data->voucher_date
-                    ]);
-
-                    // TO ACCOUNT → CREDIT
-                    $to_cb = calculateBalance($to_acc, 0, $amount, $data->voucher_date);
-
-                    Transaction::create([
-                        'business_id' => $data->business_id,
-                        'acc_id' => $to_acc,
-                        'transaction_type' => 1,
-                        'description' => $data->description,
-                        'credit' => $amount,
-                        'debit' => 0,
-                        'current_balance' => $to_cb,
-                        'created_at' => $data->voucher_date
-                    ]);
-                }
-
-                else {
-                    throw new Exception('Invalid voucher type.');
-                }
 
                 // ✅ Recalculate both accounts (IMPORTANT)
                 recalculateAccountTransactions($from_acc);
