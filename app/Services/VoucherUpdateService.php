@@ -34,6 +34,8 @@ class VoucherUpdateService
             $newDate   = $data['voucher_date'];
             $oldDate   = $voucher->voucher_date;
 
+            $recalculateFrom = min($oldDate, $newDate);
+
             // 🔹 Get transactions (NO PAIRING NOW 🎯)
             $transactions = $this->findVoucherTransactions($voucher, $type);
 
@@ -113,11 +115,11 @@ class VoucherUpdateService
             $startId = min($trx1->id, $trx2->id);
 
             // recalculateAccountTransactions($cashAccId);
-                $this->recalculateAccountTransactionsFromDate($cashAccId, $oldDate);
+            $this->recalculateAccountTransactionsFromDate($cashAccId, $recalculateFrom);
                 
-                if ($cashAccId != $partyAccId) {
+            if ($cashAccId != $partyAccId) {
                     // recalculateAccountTransactions($partyAccId);
-                    $this->recalculateAccountTransactionsFromDate($partyAccId, $oldDate);
+                $this->recalculateAccountTransactionsFromDate($partyAccId, $recalculateFrom);
                 $this->applyVoucherUpdates($voucher, $type, $data);
             }
 
