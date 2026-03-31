@@ -36,8 +36,9 @@ class JournalVoucherController extends Controller
             $end_date = Carbon::parse($request->query('end_date'))->endOfDay()->addDays(1)->toDateTimeString();
 
 
-            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as asset_name')
-            ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as from_account_name','chart_of_accounts.name as to_account_name')
+            ->join('chart_of_accounts as coa1', 'journal_vouchers.from_acc_id', '=', 'coa1.id')
+            ->join('chart_of_accounts as coa2', 'journal_vouchers.to_acc_id', '=', 'coa2.id')
             ->where('journal_vouchers.business_id','=',$businessId)
             ->orderBy('id', 'desc');
 
