@@ -1,429 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eman Traders - Invoice</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
-        rel="stylesheet">
+    <title>{{ $pageTitle ?? 'Invoice' }}</title>
     <style>
-        /* Reset and base styles */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Inter", sans-serif;
-        }
-
-        body {
-            background-color: #f5f5f5;
-            padding: 0px;
-            color: #333;
-        }
-
-        hr {
-            border: none;
-            border-top: 1px solid #ddd;
-            margin: 10px 0;
-            width: 100%;
-        }
-
-        .invoice-container {
-            max-width: 1024px;
-            margin: 0 auto;
-            background-color: white
-        }
-
-        /* Header styles */
-        .invoice-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-            padding: 0px 20px;
-        }
-
-        .company-logo {
-            display: flex;
-            align-items: flex-end;
-        }
-
-        .logo-container {
-            margin-right: 10px;
-        }
-
-        .logo-container img {
-            width: 150px;
-            height: auto;
-            border-radius: 5px;
-        }
-
-        .company-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .company-name {
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-
-        .company-name .e {
-            color: #1e88e5;
-        }
-
-        .company-details {
-            font-size: 10px;
-            line-height: 1.5;
-            color: #555;
-        }
-
-        .company-address {
-            display: flex;
-            align-items: flex-end;
-            text-align: right;
-            font-size: 10px;
-            line-height: 1.5;
-            color: #555;
-        }
-
-        .invoice-body {
-            padding: 20px;
-            border: 2.08px solid #D7DAE0;
-            border-radius: 20px;
-        }
-
-        /* Invoice info styles */
-        .invoice-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 30px;
-        }
-
-        .info-column {
-            display: flex;
-            flex-direction: column;
-            width: 23%;
-        }
-
-        .info-title {
-            font-weight: normal;
-            color: #555;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 12px;
-        }
-
-        .invoice-amount {
-            font-size: 16px;
-            font-weight: bold;
-            color: #1e88e5;
-        }
-
-        /* Table styles */
-        .invoice-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-        }
-
-        .invoice-table th {
-            padding: 8px;
-            text-align: left;
-            font-size: 10px;
-            border-top: 1px solid #ddd;
-            border-bottom: none;
-            color: #555;
-            font-weight: normal;
-            background-color: transparent;
-        }
-
-        .invoice-table td {
-            padding: 8px;
-            border: none;
-            font-size: 12px;
-        }
-
-        .invoice-table .text-right {
-            text-align: right;
-        }
-
-        .invoice-table .text-center {
-            text-align: center;
-        }
-
-        .invoice-table tr.total-row td {
-            border-top: 1px solid #ddd;
-        }
-
-        /* Summary styles */
-        .invoice-summary {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            padding: 10px 0px;
-            border-top: 1px solid #ddd;
-            border-bottom: 1px solid #ddd;
-        }
-
-        .amount-words {
-            width: 60%;
-            font-size: 12px;
-            padding: 0;
-        }
-
-        .amount-calculations {
-            width: 35%;
-        }
-
-        .calc-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            padding: 5px 0;
-        }
-
-        .calc-row.total {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        /* Footer styles */
-        .invoice-footer {
-            margin-top: 50px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .signature-section {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .signature-text {
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-
-        .signature-line {
-            width: 250px;
-            border-top: 1px solid #777;
-        }
-
-        .terms-container {
-            margin-top: 20px;
-            color: #555;
-        }
-
-        .terms-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .terms-text {
-            font-size: 12px;
-        }
-
-        /* Print styles */
-        @media print {
-            body {
-                background-color: white;
-                padding: 0;
-                font-size: 10px;
-            }
-
-            .invoice-container {
-                box-shadow: none;
-                padding: 15px;
-            }
-
-            .invoice-header {
-                padding: 0px;
-                margin-bottom: 20px;
-            }
-
-            .company-logo img {
-                width: 120px;
-            }
-
-            .company-info .company-name {
-                font-size: 16px;
-            }
-
-            .invoice-table th {
-                font-size: 10px;
-                padding: 5px;
-            }
-
-            .invoice-table td {
-                font-size: 10px;
-                padding: 5px;
-            }
-
-            .signature-text {
-                font-size: 10px;
-            }
-
-            .terms-title {
-                font-size: 10px;
-            }
-
-            .terms-text {
-                font-size: 10px;
-            }
-        }
+        {!! $css ?? '' !!}
     </style>
 </head>
-
 <body>
-    <div class="invoice-container">
-        <!-- Invoice Header -->
-        <div class="invoice-header">
-            <div class="company-logo">
-            <div class="logo-container">
-                    <img src="{{ url($data->business_logo) }}" alt="Logo">
-                </div>
-                <div class="company-info">
-                    <div class="company-details">
-                    <p>{{ url('/') }}</p><br>
-                        {{ $data->business_telephone }}
-                    </div>
-                </div>
-            </div>
-            <div class="company-address">
-                {{ $data->business_address }}, {{ $data->business_city_name }}
-            </div>
-        </div>
+@php
+    $documentType = strtolower((string) ($documentType ?? 'purchase-invoice'));
+    $isReceipt = in_array($documentType, ['sale-receipt', 'receipt'], true);
+    $isPurchaseInvoice = $documentType === 'purchase-invoice';
 
-        <div class="invoice-body">
-            <!-- Invoice Info -->
-            <div class="invoice-info">
-                <div class="info-column">
-                    <div class="info-title">Billed to</div>
-                    <div class="info-value">M/s {{$data->customer_name}} E/S</div>
-                    <div class="info-value"><strong>Address:</strong> {{$data->customer_address}}, {{$data->customer_city_name}}</div>
-                    <div class="info-value"><strong>Telephone:</strong> {{$data->customer_phone}}</div>
-                </div>
+    $documentTitle = $isReceipt ? 'Receipt' : 'Invoice';
+    $documentNoLabel = $isReceipt ? 'Receipt No.' : 'Invoice No.';
+    $vendorLabel = $isPurchaseInvoice ? 'Vendor' : 'Customer';
 
-                <div class="info-column">
-                    <div class="info-title">Invoice no.</div>
-                    <div class="info-value">#{{$data->receipt_no}}</div>
-                </div>
+    $documentNo = data_get($invoice ?? [], 'receipt_no')
+        ?: data_get($invoice ?? [], 'invoice_no')
+        ?: '';
+    $documentDate = data_get($invoice ?? [], 'receipt_date')
+        ?: data_get($invoice ?? [], 'invoice_date')
+        ?: '';
+    $orderNo = data_get($invoice ?? [], 'order_no')
+        ?: data_get($invoice ?? [], 'so_no')
+        ?: data_get($invoice ?? [], 'po_no')
+        ?: '';
 
-                <div class="info-column">
-                    <div class="info-title">Invoice date</div>
-                    <div class="info-value">{{$data->receipt_date}}</div>
-                </div>
+    $items = data_get($invoice ?? [], 'items', []);
+    if (!is_array($items)) {
+        $items = [];
+    }
 
-                <div class="info-column">
-                    <div class="info-title">Invoice of</div>
-                    <div class="invoice-amount">Rs {{number_format($data->total)}}</div>
-                </div>
-            </div>
+    $subTotal = 0.0;
+    $computedDiscount = 0.0;
+    foreach ($items as $line) {
+        $qty = (float) data_get($line, 'quantity', 0);
+        $unitPrice = (float) data_get($line, 'unit_price', 0);
+        $lineDiscount = (float) data_get($line, 'discount', 0);
+        $isPercentDiscount = (bool) data_get($line, 'discount_in_percentage', false);
 
-            <!-- Invoice Table -->
-            <table class="invoice-table">
-                <thead>
+        $subTotal += ($qty * $unitPrice);
+        $computedDiscount += $isPercentDiscount ? (($qty * $unitPrice * $lineDiscount) / 100) : $lineDiscount;
+    }
+
+    $totalDiscount = (float) data_get($invoice ?? [], 'total_discount', $computedDiscount);
+    $totalAmount = (float) data_get($invoice ?? [], 'total', $subTotal - $totalDiscount);
+    $previousBalance = (float) data_get($invoice ?? [], 'previous_balance', 0);
+    $thisBill = (float) data_get($invoice ?? [], 'this_bill', $totalAmount);
+    $currentBalance = (float) data_get($invoice ?? [], 'current_balance', $previousBalance + $thisBill);
+
+    $rowsToRender = 15;
+    $emptyRows = max(0, $rowsToRender - count($items));
+
+    $format = function ($value) {
+        return number_format((float) $value, 2);
+    };
+@endphp
+
+<div class="invoice-page">
+    <table class="header-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="header-left">
+                <h1 class="invoice-title">{{ $documentTitle }}</h1>
+                <p class="meta-line"><strong>{{ $documentNoLabel }}</strong> {{ $documentNo }}</p>
+                <p class="meta-line"><strong>Mobile No :</strong> {{ data_get($company ?? [], 'mobile', '') }}</p>
+            </td>
+            <td class="header-right">
+                <div class="logo-box">
+                    @if(data_get($company ?? [], 'logo'))
+                        <img src="{{ data_get($company ?? [], 'logo') }}" alt="Company Logo">
+                    @else
+                        <span>EP</span>
+                    @endif
+                </div>
+                <div class="company-name">{{ data_get($company ?? [], 'name', 'Eeman Prime') }}</div>
+                <div class="company-address">{{ data_get($company ?? [], 'address', 'Shahrah e faisal Karachi') }}</div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-divider"></div>
+
+    <table class="info-main-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="info-col">
+                <table class="info-card" cellpadding="0" cellspacing="0">
                     <tr>
-                        <th>S NO.</th>
-                        <th>ITEM DETAIL</th>
-                        <th class="text-center">QTY</th>
-                        <th class="text-right">RATE</th>
-                        <th class="text-right">GROSS AMOUNT</th>
-                        <th class="text-right">TAX</th>
-                        <th class="text-right">DISCOUNT</th>
-                        <th class="text-right">NET AMOUNT</th>
+                        <td colspan="2" class="card-title">{{ $vendorLabel }}</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @php
-                    $subtotal = 0;
-                    $tax = 0;
-                    @endphp
-                    @foreach ($data->items as $item )
                     <tr>
-                        <td>{{$loop->iteration}}</td>
-                        <td>{{$item['product']['title']}}</td>
-                        <td class="text-right">{{$item->quantity}} {{$item->measurement_unit}}</td>
-                        <td class="text-right">{{number_format($item->unit_price)}} Rs</td>
-                        <td class="text-right">{{number_format($item->unit_price * $item->quantity)}} Rs</td>
-                        <td class="text-right">{{number_format($item->tax)}} Rs</td>
-                        <td class="text-right">{{number_format($item->discount)}} @if($item->discount_in_percentage == 1)% @else Rs @endif</td>
-                        <td class="text-right">{{number_format($item->total)}} Rs</td>
+                        <td class="label-cell">Code</td>
+                        <td class="value-cell">{{ data_get($invoice ?? [], 'vendor_code', data_get($invoice ?? [], 'customer_code', '')) }}</td>
                     </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    <tr>
+                        <td class="label-cell">Name</td>
+                        <td class="value-cell">{{ data_get($invoice ?? [], 'vendor_name', data_get($invoice ?? [], 'customer_name', '')) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Address</td>
+                        <td class="value-cell">{{ data_get($invoice ?? [], 'vendor_address', data_get($invoice ?? [], 'customer_address', '')) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">City</td>
+                        <td class="value-cell">{{ data_get($invoice ?? [], 'vendor_city', data_get($invoice ?? [], 'customer_city_name', '')) }}</td>
+                    </tr>
+                </table>
+            </td>
+            <td class="info-col">
+                <table class="info-card" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td colspan="2" class="card-title">{{ $documentTitle }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Date</td>
+                        <td class="value-cell">{{ $documentDate }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label-cell">Order No</td>
+                        <td class="value-cell">{{ $orderNo }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 
-            <!-- Invoice Summary -->
-            <div class="invoice-summary">
-                <div class="amount-words">
-                    <strong>Amount in Words:</strong><br>
-                    {{ convertNumberToWords($data->total) }} only
-                    
-                </div>
-                <div class="amount-calculations">
-                    <div class="calc-row">
-                        <div>Delivery Cost</div>
-                        <div>Rs. {{number_format($data->delivery_cost )}}</div>
-                    </div>
-                    <div class="calc-row">
-                        <div>Subtotal</div>
-                        <div>Rs. {{number_format($data->total )}}</div>
-                    </div>
-                    <div class="calc-row">
-                        <div>Amount Received</div>
-                        <div>Rs. {{number_format($data->total)}}</div>
-                    </div>
-                    <hr>
-                    <div class="calc-row total">
-                        <div>Balance</div>
-                        <div>Rs. {{ number_format($current_balance) }}</div>
-                    </div>
-                </div>
-            </div>
+    <table class="items-table" cellpadding="0" cellspacing="0">
+        <thead>
+            <tr>
+                <th class="col-id">Item ID</th>
+                <th class="col-desc">Description</th>
+                <th class="col-unit">Unit</th>
+                <th class="col-qty">Quantity</th>
+                <th class="col-price">Unit Price</th>
+                <th class="col-rate">Discount Rate</th>
+                <th class="col-disc">Discount Amount</th>
+                <th class="col-amt">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($items as $item)
+                @php
+                    $qty = (float) data_get($item, 'quantity', 0);
+                    $unitPrice = (float) data_get($item, 'unit_price', 0);
+                    $discount = (float) data_get($item, 'discount', 0);
+                    $isPercentDiscount = (bool) data_get($item, 'discount_in_percentage', false);
+                    $discountAmount = $isPercentDiscount ? (($qty * $unitPrice * $discount) / 100) : $discount;
+                    $amount = (float) data_get($item, 'total', ($qty * $unitPrice) - $discountAmount);
+                @endphp
+                <tr>
+                    <td class="txt-left">{{ data_get($item, 'product.id', data_get($item, 'product_id', '')) }}</td>
+                    <td class="txt-left uppercase">{{ data_get($item, 'product.title', data_get($item, 'product_name', '')) }}</td>
+                    <td class="txt-center">{{ data_get($item, 'measurement_unit', '') }}</td>
+                    <td class="txt-center">{{ rtrim(rtrim(number_format($qty, 2, '.', ''), '0'), '.') }}</td>
+                    <td class="txt-right">{{ $format($unitPrice) }}</td>
+                    <td class="txt-center">{{ $isPercentDiscount ? $discount . '%' : '-' }}</td>
+                    <td class="txt-right">{{ $format($discountAmount) }}</td>
+                    <td class="txt-right">{{ $format($amount) }}</td>
+                </tr>
+            @endforeach
 
-            <!-- Invoice Footer -->
-            <div class="invoice-footer">
-                <div class="signature-section">
-                    <div class="signature-text">Authorized Signatures</div>
-                    <div class="signature-line"></div>
-                </div>
-                <div class="signature-section">
-                    <div class="signature-text">Prepared by Administrated</div>
-                </div>
-            </div>
-        </div>
+            @for($i = 0; $i < $emptyRows; $i++)
+                <tr>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                    <td>&nbsp;</td>
+                </tr>
+            @endfor
+        </tbody>
+    </table>
 
-        <div class="terms-container">
-            <div class="terms-title">Terms & Conditions</div>
-            <div class="terms-text">
-                @if ($data->terms_of_payment != null)
-                    {{ $data->terms_of_payment }}
-                @else
-                    Please pay within 15 days of receiving this invoice.
-                @endif
-            </div>
-        </div>
-    </div>
-<script>
-        // Trigger print automatically when the page is fully loaded
-        window.onload = function() {
-            window.print();
-        };
-    </script>
+    <table class="summary-main-table" cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="summary-left">
+                <table class="balance-table" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td class="balance-label">Previous Balance:</td>
+                        <td class="balance-value">{{ $format($previousBalance) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="balance-label">This Bill:</td>
+                        <td class="balance-value">{{ $format($thisBill) }}</td>
+                    </tr>
+                    <tr>
+                        <td class="balance-label">Current Balance:</td>
+                        <td class="balance-value">{{ $format($currentBalance) }}</td>
+                    </tr>
+                </table>
+            </td>
+            <td class="summary-right">
+                <table class="totals-table" cellpadding="0" cellspacing="0">
+                    <tr class="total-row">
+                        <td>Total</td>
+                        <td class="txt-right">{{ $format($subTotal) }}</td>
+                    </tr>
+                    <tr>
+                        <td>Less Discount</td>
+                        <td class="txt-right">{{ $format($totalDiscount) }}</td>
+                    </tr>
+                    <tr class="grand-total-row">
+                        <td>Total Amount</td>
+                        <td class="txt-right">{{ $format($totalAmount) }}</td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+
+    <p class="prepared-by">Prepared By: {{ data_get($company ?? [], 'preparedBy', 'Admin') }}</p>
+</div>
 </body>
-
 </html>

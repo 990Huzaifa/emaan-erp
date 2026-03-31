@@ -13,6 +13,7 @@ use App\Models\Customer;
 use App\Models\SaleReceiptItem;
 use App\Models\SaleOrder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Exception;
 use Illuminate\Database\QueryException;
@@ -334,6 +335,102 @@ class SaleReceiptController extends Controller
         }catch(Exception $e){
             DB::rollBack();
             return false;
+        }
+    }
+
+    public function download(string $id)
+    {
+        try {
+            $user = Auth::user();
+
+            // 🔐 Permission
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'view sale receipt')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            // 🔹 Get Data
+            $data = SaleReceipt::with(['items.product' => function ($query) {
+                    $query->select('id', 'title');
+                }])
+                ->join('businesses', 'sale_receipts.business_id', '=', 'businesses.id')
+                ->join('customers', 'sale_receipts.customer_id', '=', 'customers.id')
+                ->join('cities as customer_city', 'customers.city_id', '=', 'customer_city.id')
+                ->join('cities as business_city', 'businesses.city_id', '=', 'business_city.id')
+                ->select(
+                    'sale_receipts.*',
+                    'customers.name as customer_name',
+                    'customers.c_code as customer_code',
+                    'customers.address as customer_address',
+                    'customers.mobile as customer_telephone',
+                    'businesses.name as business_name',
+                    'businesses.logo as business_logo',
+                    'businesses.address as business_address',
+                    'businesses.phone as business_telephone',
+                    'customer_city.name as customer_city_name',
+                    'business_city.name as business_city_name'
+                )
+                ->where('sale_receipts.id', $id)
+                ->first();
+
+            if (!$data) {
+                throw new Exception('Sale Receipt not found', 404);
+            }
+
+            // 🔹 Balances
+            $acc_id = Customer::where('id', $data->customer_id)->value('acc_id');
+
+            $current_balance = Transaction::where('acc_id', $acc_id)
+                ->orderBy('id', 'desc')
+                ->value('current_balance');
+
+            $previous_balance = Transaction::where('acc_id', $acc_id)
+                ->orderBy('id', 'desc')
+                ->skip(1)
+                ->value('current_balance') ?? 0.00;
+
+            // 🔥 IMPORTANT: Blade compatible structure
+            $invoice = $data->toArray();
+            $invoice['previous_balance'] = $previous_balance;
+            $invoice['current_balance'] = $current_balance;
+            $invoice['this_bill'] = $data->total ?? 0; // blade uses this
+
+            $company = [
+                'name' => $data->business_name,
+                'logo' => $data->business_logo,
+                'address' => $data->business_address,
+                'mobile' => $data->business_telephone,
+                'preparedBy' => $user->name ?? 'Admin'
+            ];
+
+            // 🔹 Generate PDF (FIXED VIEW PATH ✅)
+            $pdf = PDF::loadView('invoice.sale-receipt', [
+                'invoice' => $invoice,
+                'company' => $company,
+                'documentType' => 'sale-receipt'
+            ]);
+
+            // 🔹 Save file
+            $fileName = 'sale_receipt_' . $data->id . '_' . time() . '.pdf';
+            $filePath = 'pdf/' . $fileName;
+
+            Storage::disk('public')->put($filePath, $pdf->output());
+
+            $url = asset('storage/' . $filePath);
+
+            return response()->json([
+                'message' => 'PDF generated successfully',
+                'download_url' => $url
+            ], 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
     }
 
