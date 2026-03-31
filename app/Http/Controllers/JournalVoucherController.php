@@ -290,7 +290,7 @@ class JournalVoucherController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function updateStatus(Request $request, string $id): JsonResponse
+    public function updateStatusOld(Request $request, string $id): JsonResponse
     {
         try{
             $user = Auth::user();
@@ -367,6 +367,127 @@ class JournalVoucherController extends Controller
         }catch(QueryException $e){
             return response()->json(['DB error' => $e->getMessage()], 400);
         }catch(Exception $e){
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function updateStatus(Request $request, string $id): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'approve journal voucher')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            if ($request->status == 0) throw new Exception('Status is invalid', 400);
+
+            $data = JournalVoucher::findOrFail($id);
+
+            if ($request->status == $data->status) {
+                throw new Exception('Status is already updated', 400);
+            }
+
+            // ✅ Update voucher status
+            $data->update([
+                'approved_by' => $user->id,
+                'approved_date' => Carbon::now(),
+                'status' => $request->status,
+            ]);
+
+            // ✅ Only on approve
+            if ($data->status == 1) {
+
+                $from_acc = $data->from_acc_id;
+                $to_acc   = $data->to_acc_id;
+                $amount   = $data->voucher_amount;
+
+                // =========================
+                // WITHDRAW
+                // =========================
+                if ($data->type === 'WITHDRAW') {
+
+                    // FROM ACCOUNT → CREDIT
+                    $from_cb = calculateBalance($from_acc, 0, $amount, $data->voucher_date);
+
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $from_acc,
+                        'transaction_type' => 2,
+                        'description' => $data->description,
+                        'credit' => $amount,
+                        'debit' => 0,
+                        'current_balance' => $from_cb,
+                        'created_at' => $data->voucher_date
+                    ]);
+
+                    // TO ACCOUNT → DEBIT
+                    $to_cb = calculateBalance($to_acc, $amount, 0, $data->voucher_date);
+
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $to_acc,
+                        'transaction_type' => 2,
+                        'description' => $data->description,
+                        'credit' => 0,
+                        'debit' => $amount,
+                        'current_balance' => $to_cb,
+                        'created_at' => $data->voucher_date
+                    ]);
+                }
+
+                // =========================
+                // DEPOSIT
+                // =========================
+                elseif ($data->type === 'DEPOSIT') {
+
+                    // FROM ACCOUNT → DEBIT
+                    $from_cb = calculateBalance($from_acc, $amount, 0, $data->voucher_date);
+
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $from_acc,
+                        'transaction_type' => 1,
+                        'description' => $data->description,
+                        'credit' => 0,
+                        'debit' => $amount,
+                        'current_balance' => $from_cb,
+                        'created_at' => $data->voucher_date
+                    ]);
+
+                    // TO ACCOUNT → CREDIT
+                    $to_cb = calculateBalance($to_acc, 0, $amount, $data->voucher_date);
+
+                    Transaction::create([
+                        'business_id' => $data->business_id,
+                        'acc_id' => $to_acc,
+                        'transaction_type' => 1,
+                        'description' => $data->description,
+                        'credit' => $amount,
+                        'debit' => 0,
+                        'current_balance' => $to_cb,
+                        'created_at' => $data->voucher_date
+                    ]);
+                }
+
+                else {
+                    throw new Exception('Invalid voucher type.');
+                }
+
+                // ✅ Recalculate both accounts (IMPORTANT)
+                recalculateAccountTransactions($from_acc);
+                recalculateAccountTransactions($to_acc);
+            }
+
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
