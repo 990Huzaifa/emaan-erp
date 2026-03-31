@@ -174,9 +174,13 @@ class JournalVoucherController extends Controller
                 }
             }
             // we hai two accounts from and to account, so we need to join the chart of accounts table twice to get the names of both accounts
-            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as from_account_name','chart_of_accounts.name as to_account_name')
-            ->join('chart_of_accounts', 'journal_vouchers.from_acc_id', '=', 'chart_of_accounts.id')
-            ->join('chart_of_accounts as coa2', 'journal_vouchers.to_acc_id', '=', 'coa2.id')
+            $data = JournalVoucher::select(
+                    'journal_vouchers.*',
+                    'coa1.name as from_account_name',
+                    'coa2.name as to_account_name'
+                )
+                ->join('chart_of_accounts as coa1', 'journal_vouchers.from_acc_id', '=', 'coa1.id')
+                ->join('chart_of_accounts as coa2', 'journal_vouchers.to_acc_id', '=', 'coa2.id')
             ->find($id);
             return response()->json($data,200);
 
