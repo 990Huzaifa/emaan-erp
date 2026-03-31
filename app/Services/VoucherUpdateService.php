@@ -32,6 +32,7 @@ class VoucherUpdateService
             // 🔹 New values
             $newAmount = $data['voucher_amount'];
             $newDate   = $data['voucher_date'];
+            $oldDate   = $voucher->voucher_date;
 
             // 🔹 Get transactions (NO PAIRING NOW 🎯)
             $transactions = $this->findVoucherTransactions($voucher, $type);
@@ -111,10 +112,10 @@ class VoucherUpdateService
             // 🔹 Recalculate ledger
             $startId = min($trx1->id, $trx2->id);
 
-            $this->recalculateAccountTransactionsFromDate($cashAccId, $newDate);
+            $this->recalculateAccountTransactionsFromDate($cashAccId, $oldDate);
 
             if ($cashAccId != $partyAccId) {
-                $this->recalculateAccountTransactionsFromDate($partyAccId, $newDate);
+                $this->recalculateAccountTransactionsFromDate($partyAccId, $oldDate);
                 $this->applyVoucherUpdates($voucher, $type, $data);
             }
 
@@ -241,7 +242,6 @@ class VoucherUpdateService
         $previousTransaction = Transaction::where('acc_id', $acc_id)
             ->where('created_at', '<', $fromDate)
             ->orderBy('created_at', 'desc')
-            ->orderBy('id', 'desc')
             ->first();
 
         // 🔹 Step 2: Opening balance
