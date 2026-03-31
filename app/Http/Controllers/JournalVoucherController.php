@@ -20,7 +20,7 @@ class JournalVoucherController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -30,33 +30,40 @@ class JournalVoucherController extends Controller
                     ], 403);
                 }
             }
+
             $perPage = $request->query('per_page', 10);
             $searchQuery = $request->query('search');
-            $start_date = Carbon::parse($request->query('start_date'))->startOfDay()->toDateTimeString();
-            $end_date = Carbon::parse($request->query('end_date'))->endOfDay()->addDays(1)->toDateTimeString();
 
+            $query = JournalVoucher::select(
+                    'journal_vouchers.*',
+                    'coa1.name as from_account_name',
+                    'coa2.name as to_account_name'
+                )
+                ->join('chart_of_accounts as coa1', 'journal_vouchers.from_acc_id', '=', 'coa1.id')
+                ->join('chart_of_accounts as coa2', 'journal_vouchers.to_acc_id', '=', 'coa2.id')
+                ->where('journal_vouchers.business_id', '=', $businessId)
+                ->orderBy('journal_vouchers.id', 'desc');
 
-            $query = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as from_account_name','chart_of_accounts.name as to_account_name')
-            ->join('chart_of_accounts as coa1', 'journal_vouchers.from_acc_id', '=', 'coa1.id')
-            ->join('chart_of_accounts as coa2', 'journal_vouchers.to_acc_id', '=', 'coa2.id')
-            ->where('journal_vouchers.business_id','=',$businessId)
-            ->orderBy('id', 'desc');
-
-
+            // ✅ Date filter (safe handling)
             if (!empty($request->query('start_date')) && !empty($request->query('end_date'))) {
-                $query = $query->whereBetween('voucher_date', [$start_date, $end_date]);
+                $start_date = Carbon::parse($request->query('start_date'))->startOfDay();
+                $end_date = Carbon::parse($request->query('end_date'))->endOfDay();
+
+                $query->whereBetween('journal_vouchers.voucher_date', [$start_date, $end_date]);
             }
 
+            // ✅ Search
             if (!empty($searchQuery)) {
-                $query = $query->where('voucher_code', 'like', '%' . $searchQuery . '%');
+                $query->where('journal_vouchers.voucher_code', 'like', '%' . $searchQuery . '%');
             }
-            // Execute the query with pagination
-            $data = $query->paginate($perPage);
-            return response()->json($data,200);
 
-        }catch(QueryException $e){
+            $data = $query->paginate($perPage);
+
+            return response()->json($data, 200);
+
+        } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
-        }catch(Exception $e){
+        } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
