@@ -2,9 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ChartOfAccount;
 use App\Models\JournalVoucher;
-use App\Models\Partner;
 use Carbon\Carbon;
 use Exception;
 use App\Models\Transaction;
@@ -86,7 +84,8 @@ class JournalVoucherController extends Controller
                     'data.*.voucher_date' => 'required|date',
                     
                     'data.*.payment_method' => 'required|string|in:CASH,BANK,OTHER',
-                    'data.*.acc_id' => 'required|exists:chart_of_accounts,id',
+                    'data.*.from_acc_id' => 'required|exists:chart_of_accounts,id',
+                    'data.*.to_acc_id' => 'required|exists:chart_of_accounts,id',
                     'data.*.type'=>'required|string|in:WITHDRAW,DEPOSIT',
 
                 ],[
@@ -99,12 +98,12 @@ class JournalVoucherController extends Controller
                     'data.*.voucher_amount.required' => 'The voucher amount field is required.',
                     'data.*.voucher_amount.numeric' => 'The voucher amount must be a number.',
 
-                    'data.*.payment_method.required' => 'The payment method field is required.',
-                    'data.*.payment_method.in' => 'The selected payment method is invalid.',
-
-                    'data.*.acc_id.required' => 'The Account field is required.',
-                    'data.*.acc_id.exists' => 'The selected account is invalid.',
+                    'data.*.from_acc_id.required' => 'The From Account field is required.',
+                    'data.*.from_acc_id.exists' => 'The selected from account is invalid.',
                     
+                    'data.*.to_acc_id.required' => 'The To Account field is required.',
+                    'data.*.to_acc_id.exists' => 'The selected to account is invalid.',
+
                     'data.*.voucher_date.required' => 'The voucher date field is required.',
                     
                     'data.*.type.required'=>'Type is Required',
@@ -120,15 +119,16 @@ class JournalVoucherController extends Controller
                 do {
                     $voucher_code = 'JV-'.str_pad(mt_rand(0, 999999999), 9, '0', STR_PAD_LEFT);
                 } while (JournalVoucher::where('voucher_code', $voucher_code)->exists());
-                $description = $request->payment_method == 'CASH' 
-                    ? 'Cash Transfer' 
-                    : 'Bank Transfer';
+                $description = $request->type == 'WITHDRAW' 
+                    ? 'Amount Withdraw' 
+                    : 'Amount Deposit';
 
                 if(isset($item['description']) && !empty($item['description'])){
                     $description = $item['description'];
                 }
                 $data[]=[
-                    'acc_id'=>$item['acc_id'],
+                    'from_acc_id'=>$item['from_acc_id'],
+                    'to_acc_id'=>$item['to_acc_id'],
                     'voucher_code'=>$voucher_code,
                     'business_id'=>$user->login_business,
                     'voucher_amount'=>$item['voucher_amount'],
@@ -166,8 +166,10 @@ class JournalVoucherController extends Controller
                     ], 403);
                 }
             }
-            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as account_name')
-            ->join('chart_of_accounts', 'journal_vouchers.acc_id', '=', 'chart_of_accounts.id')
+            // we hai two accounts from and to account, so we need to join the chart of accounts table twice to get the names of both accounts
+            $data = JournalVoucher::select('journal_vouchers.*','chart_of_accounts.name as from_account_name','chart_of_accounts.name as to_account_name')
+            ->join('chart_of_accounts', 'journal_vouchers.from_acc_id', '=', 'chart_of_accounts.id')
+            ->join('chart_of_accounts as coa2', 'journal_vouchers.to_acc_id', '=', 'coa2.id')
             ->find($id);
             return response()->json($data,200);
 

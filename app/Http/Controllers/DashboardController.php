@@ -135,10 +135,11 @@ class DashboardController extends Controller
                 "), 'customers.acc_id', '=', 't.acc_id') // Inner join ensures only customers with transactions
                 ->leftJoin('opening_balances as ob', 'customers.acc_id', '=', 'ob.acc_id')
                 ->where('customers.business_id', $businessId)
+                ->having('balance', '!=', 0)
+                ->orderByDesc('balance')    
                 ->get();
 
             return response()->json($customers, 200);
-
         } catch (QueryException $e) {
             return response()->json(['DB error' => $e->getMessage()], 400);
         } catch (Exception $e) {

@@ -13,17 +13,14 @@ return new class extends Migration
     {
         Schema::create('journal_vouchers', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('partner_id');
-            $table->foreign('partner_id')->references('id')->on('partners')->onDelete('cascade');
-            $table->unsignedBigInteger('acc_id'); // Link to COA for tracking payments
-            $table->foreign('acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
+            $table->unsignedBigInteger('from_acc_id'); // Link to COA for tracking payments
+            $table->foreign('from_acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
+            $table->unsignedBigInteger('to_acc_id'); // Link to COA for tracking payments
+            $table->foreign('to_acc_id')->references('id')->on('chart_of_accounts')->onDelete('cascade');
             $table->unsignedBigInteger('business_id'); // Link to COA for tracking payments
             $table->foreign('business_id')->references('id')->on('businesses')->onDelete('cascade');
             $table->string('voucher_code')->unique();
-            $table->enum('payment_method', ['CASH', 'BANK'])->default('CASH');
             $table->enum('type', ['WITHDRAW', 'DEPOSIT']);
-            $table->string('cheque_no')->nullable();
-            $table->date('cheque_date')->nullable();
             $table->decimal('voucher_amount', 25, 2);
             $table->integer('status')->default(0)->comment('0->Un Paid, 1->Paid'); // Payment status
             $table->datetime('voucher_date');

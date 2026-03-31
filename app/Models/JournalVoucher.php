@@ -11,7 +11,8 @@ class JournalVoucher extends Model
 
     protected $fillable = [
         'voucher_code',
-        'acc_id',
+        'from_acc_id',
+        'to_acc_id',
         'voucher_amount',
         'payment_method',
         'type',
