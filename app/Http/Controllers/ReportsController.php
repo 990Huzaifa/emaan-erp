@@ -890,6 +890,7 @@ class ReportsController extends Controller
                                  GROUP BY acc_id
                              ) t2 ON t1.id = t2.max_id
                          ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.created_at', 'desc')           
             ->orderBy('transactions.id', 'desc')
             ->paginate($perpage);
 
