@@ -781,23 +781,17 @@ class ReportsController extends Controller
                 'customers.c_code',
                 'customers.address',
                 'opening_balances.amount as opening_balance',
-                'transactions.current_balance'
             )
             ->when($businessId, function ($query) use ($businessId) {
                 return $query->where('customers.business_id', $businessId);
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
-            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
-                             INNER JOIN (
-                                 SELECT acc_id, MAX(id) as max_id 
-                                 FROM transactions 
-                                 GROUP BY acc_id
-                             ) t2 ON t1.id = t2.max_id
-                         ) as transactions'), 'customers.acc_id', '=', 'transactions.acc_id')
-            ->orderBy('transactions.created_at', 'desc') 
-            ->orderBy('transactions.id', 'desc')
             ->paginate($perpage);
 
+            foreach ($customers as $customer) {
+                // Assuming your helper function is called getLatestTransactionBalance() and takes acc_id as a parameter
+                $customer->current_balance = currentBalance($customer->acc_id);
+            }
 
             return response()->json($customers);
 
@@ -860,47 +854,47 @@ class ReportsController extends Controller
     }
 
 
-public function vendorBalances(Request $request): JsonResponse
-{
-    try {
-        $user = Auth::user();
-        if ($user->role != 'admin') {
-            $businessId = $user->login_business;
-            if (!$user->hasBusinessPermission($businessId, 'vendor balance')) {
-                return response()->json([
-                    'error' => 'User does not have the required permission.'
-                ], 403);
+    public function vendorBalances(Request $request): JsonResponse
+    {
+        try {
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'vendor balance')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
             }
+
+            $perpage = $request->input('perpage', 10);
+
+            // Fetch all vendors
+            $vendors = Vendor::select(
+                'vendors.id',
+                'vendors.name',
+                'vendors.acc_id',
+                'vendors.v_code',
+                'vendors.address',
+                'opening_balances.amount as opening_balance'
+            )
+            ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
+            ->paginate($perpage);
+
+            // Loop through each vendor to get their current balance using the helper function
+            foreach ($vendors as $vendor) {
+                // Assuming your helper function is called getLatestTransactionBalance() and takes acc_id as a parameter
+                $vendor->current_balance = currentBalance($vendor->acc_id);
+            }
+
+            return response()->json($vendors);
+
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
         }
-
-        $perpage = $request->input('perpage', 10);
-
-        // Fetch all vendors
-        $vendors = Vendor::select(
-            'vendors.id',
-            'vendors.name',
-            'vendors.acc_id',
-            'vendors.v_code',
-            'vendors.address',
-            'opening_balances.amount as opening_balance'
-        )
-        ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-        ->paginate($perpage);
-
-        // Loop through each vendor to get their current balance using the helper function
-        foreach ($vendors as $vendor) {
-            // Assuming your helper function is called getLatestTransactionBalance() and takes acc_id as a parameter
-            $vendor->current_balance = currentBalance($vendor->acc_id);
-        }
-
-        return response()->json($vendors);
-
-    } catch (QueryException $e) {
-        return response()->json(['DB error' => $e->getMessage()], 400);
-    } catch (Exception $e) {
-        return response()->json(['error' => $e->getMessage()], 400);
     }
-}
 
     public function employeeBalances(Request $request): JsonResponse
     {
