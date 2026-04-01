@@ -794,6 +794,7 @@ class ReportsController extends Controller
                                  GROUP BY acc_id
                              ) t2 ON t1.id = t2.max_id
                          ) as transactions'), 'customers.acc_id', '=', 'transactions.acc_id')
+            ->orderBy('transactions.created_at', 'desc') 
             ->orderBy('transactions.id', 'desc')
             ->paginate($perpage);
 
@@ -889,9 +890,9 @@ class ReportsController extends Controller
                                  FROM transactions 
                                  GROUP BY acc_id
                              ) t2 ON t1.id = t2.max_id
-                         ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')
-            ->orderBy('transactions.created_at', 'desc')           
-            ->orderBy('transactions.id', 'desc')
+                         ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')         
+            ->orderBy('transactions.created_at', 'desc')  // First order by created_at
+            ->orderBy('transactions.id', 'asc')
             ->paginate($perpage);
 
 
