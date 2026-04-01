@@ -884,16 +884,16 @@ class ReportsController extends Controller
                 'transactions.current_balance'
             )
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
-                             INNER JOIN (
-                                 SELECT acc_id, MAX(id) as max_id 
-                                 FROM transactions 
-                                 GROUP BY acc_id
-                             ) t2 ON t1.id = t2.max_id
-                         ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')         
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1
+                            INNER JOIN (
+                                SELECT acc_id, MAX(created_at) as max_created_at
+                                FROM transactions
+                                GROUP BY acc_id
+                            ) t2 ON t1.acc_id = t2.acc_id AND t1.created_at = t2.max_created_at
+                        ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')
             ->orderBy('transactions.created_at', 'desc')  // First order by created_at
+            ->orderBy('transactions.id', 'asc')  // Then order by id
             ->paginate($perpage);
-
 
             return response()->json($vendors);
 
