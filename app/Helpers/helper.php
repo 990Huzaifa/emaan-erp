@@ -277,7 +277,7 @@ function currentBalance($acc_id, $date = null)
             ->orderBy('id', 'desc')
             ->first();
     }else{
-        $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('created_at', 'desc')->first();
+        $lastTransaction = Transaction::where('acc_id', $acc_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first();
     }
     if (!empty($lastTransaction)) {
         return $lastTransaction->current_balance;
