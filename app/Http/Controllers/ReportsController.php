@@ -862,7 +862,7 @@ class ReportsController extends Controller
 
     public function vendorBalances(Request $request): JsonResponse
     {
-        try{
+        try {
             $user = Auth::user();
             if ($user->role != 'admin') {
                 $businessId = $user->login_business;
@@ -872,6 +872,7 @@ class ReportsController extends Controller
                     ], 403);
                 }
             }
+
             $perpage = $request->input('perpage', 10);
 
             $vendors = Vendor::select(
@@ -884,10 +885,10 @@ class ReportsController extends Controller
                 'transactions.current_balance'
             )
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-            ->join(DB::raw('(SELECT t1.* FROM transactions t1
+            ->join(DB::raw('(SELECT t1.* FROM transactions t1 
                             INNER JOIN (
-                                SELECT acc_id, MAX(created_at) as max_created_at
-                                FROM transactions
+                                SELECT acc_id, MAX(created_at) as max_created_at 
+                                FROM transactions 
                                 GROUP BY acc_id
                             ) t2 ON t1.acc_id = t2.acc_id AND t1.created_at = t2.max_created_at
                         ) as transactions'), 'vendors.acc_id', '=', 'transactions.acc_id')
