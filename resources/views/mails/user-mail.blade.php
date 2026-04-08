@@ -1,3 +1,5 @@
+{{-- resources/views/mails/user-mail.blade.php --}}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,16 +26,16 @@
                     <tr>
                         <td style="padding:35px 30px;">
                             <p style="margin:0 0 20px; font-size:16px; line-height:1.7; color:#444444;">
-                                {{$data['message']}}
+                                {{ $message }}
                             </p>
 
-                            @if($data['is_url'])
+                            @if($is_url)
                                 <div style="margin-top:25px; padding:18px; background-color:#f9fafb; border:1px solid #e5e7eb; border-radius:8px;">
                                     <p style="margin:0 0 10px; font-size:14px; font-weight:bold; color:#111827;">
                                         Related Link
                                     </p>
-                                    <a href="{{$data['url']}}" target="_blank" style="font-size:14px; color:#4f46e5; text-decoration:none; word-break:break-all;">
-                                        {{$data['url']}}
+                                    <a href="{{ $url }}" target="_blank" style="font-size:14px; color:#4f46e5; text-decoration:none; word-break:break-all;">
+                                        {{ $url }}
                                     </a>
                                 </div>
                             @endif
