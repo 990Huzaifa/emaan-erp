@@ -631,11 +631,16 @@ class UserController extends Controller
 
             ]);
             $setupUrl = config('app.frontend_url').'/setup-system-user/'.$setupCode;
-            Mail::to($user->email)->send(new UserMail([
-                'message'=>'Please setup your account by clicking on the below link',
-                'url' => $setupUrl,
-                'is_url'=>true,
-            ])); 
+            $this->externalMailService->sendView(
+                    to: $user->email,
+                    subject: 'Setup Your Account',
+                    view: 'mails.user-mail',
+                    data: [
+                        'message'=> 'Please setup your account by clicking on the below link',
+                        'url' => $setupUrl,
+                        'is_url'=>true,
+                    ]
+                );
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User send setup mail to user',
