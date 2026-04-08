@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\View;
 use InvalidArgumentException;
 
-class ExternalMailService
+class MailingService
 {
     public function sendView(
         string|array $to,

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
-use App\Services\ExternalMailService;
+use App\Services\MailingService;
 use DB; 
 use Exception;
 use Carbon\Carbon;
@@ -29,7 +29,7 @@ class UserController extends Controller
     protected $user;
     protected $externalMailService;
 
-    public function __construct(ExternalMailService $externalMailService)
+    public function __construct(MailingService $externalMailService)
     {
         $this->externalMailService = $externalMailService;
     }
