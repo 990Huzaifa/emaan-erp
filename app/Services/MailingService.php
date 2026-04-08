@@ -72,13 +72,33 @@ class MailingService
             ],
         ];
 
-            $response = Http::withOptions([
-                'verify' => false, // Disable SSL verification for testing (not recommended for production)
-            ])
-            ->withHeaders([
-                'x-api-key' => 'ziiklzezflcaJJmoyrsev2aiqjlne'
-            ])
-            ->post("https://72.60.114.133:8005/send-email", $payload);
+            $url = 'http://72.60.114.133:8005/send-email';
+
+            $jsonPayload = json_encode($payload);
+
+            // API key for authentication
+            $apiKey = 'ziiklzezflcaJJmoyrsev2aiqjlne';
+
+            // cURL setup
+            $ch = curl_init($url);
+
+            // Set cURL options
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Content-Type: application/json',
+                'x-api-key: ' . $apiKey,
+            ]);
+
+            // Execute the cURL request
+            $response = curl_exec($ch);
+
+            // Close the cURL session
+            curl_close($ch);
+
+            // Decode the response
+            $response = json_decode($response, true);
 
 
         return [
