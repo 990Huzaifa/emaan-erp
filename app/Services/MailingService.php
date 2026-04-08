@@ -72,16 +72,11 @@ class MailingService
             ],
         ];
 
-        $response = Http::acceptJson()
-            ->timeout((int) config('services.external_mail.request_timeout', 30))
-            ->connectTimeout((int) config('services.external_mail.connect_timeout', 10))
-            ->retry(2, 300)
-            ->withHeaders([
-                config('services.external_mail.api_key', 'x-api-key') => config('services.external_mail.api_key'),
+            $response = Http::withHeaders([
+                'x-api-key' => config('services.external_mail.api_key', 'x-api-key'),  // Replace with your actual API key
             ])
             ->post(config('services.external_mail.endpoint'), $payload);
 
-        $response->throw();
 
         return [
             'success' => $response->successful(),
