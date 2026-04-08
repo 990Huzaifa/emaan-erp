@@ -101,11 +101,12 @@ class MailingService
             $response = json_decode($response, true);
 
 
-        return [
-            'success' => $response->successful(),
-            'status' => $response->status(),
-            'data' => $response->json() ?: ['raw' => $response->body()],
-        ];
+        if (isset($response['ok']) && $response['ok'] === true) {
+            return ['success' => true, 'message' => 'Email sent successfully'];
+        } else {
+            // Handle error responses from FastAPI
+            return ['success' => false, 'error' => 'Failed to send email', 'response' => $response];
+        }
     }
 
     protected function validateConfig(): void
