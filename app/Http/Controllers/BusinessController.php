@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\UserMail;
+use App\Services\MailingService;
 use Exception;
 use App\Models\User;
 use App\Models\Log;
@@ -27,6 +28,13 @@ class BusinessController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    protected $externalMailService;
+
+    public function __construct(MailingService $externalMailService)
+    {
+        $this->externalMailService = $externalMailService;
+    }
     public function index(Request $request): JsonResponse
     {
         try{
@@ -204,11 +212,16 @@ class BusinessController extends Controller
             $allPermissions = Permission::all();
             $uhb->syncPermissions($allPermissions);
             // sending mail to business admin
-            Mail::to($request->email)->send(new UserMail([
-                'message'=>'You are Admin of the business now you have all the access of this business.',
-                'url'=>config('app.frontend_url'),
-                'is_url'=>true,
-            ]));
+            $this->externalMailService->sendView(
+                    to: $request->email,
+                    subject: 'Setup Your Account',
+                    view: 'mails.user-mail',
+                    data: [
+                        'message'=> 'You are Admin of the business now you have all the access of this business.',
+                        'url' => config('app.frontend_url'),
+                        'is_url'=>true,
+                    ]
+                );
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User create business',

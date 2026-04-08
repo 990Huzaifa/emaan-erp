@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\MailingService;
 use Exception;
 use Carbon\Carbon;
 use App\Models\User;
@@ -24,6 +25,13 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     protected $accessToken;
+
+        protected $externalMailService;
+
+    public function __construct(MailingService $externalMailService)
+    {
+        $this->externalMailService = $externalMailService;
+    }
 
     public function login(Request $request):JsonResponse
     {
@@ -215,11 +223,17 @@ class AuthController extends Controller
 
             $user = User::where('email', $request->email)->first();
 
-            Mail::to($request->email)->send(new UserMail([
-                'message' => 'Hi '.$user->name.', Please click on the link below to reset your password.',
-                'url' => config('app.frontend_url').'/reset-password/'.$token,
-                 'is_url'=>true
-            ]));
+
+            $this->externalMailService->sendView(
+                    to: $request->email,
+                    subject: 'Reset Your Password',
+                    view: 'mails.user-mail',
+                    data: [
+                        'message'=> 'Please reset your password by clicking on the below link',
+                        'url' => config('app.frontend_url').'/reset-password/'.$token,
+                        'is_url'=>true,
+                    ]
+                );
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User forgot password',
