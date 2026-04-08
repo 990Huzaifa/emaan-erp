@@ -73,15 +73,12 @@ class MailingService
         ];
 
             $response = Http::withOptions([
-                'curl' => [
-                    CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_2, // Force TLSv1.2
-                    // Alternatively, use CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1_3 for TLSv1.3
-                    CURLOPT_SSL_VERIFYPEER => false, // Disable SSL verification (only for development, not for production)
-                ]
-            ])->withHeaders([
-                'x-api-key' => config('services.external_mail.api_key', 'x-api-key'),  // Replace with your actual API key
+                'verify' => false, // Disable SSL verification for testing (not recommended for production)
             ])
-            ->post(config('services.external_mail.endpoint'), $payload);
+            ->withHeaders([
+                'x-api-key' => 'ziiklzezflcaJJmoyrsev2aiqjlne'
+            ])
+            ->post("https://72.60.114.133:8005/send-email", $payload);
 
 
         return [
