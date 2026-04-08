@@ -228,6 +228,7 @@ class PermissionsTableSeeder extends Seeder
             'vendor balance',
             'employee balance',
             'cashnbank balance',
+            'opening balance',
         ];
 
         // Loop through each permission and create it

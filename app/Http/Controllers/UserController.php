@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ChartOfAccount;
+use App\Services\ExternalMailService;
 use DB; 
 use Exception;
 use Carbon\Carbon;
@@ -26,6 +27,12 @@ class UserController extends Controller
 {
 
     protected $user;
+    protected $externalMailService;
+
+    public function __construct(ExternalMailService $externalMailService)
+    {
+        $this->externalMailService = $externalMailService;
+    }
 
     public function index(Request $request):JsonResponse
     {
@@ -177,11 +184,23 @@ class UserController extends Controller
                 $uhb->syncPermissions($permissions);
             }
             // sending mail to user
-            Mail::to($request->email)->send(new UserMail([
-                'message'=> 'Please setup your account by clicking on the below link',
-                'url' => $setupUrl,
-                'is_url'=>true,
-            ])); 
+
+            // Mail::to($request->email)->send(new UserMail([
+            //     'message'=> 'Please setup your account by clicking on the below link',
+            //     'url' => $setupUrl,
+            //     'is_url'=>true,
+            // ])); 
+
+                $this->externalMailService->sendView(
+                    to: $request->email,
+                    subject: 'Setup Your Account',
+                    view: 'mails.user-mail',
+                    data: [
+                        'message'=> 'Please setup your account by clicking on the below link',
+                        'url' => $setupUrl,
+                        'is_url'=>true,
+                    ]
+                );
         
             Log::create([
                 'user_id' => $Auser->id,

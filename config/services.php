@@ -35,4 +35,24 @@ return [
         'access_token' => env('WHATSAPP_ACCESS_TOKEN','EAAR1Rq25RVcBOxqBvzDEXF844jUZC5ATC0QTDJnJWpbnb1SE9RZBZAImynjp0fl0BAafRgOuGYsm7CJsYiljYSsDD5CpjwLfgrcf4Aph3xzOEK6ojPu7R3t7qkFS9sduPMuG1ZAXsBE0hCZCm6Fn535G0KxR6aj7PubQ2m4AXYdbcmtdHoiBstMmfZCnMUjuoYzwZDZD'),
     ],
 
+    'external_mail' => [
+        'endpoint' => env('EXTERNAL_MAIL_ENDPOINT'),
+        'api_key' => env('EXTERNAL_MAIL_API_KEY'),
+
+        'request_timeout' => (int) env('EXTERNAL_MAIL_REQUEST_TIMEOUT', 30),
+        'connect_timeout' => (int) env('EXTERNAL_MAIL_CONNECT_TIMEOUT', 10),
+
+        'from_email' => env('EXTERNAL_MAIL_FROM_EMAIL'),
+        'from_name' => env('EXTERNAL_MAIL_FROM_NAME', env('APP_NAME')),
+
+        'smtp' => [
+            'host' => env('EXTERNAL_SMTP_HOST'),
+            'port' => (int) env('EXTERNAL_SMTP_PORT', 587),
+            'username' => env('EXTERNAL_SMTP_USERNAME'),
+            'password' => env('EXTERNAL_SMTP_PASSWORD'),
+            'security' => env('EXTERNAL_SMTP_SECURITY', 'starttls'),
+            'timeout' => (int) env('EXTERNAL_SMTP_TIMEOUT', 30),
+        ],
+    ],
+
 ];
