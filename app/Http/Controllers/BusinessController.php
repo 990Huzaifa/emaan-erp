@@ -220,7 +220,8 @@ class BusinessController extends Controller
                         'message'=> 'You are Admin of the business now you have all the access of this business.',
                         'url' => config('app.frontend_url'),
                         'is_url'=>true,
-                    ]
+                    ],
+                    fromEmail: 'noreply@salesvince.com'
                 );
             Log::create([
                 'user_id' => $user->id,

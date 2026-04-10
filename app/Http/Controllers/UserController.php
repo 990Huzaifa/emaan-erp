@@ -640,7 +640,8 @@ class UserController extends Controller
                         'message'=> 'Please setup your account by clicking on the below link',
                         'url' => $setupUrl,
                         'is_url'=>true,
-                    ]
+                    ],
+                    fromEmail: 'noreply@salesvince.com'
                 );
             Log::create([
                 'user_id' => $user->id,
