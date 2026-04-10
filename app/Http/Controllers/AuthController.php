@@ -232,7 +232,8 @@ class AuthController extends Controller
                         'message'=> 'Please reset your password by clicking on the below link',
                         'url' => config('app.frontend_url').'/reset-password/'.$token,
                         'is_url'=>true,
-                    ]
+                    ],
+                    fromEmail: 'noreply@salesvince.com'
                 );
             Log::create([
                 'user_id' => $user->id,
