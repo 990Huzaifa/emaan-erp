@@ -314,7 +314,7 @@ class GRNController extends Controller
         ->join('purchase_orders', 'purchase_orders.id', '=', 'goods_receive_notes.purchase_order_id')
         ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
         ->select('goods_receive_notes.*', 'purchase_orders.order_code as po_code', 'vendors.name as vendor_name')
-        ->where('id', $id) // Filter by the specific GRN ID
+        ->where('goods_receive_notes.id', $id) // Filter by the specific GRN ID
         ->firstOrFail();
             return response()->json($data,200);
         }catch(QueryException $e){
