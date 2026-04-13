@@ -311,17 +311,12 @@ class PurchaseInvoiceController extends Controller
             $previous_balance = 0;
             $current_balance = $currentTransaction->current_balance;
             if ($currentTransaction) {
-                $previous_balance = Transaction::where('acc_id', $acc_id)
-                    ->where(function ($q) use ($currentTransaction) {
-                        $q->where('created_at', '<', $currentTransaction->created_at)
-                        ->orWhere(function ($q2) use ($currentTransaction) {
-                            $q2->where('created_at', '=', $currentTransaction->created_at)
-                                ->where('id', '<', $currentTransaction->id);
-                        });
-                    })
-                    ->orderBy('created_at', 'desc')
+                $previousTransaction = Transaction::where('acc_id', $acc_id)
+                    ->where('id', '<', $currentTransaction->id)
                     ->orderBy('id', 'desc')
-                    ->value('current_balance') ?? 
+                    ->first();
+
+                $previous_balance = $previousTransaction?->current_balance ??
                     (OpeningBalance::where('acc_id', $acc_id)->value('amount') ?? 0);
             }     
             if (!$data) throw new Exception('Sale Receipt not found', 404);
