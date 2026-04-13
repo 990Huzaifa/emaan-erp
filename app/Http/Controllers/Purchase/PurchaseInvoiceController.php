@@ -300,18 +300,16 @@ class PurchaseInvoiceController extends Controller
             $acc_id = Vendor::where('id',$data->vendor_id)->value('acc_id');
             
             // CURRENT BALANCE (latest)
-            $current_balance = Transaction::where('acc_id', $acc_id)
-                ->orderBy('created_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->value('current_balance');
+            
 
             // CURRENT INVOICE TRANSACTION
             $currentTransaction = Transaction::where('acc_id', $acc_id)
-                ->where('credit', '=', $data->total)
-                ->first();
+            ->where('transaction_type', 0)
+            ->where('credit', '=', $data->total)
+            ->first();
 
             $previous_balance = 0;
-
+            $current_balance = $currentTransaction->current_balance;
             if ($currentTransaction) {
                 $previous_balance = Transaction::where('acc_id', $acc_id)
                     ->where(function ($q) use ($currentTransaction) {
