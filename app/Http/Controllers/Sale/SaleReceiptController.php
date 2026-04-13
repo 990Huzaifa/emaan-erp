@@ -264,11 +264,32 @@ class SaleReceiptController extends Controller
 
             $acc_id = Customer::where('id',$data->customer_id)->value('acc_id');
             
-            $current_balance = Transaction::where('acc_id', $acc_id)
-            ->orderBy('id', 'desc')->value('current_balance');
+            // $current_balance = Transaction::where('acc_id', $acc_id)->where
+            // ->orderBy('id', 'desc')->value('current_balance');
 
-            $previous_balance = Transaction::where('acc_id', $acc_id)
-            ->orderBy('id', 'desc')->skip(1)->value('current_balance') ?? 0.00;
+            // $previous_balance = Transaction::where('acc_id', $acc_id)
+            // ->orderBy('id', 'desc')->skip(1)->value('current_balance') ?? 0.00;
+
+            // Current sale receipt ki exact transaction nikaalo
+            $currentTransaction = Transaction::where('acc_id', $acc_id)
+                ->where('transaction_type', 1) // 1 = sale
+                ->where('debit', $data->total) // ya credit, tumhari transaction entry rule ke hisab se
+                ->orderBy('id', 'desc')
+                ->first();
+
+            $current_balance = 0.00;
+            $previous_balance = 0.00;
+
+            if ($currentTransaction) {
+                $current_balance = $currentTransaction->current_balance;
+
+                $previousTransaction = Transaction::where('acc_id', $acc_id)
+                    ->where('id', '<', $currentTransaction->id)
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $previous_balance = $previousTransaction?->current_balance ?? 0.00;
+            }
 
             if (!$data) throw new Exception('Sale Receipt not found', 404);
             // return view('invoice.sale-receipt', compact('data','current_balance'));
