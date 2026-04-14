@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
         $schedule->command('users:remove-expired-setup-codes')->everyMinute();
-        $schedule->command('inventory:update-status')->everyMinute();
+        $schedule->command('app:update-inventory-status')->everyMinute();
         $schedule->command('generate:payslips')->dailyAt('00:00');  // Runs every day at midnight
     }
 
