@@ -570,3 +570,17 @@ function recalculateAccountTransactions($acc_id)
         ]);
     }
 }
+
+function findTargetTransactionPurchase($accId, $oldAmount, $poCode)
+{
+    return Transaction::where('acc_id', $accId)
+        ->where('transaction_type', 0)
+        ->where(function ($q) use ($oldAmount) {
+            $q->where('debit', $oldAmount)
+                ->orWhere('credit', $oldAmount);
+        })
+        ->where('description', 'like', '%' . $poCode . '%')
+        ->lockForUpdate()
+        ->orderBy('id')
+        ->first();
+}

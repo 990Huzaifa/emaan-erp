@@ -303,14 +303,13 @@ class PurchaseInvoiceController extends Controller
             
 
             // CURRENT INVOICE TRANSACTION
-            $currentTransaction = Transaction::where('acc_id', $acc_id)
-            ->where('transaction_type', 0)
-            ->where('credit', '=', $data->total)
-            ->first();
+            $currentTransaction = findTargetTransactionPurchase($acc_id, $data->total, $data->so_no); // credit should match total and transaction type should be 0 (sale)
+
 
             $previous_balance = 0;
-            $current_balance = $currentTransaction->current_balance;
+            $current_balance = 0;
             if ($currentTransaction) {
+                $current_balance = $currentTransaction->current_balance;
                 $previousTransaction = Transaction::where('acc_id', $acc_id)
                     ->where('id', '<', $currentTransaction->id)
                     ->orderBy('id', 'desc')
