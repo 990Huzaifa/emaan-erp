@@ -47,18 +47,6 @@ class UpdateInventoryStatus extends Command
             $inventory->save();
         }
 
-        foreach ($lots as $lot) {
-            if ($lot->quantity <= 0) {
-                $lot->status = 0;
-            } elseif ($lot->quantity <= $lowStockThreshold) {
-                $lot->status = 2;
-            } else {
-                $lot->status = 1;
-            }
-            // Save changes
-            $lot->save();
-        }
-
         Log::info('Inventory statuses updated successfully.');
     }
 }
