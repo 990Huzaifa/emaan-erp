@@ -13,8 +13,8 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        $schedule->command('users:remove-expired-setup-codes')->hourly();
-        $schedule->command('inventory:update-status')->daily();
+        $schedule->command('users:remove-expired-setup-codes')->everyMinute();
+        $schedule->command('inventory:update-status')->everyMinute();
         $schedule->command('generate:payslips')->dailyAt('00:00');  // Runs every day at midnight
     }
 
