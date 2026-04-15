@@ -20,6 +20,7 @@ use App\Http\Controllers\COAController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\LedgerController;
 use App\Http\Controllers\Product\ProductController;
@@ -107,6 +108,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('business-accounts',[BusinessController::class,'businessAccounts']);
     Route::get('global-accounts',[BusinessController::class,'globalAccounts']);
     // user
+    Route::prefix('admin/')->group(function () {
+        Route::apiResource('user',AdminUserController::class)->only('index','store','show','destroy');
+        Route::post('user-update/{id}',[AdminUserController::class,'update']);
+        Route::put('status/{id}/user',[AdminUserController::class,'updateStatus']);
+        Route::get('wait-list/user',[AdminUserController::class,'waitList']);
+        Route::put('verify/{id}/user',[AdminUserController::class,'verify']);
+        Route::get('invite-list/user',[AdminUserController::class,'inviteList']);
+        Route::post('invite-update/{id}/user',[AdminUserController::class,'updateInvite']);
+        Route::post('setup/{id}/user',[AdminUserController::class,'sendSetupMail']);
+    });
+
     Route::apiResource('user',UserController::class)->only('index','store','show','destroy');
     Route::post('user-update/{id}',[UserController::class,'update']);
     Route::put('status/{id}/user',[UserController::class,'updateStatus']);

@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
-use App\Models\ChartOfAccount;
+use App\Http\Controllers\Controller;
 use App\Services\MailingService;
 use DB; 
 use Exception;
@@ -14,14 +14,10 @@ use App\Mail\UserMail;
 use Illuminate\Http\Request;
 use App\Models\UserHasBusiness;
 use Illuminate\Http\JsonResponse;
-use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
-use Spatie\Permission\Exceptions\UnauthorizedException;
-use App\Notifications\GeneralNotification;
 
 class UserController extends Controller
 {
@@ -38,11 +34,11 @@ class UserController extends Controller
     {
         try{
             $user = Auth::user();
-            $loginBusinessId = $user->login_business;
             
             // Check if the user has the required permission
             if ($user->role != 'admin') {
-                if (!$user->hasBusinessPermission($loginBusinessId, 'list users')) {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list users')) {
                     return response()->json([
                         'error' => 'User does not have the required permission.'
                     ], 403);
@@ -51,58 +47,54 @@ class UserController extends Controller
             $perPage = $request->query('per_page', 10);
             $isActive = $request->query('is_active');
             $searchQuery = $request->query('search');
-            $query = User::query()
-            ->orderByDesc('users.id')
-            ->where('users.role', 'user')
-            ->where('users.is_verify', 1)
-            ->join('user_has_businesses', 'users.id', '=', 'user_has_businesses.user_id')
-            ->where('user_has_businesses.business_id', $loginBusinessId)
-            ->leftJoin('cities', 'users.city_id', '=', 'cities.id')
-            ->select('users.*', 'cities.name as city')
-            ->distinct();
 
+            $query = User::orderBy('id', 'desc')
+            ->where('role','user')
+            ->where('is_verify',1)
+            ->join('cities', 'users.city_id', '=', 'cities.id')
+            ->select('users.*', 'cities.name as city'); 
             if ($isActive === 'active') {
-                $query = $query->where('users.is_active', 1);
+                $query = $query->where('is_active', 1);
             } elseif ($isActive === 'inactive') {
-                $query = $query->where('users.is_active', 0);
+                $query = $query->where('is_active', 0);
             }
-
             if (!empty($searchQuery)) {
+                // Check if the search query is numeric to search by order ID
                 if (is_numeric($searchQuery)) {
-                    $query = $query->where('users.id', $searchQuery);
+                    $query = $query->where('id', $searchQuery);
                 } else {
-                    $query = $query->where(function ($search) use ($searchQuery) {
-                        $search->where('users.name', 'like', '%' . $searchQuery . '%')
-                            ->orWhere('users.email', 'like', '%' . $searchQuery . '%')
-                            ->orWhere('users.u_code', 'like', '%' . $searchQuery . '%');
-                    });
+                    // Otherwise, search by user name or email
+                    $userIds = User::where('name', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('email', 'like', '%' . $searchQuery . '%')
+                        ->orWhere('u_code', 'like', '%' . $searchQuery . '%')
+                        ->pluck('id')
+                        ->toArray();
+    
+                    // Filter orders by the found user IDs
+                    $query = $query->whereIn('users.id', $userIds);
                 }
             }
-
             $data = $query->paginate($perPage);
 
-            $userBusinessLinks = UserHasBusiness::with('business')
-                ->whereIn('user_id', $data->getCollection()->pluck('id'))
-                ->where('business_id', $loginBusinessId)
-                ->get()
-                ->keyBy('user_id');
-
-            $data->getCollection()->transform(function ($listedUser) use ($userBusinessLinks) {
-                $userBusiness = $userBusinessLinks->get($listedUser->id);
-                $business = $userBusiness?->business;
-
-                $listedUser->business_names = $business ? [[
-                    'id' => $business->id,
-                    'name' => $business->name,
-                ]] : [];
-
-                $listedUser->business_permissions = $userBusiness ? [[
-                    $userBusiness->business_id => $userBusiness->getAllPermissions()->pluck('name')->values()->toArray(),
-                ]] : [];
-
-                return $listedUser;
+            // Attach the related business names to each user
+            $data->getCollection()->transform(function ($user) {
+                // Fetch business ids and names from businesses table via user_has_businesses
+                $businesses = DB::table('user_has_businesses')
+                    ->join('businesses', 'user_has_businesses.business_id', '=', 'businesses.id')
+                    ->where('user_has_businesses.user_id', $user->id)
+                    ->select('businesses.id', 'businesses.name')
+                    ->get();
+            
+                // Append the business array (with id and name) to the user object
+                $user->business_names = $businesses->map(function($business) {
+                    return [
+                        'id' => $business->id,
+                        'name' => $business->name
+                    ];
+                })->toArray();
+            
+                return $user;
             });
-
             Log::create([
                 'user_id' => $user->id,
                 'description' => 'User list users',
