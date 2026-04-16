@@ -117,6 +117,7 @@ class AuthController extends Controller
             if (empty($user)) throw new Exception('Invalid setup code', 400);
             $validator = Validator::make(
                 $request->all(),[
+                    'name'=>'required|string',
                     'phone'=>'nullable|string',
                     'cnic'=>'nullable|string',
                     'address'=>'nullable|string',
@@ -172,6 +173,7 @@ class AuthController extends Controller
             $cnic_images = [$cnic_front, $cnic_back];
             if($request->password != $request->confirm_password) throw new Exception('Password Mismatch', 400);
             $user->update([
+                'name'=>$request->name ?? null,
                 'city_id'=>$request->city_id ?? $user->city_id,
                 'phone'=>$request->phone ?? null,
                 'address' => $request->address ?? null,
