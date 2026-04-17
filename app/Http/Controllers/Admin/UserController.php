@@ -482,8 +482,8 @@ class UserController extends Controller
             $query = User::orderBy('id', 'desc')
             ->where('role', 'user')
             ->where(function($q) {
-                $q->where('setup_code', '<>', '')
-                  ->orWhere('setup_code', '=', '0');
+                $q->where('is_verify', 0)
+                  ->whereNotNull('setup_code');
             })
             ->join('cities', 'users.city_id', '=', 'cities.id')
             ->select('users.*', 'cities.name as city');
