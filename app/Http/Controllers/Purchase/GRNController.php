@@ -55,7 +55,9 @@ class GRNController extends Controller
             ->select('goods_receive_notes.*', 'users.name as received_by', 'purchase_orders.order_code as po_code', 'vendors.name as vendor_name')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+                $query = $query->where('goods_receive_notes.grn_code', 'like', '%' . $searchQuery . '%')
+                ->orWhere('vendors.name', 'like', '%' . $searchQuery . '%')
+                ->orWhere('purchase_orders.order_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
