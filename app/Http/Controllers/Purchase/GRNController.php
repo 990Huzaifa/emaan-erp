@@ -616,25 +616,25 @@ class GRNController extends Controller
             $vendor = Vendor::find($data->purchase_order->vendor_id);
             $total_amount_grn = 0;
             foreach ($data->items as $item) {
+                $check = InventoryDetail::where('product_id', $item->product_id)->first();
+                // update lot status
                 $lot = Lot::where('product_id', $item->product_id)
                 ->where('vendor_id', $vendor->id)
                 ->where('grn_id', $id)->first();
 
                 $lot->update([
-                    'quantity' => $lot->quantity + $item->quantity,
-                    'total_price' => $lot->total_price + ($item->quantity * $lot->sale_unit_price),
+                    'status' => 0
                 ]);
-                $check = InventoryDetail::where('product_id', $item->product_id)->first();
-                
+                // end
                 $check->update([
-                    'stock' => $check->stock + $item->quantity
+                    'stock' => $check->stock - $item->quantity
                 ]);
                 $total_amount_grn += $item->billed;
             }
 
             // reveresd transaction
             // entry is debit but amount will be credit
-            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,false);
+            $v_cb = calculateBalance($vendor->acc_id,$total_amount_grn,0,$data->grn_date);
             // Debit amount to Vendor's account
             $link = $data->purhcase_order_id;
             Transaction::create([

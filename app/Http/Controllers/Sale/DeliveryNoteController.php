@@ -556,8 +556,7 @@ class DeliveryNoteController extends Controller
                 ->first();
 
                 $lot->update([
-                    'quantity' => $lot->quantity + $item->quantity,
-                    'total_price' => $lot->total_price + ($lot->sale_unit_price * $item->quantity)
+                    "status" => 0
                 ]);
                 
 
@@ -571,7 +570,13 @@ class DeliveryNoteController extends Controller
 
                 $total_amount_dn += $item->charged;
             }
-            $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,false);
+            // 
+            $c_cb = calculateBalance(
+                $customer->acc_id,
+                0,
+                $total_amount_dn, // credit
+                $data->dn_date
+            );
             $link =$data->sale_order_id;
             // Debit amount to customer's account
             Transaction::create([
