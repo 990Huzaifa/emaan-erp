@@ -188,14 +188,14 @@ class DashboardController extends Controller
             $graphFilter = request('graph_filter');
 
             // Sales Graph: Filtered by Year and Month
-            $query = SaleVoucher::where('status', 1)
+            $query = SaleReceipt::where('status', 1)
                 ->where('business_id', $businessId)
-                ->whereYear('voucher_date', $year)
-                ->whereMonth('voucher_date', $month);
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month);
 
             // Handle Daily Data
             if ($graphFilter === 'daily') {
-                $salesGraph = $query->selectRaw('DAY(voucher_date) as day, SUM(voucher_amount) as total')
+                $salesGraph = $query->selectRaw('DAY(created_at) as day, SUM(total) as total')
                     ->groupBy('day')
                     ->orderBy('day')
                     ->get()
@@ -214,7 +214,7 @@ class DashboardController extends Controller
 
             // Handle Weekly Data
             elseif ($graphFilter === 'weekly') {
-                $salesGraph = $query->selectRaw('FLOOR((DAY(voucher_date)-1)/7)+1 as week, SUM(voucher_amount) as total')
+                $salesGraph = $query->selectRaw('FLOOR((DAY(created_at)-1)/7)+1 as week, SUM(total) as total')
                     ->groupBy('week')
                     ->orderBy('week')
                     ->get()
