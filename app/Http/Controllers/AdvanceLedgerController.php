@@ -116,25 +116,25 @@ class AdvanceLedgerController extends Controller
 
                 // Paginate the results
                 $results = $query->get();
-                $totalCredit = $results->sum('credit');
-                $remainingCredit = $totalCredit;
+                $totalDebit = $results->sum('debit');
+                $remainingDebit = $totalDebit;
                 
                 foreach ($results as $transaction) {
-                    if($transaction->debit > 0){
-                        if ($remainingCredit > 0 ) {
+                    if($transaction->credit > 0){
+                        if ($remainingDebit > 0 ) {
                             // Calculate how much of this debit is covered by remaining credit
-                            $coveredAmount = min($transaction->debit, $remainingCredit);
+                            $coveredAmount = min($transaction->credit, $remainingDebit);
                             
                             // Calculate percentage
-                            $transaction->progress_percentage = ($coveredAmount / $transaction->debit) * 100;
+                            $transaction->progress_percentage = ($coveredAmount / $transaction->credit) * 100;
                             
-                            // Reduce remaining credit
-                            $remainingCredit -= $coveredAmount;
+                            // Reduce remaining debit
+                            $remainingDebit -= $coveredAmount;
                         }else{
                             $transaction->progress_percentage =0;
                         }
                     } else {
-                        // If no remaining credit, progress is 0%
+                        // If no remaining debit, progress is 0%
                         $transaction->progress_percentage = null;
                     }
                 }
