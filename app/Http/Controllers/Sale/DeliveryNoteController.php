@@ -589,7 +589,8 @@ class DeliveryNoteController extends Controller
                 'link' => $link,
                 'debit' => 0.00, // FIXED
                 'credit' => $total_amount_dn, // FIXED
-                'current_balance' => $c_cb
+                'current_balance' => $c_cb,
+                'created_at' => $data->dn_date
             ]);
             // status changes
             $data->update([
