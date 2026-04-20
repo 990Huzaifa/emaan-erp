@@ -54,7 +54,9 @@ class DeliveryNoteController extends Controller
             ->select('delivery_notes.*', 'users.name as received_by', 'sale_orders.order_code as so_code', 'customers.name as customer_name')
             ->orderBy('id', 'desc');
             if (!empty($searchQuery)) {
-                $query = $query->where('order_code', 'like', '%' . $searchQuery . '%');
+                $query = $query->where('delivery_notes.dn_code', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('customers.name', 'like', '%' . $searchQuery . '%')
+                    ->orWhere('sale_orders.order_code', 'like', '%' . $searchQuery . '%');
             }
             // Execute the query with pagination
             $data = $query->paginate($perPage);
