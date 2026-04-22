@@ -332,16 +332,10 @@ function notUsedfunc($acc_id, $change, $isDebit = true): float
 
 function notifyUser($user_id, $business_id,$permission, $message,$url = null){
 
-    $businesses = UserHasBusiness::where('business_id',$business_id)->get();
-
-    foreach ($businesses as $businessAccount) {
-        $user = User::find($businessAccount->user_id);
-        $user->hasBusinessPermission($business_id, $permission);
-
-        if ($user->hasBusinessPermission($business_id, $permission)) {
-            $user->notify(new GeneralNotification($message, $user->id, $url));
-            broadcast(new NotificationSent($message, $user->id, $url));
-        }
+    $user = User::find($user_id);
+    if ($user->hasBusinessPermission($business_id, $permission)) {
+        $user->notify(new GeneralNotification($message, $user->id, $url));
+        broadcast(new NotificationSent($message, $user->id, $url));
     }
 }
 
