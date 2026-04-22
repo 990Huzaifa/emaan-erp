@@ -109,6 +109,7 @@ class SaleOrderUpdateService
             }
 
             $targetTransaction->debit = $newDNTotal;
+            $targetTransaction->created_at = $so->order_date; // Align transaction date with SO date
             $targetTransaction->description = 'by edit: credit amount to customer account by DN with the so is ' . $so->order_code;
             $targetTransaction->save();
 

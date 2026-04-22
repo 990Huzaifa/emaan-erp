@@ -121,6 +121,7 @@ class PurchaseOrderUpdateService
             }
 
             $targetTransaction->credit = $newGrnTotal;
+            $targetTransaction->created_at = $po->order_date; // Align transaction date with PO date
             $targetTransaction->description = 'by edit: PO no ' . $po->order_code;
             $targetTransaction->save();
 
