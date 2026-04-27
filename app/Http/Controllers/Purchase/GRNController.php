@@ -785,7 +785,7 @@ class GRNController extends Controller
             }
             // entry is credit but amount will be debited(sum)
             $vendor = Vendor::find($GRN->purchase_order->vendor_id);
-            $v_cb = calculateBalance($vendor->acc_id,0,$total_amount_grn,$GRN->grn_date);
+            $v_cb = calculateBalance($vendor->acc_id,0,$po->total,$GRN->grn_date);
             // Credit amount to Vendor's account
             $link = $GRN->purchase_order_id;
             Transaction::create([
@@ -794,7 +794,7 @@ class GRNController extends Controller
                 'transaction_type' => 0, // 0->purchase, 1->sale, 2->expense, 3->income
                 'description' => 'PO no: '. $GRN->purchase_order->order_code,
                 'link' => $link,
-                'credit' => $total_amount_grn, // Money credited to business account
+                'credit' => $po->total, // Money credited to business account
                 'debit' => 0.00, // No money debited from business account
                 'current_balance' => $v_cb,
                 'created_at' => $GRN->grn_date

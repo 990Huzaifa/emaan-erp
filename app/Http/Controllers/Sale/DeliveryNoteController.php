@@ -718,7 +718,7 @@ class DeliveryNoteController extends Controller
                     $total_amount_dn += $item->charged;
                 }
                 
-                $c_cb = calculateBalance($customer->acc_id,$total_amount_dn,0,$deliveryNote->dn_date);
+                $c_cb = calculateBalance($customer->acc_id,$so->total,0,$deliveryNote->dn_date);
                 $link =$soId;
                 // Debit amount to customer's account
                 Transaction::create([
@@ -727,7 +727,7 @@ class DeliveryNoteController extends Controller
                     'transaction_type' => 1, // 0->purchase, 1->sale, 2->expense, 3->income
                     'description' => 'SO no: '.$so->order_code,
                     'link' => $link,
-                    'debit' => $total_amount_dn, // FIXED
+                    'debit' => $so->total, // FIXED
                     'credit' => 0.00, // FIXED
                     'current_balance' => $c_cb,
                     'created_at' => $deliveryNote->dn_date
