@@ -109,6 +109,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('global-accounts',[BusinessController::class,'globalAccounts']);
     // user
     Route::prefix('admin/')->group(function () {
+        Route::get('business-list',[BusinessController::class, 'list']);
         Route::apiResource('user',AdminUserController::class)->only('index','store','show','destroy');
         Route::post('user-update/{id}',[AdminUserController::class,'update']);
         Route::put('status/{id}/user',[AdminUserController::class,'updateStatus']);
