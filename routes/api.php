@@ -51,6 +51,8 @@ use App\Http\Controllers\Hr\SalaryVoucherController;
 
 
 use App\Http\Controllers\App\AuthController as AppAuthController;
+use App\Http\Controllers\App\InventoryDetailController as AppInventoryDetailController;
+
 
 
 /*
@@ -362,6 +364,38 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get('test/whatsapp',[DashboardController::class,'testWhatsapp']);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // for app
+
+    Route::prefix('app')->group(function () {
+        Route::get('profile',[AppAuthController::class,'profile']);
+
+
+        Route::apiResource('inventory-detail',AppInventoryDetailController::class)->only('index','store','show');
+        Route::get('inventory-products',[AppInventoryDetailController::class,'inventoryProduct']);
+        Route::get('lots/{product_id}',[AppInventoryDetailController::class,'lotIndex']);
+        Route::get('forecast/{product_id}',[AppInventoryDetailController::class,'forecast']);
+    });
 
 });
 
