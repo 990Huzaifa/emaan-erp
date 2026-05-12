@@ -49,6 +49,10 @@ use App\Http\Controllers\Sale\SaleVoucherController;
 use App\Http\Controllers\ExpenseVoucherController;
 use App\Http\Controllers\Hr\SalaryVoucherController;
 
+
+use App\Http\Controllers\App\AuthController as AppAuthController;
+
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -83,6 +87,14 @@ Route::post('setup/{code}', [AuthController::class, 'setup'])->name('setup-accou
 Route::post('login',[AuthController::class,'login']);
 Route::post('forgot-password',[AuthController::class,'forgotPassword']);
 Route::post('reset-password',[AuthController::class,'resetPassword']);
+
+
+Route::prefix('app')->group(function () {
+    Route::post('login',[AppAuthController::class,'login']);
+    Route::post('forgot-password',[AppAuthController::class,'forgotPassword']);
+    Route::post('reset-password',[AppAuthController::class,'resetPassword']);
+    Route::post('setup/{code}', [AppAuthController::class, 'setup']);
+});
 
 //global 
 
