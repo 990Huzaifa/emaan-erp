@@ -294,6 +294,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::apiResource('inventory-detail',InventoryDetailController::class)->only('index','store','show');
     Route::get('inventory-products',[InventoryDetailController::class,'inventoryProduct']);
     Route::get('lots/{product_id}',[InventoryDetailController::class,'lotIndex']);
+    Route::get('forecast/{product_id}',[InventoryDetailController::class,'forecastInventory']);
     
     Route::apiResource('transaction',TransactionController::class)->only('index','show','update');
     
@@ -394,7 +395,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::apiResource('inventory-detail',AppInventoryDetailController::class)->only('index','store','show');
         Route::get('inventory-products',[AppInventoryDetailController::class,'inventoryProduct']);
         Route::get('lots/{product_id}',[AppInventoryDetailController::class,'lotIndex']);
-        Route::get('forecast/{product_id}',[AppInventoryDetailController::class,'forecast']);
+        Route::get('forecast/{product_id}',[AppInventoryDetailController::class,'forecastInventory']);
     });
 
 });

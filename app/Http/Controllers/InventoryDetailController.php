@@ -245,7 +245,7 @@ class InventoryDetailController extends Controller
         }
     }
     
-    public function forecastInventory(string $product_id): JsonResponse
+    public function forecastInventory($product_id): JsonResponse
     {
         try{
             $user = Auth::user();
