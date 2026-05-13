@@ -10,7 +10,7 @@ use App\Models\GoodsReceiveNoteItem;
 use App\Models\PurchaseInvoice;
 use App\Models\PurchaseInvoiceItem;
 use App\Models\Lot;
-use App\Models\InventoryDetail;
+// use App\Models\InventoryDetail;
 use App\Models\Transaction;
 use Exception;
 use Illuminate\Support\Facades\DB;
@@ -139,7 +139,7 @@ class PurchaseOrderUpdateService
                 'invoice_id' => $invoice->id,
                 'transaction_id' => $targetTransaction->id
             ];
-            Log::info($res);
+            // Log::info($res);
             return $res;
         });
     }
