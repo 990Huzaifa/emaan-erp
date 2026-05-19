@@ -391,6 +391,8 @@ class PurchaseOrderController extends Controller
                             'quantity' => $item['quantity'],
                             'unit_price' => $item['unit_price'],
                             'total_price' => $item['total_price'],
+                            'discount' => $item['discount'],
+                            'discount_in_percentage' => $item['discount_in_percentage'],
                             'tax' => $item['tax'],
                         ]);
                     }
