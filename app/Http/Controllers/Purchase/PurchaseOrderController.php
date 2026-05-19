@@ -378,6 +378,8 @@ class PurchaseOrderController extends Controller
                             'unit_price' => $item['unit_price'],
                             'total_price' => $item['total_price'],
                             'tax' => $item['tax'],
+                            'discount' => $item['discount'],
+                            'discount_in_percentage' => $item['discount_in_percentage'],
                         ]);
                         $requestItemIds[] = $item['id'];  // Keep track of updated items
                     } else {
