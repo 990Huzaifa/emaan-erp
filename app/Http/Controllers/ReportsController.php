@@ -786,7 +786,7 @@ class ReportsController extends Controller
                 return $query->where('customers.business_id', $businessId);
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
-            ->paginate($perpage);
+            ->get();
 
             foreach ($customers as $customer) {
                 // Assuming your helper function is called getLatestTransactionBalance() and takes acc_id as a parameter
@@ -879,7 +879,7 @@ class ReportsController extends Controller
                 'opening_balances.amount as opening_balance'
             )
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-            ->paginate($perpage);
+            ->get();
 
             // Loop through each vendor to get their current balance using the helper function
             foreach ($vendors as $vendor) {
@@ -928,7 +928,7 @@ class ReportsController extends Controller
                              ) t2 ON t1.id = t2.max_id
                          ) as transactions'), 'employees.acc_id', '=', 'transactions.acc_id')
             ->orderBy('transactions.id', 'desc')
-            ->paginate($perpage);
+            ->get();
 
 
             return response()->json($employees);
