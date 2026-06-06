@@ -772,7 +772,7 @@ class ReportsController extends Controller
                 if (empty($businessId)) throw new Exception('business id required', 404);
             }
 
-            $perpage = $request->input('perpage', 10);
+            $perpage = $request->input('perpage', 100);
 
             $customers = Customer::select(
                 'customers.id',
@@ -786,7 +786,7 @@ class ReportsController extends Controller
                 return $query->where('customers.business_id', $businessId);
             })
             ->join('opening_balances', 'customers.acc_id', '=', 'opening_balances.acc_id')
-            ->get();
+            ->paginate($perpage);
 
             foreach ($customers as $customer) {
                 // Assuming your helper function is called getLatestTransactionBalance() and takes acc_id as a parameter
@@ -867,7 +867,7 @@ class ReportsController extends Controller
                 }
             }
 
-            $perpage = $request->input('perpage', 10);
+            $perpage = $request->input('perpage', 100);
 
             // Fetch all vendors
             $vendors = Vendor::select(
@@ -879,7 +879,7 @@ class ReportsController extends Controller
                 'opening_balances.amount as opening_balance'
             )
             ->join('opening_balances', 'vendors.acc_id', '=', 'opening_balances.acc_id')
-            ->get();
+            ->paginate($perpage);
 
             // Loop through each vendor to get their current balance using the helper function
             foreach ($vendors as $vendor) {
@@ -908,7 +908,7 @@ class ReportsController extends Controller
                     ], 403);
                 }
             }
-            $perpage = $request->input('perpage', 10);
+            $perpage = $request->input('perpage', 100);
 
             $employees = Employee::select(
                 'employees.id',
@@ -928,7 +928,7 @@ class ReportsController extends Controller
                              ) t2 ON t1.id = t2.max_id
                          ) as transactions'), 'employees.acc_id', '=', 'transactions.acc_id')
             ->orderBy('transactions.id', 'desc')
-            ->get();
+            ->paginate($perpage);
 
 
             return response()->json($employees);
