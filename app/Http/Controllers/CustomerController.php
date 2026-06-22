@@ -409,6 +409,19 @@ class CustomerController extends Controller
     {
         try {
 
+
+            $filename = 'customers-export-' . date('Y-m-d') . '.csv';
+            $csvHeaders = [
+                'name',
+                'phone',
+                'address',
+                'countryId',
+                'stateId',
+                'cityId',
+                'class',
+                'receivableOpeningBalance',
+            ];
+
             $customers = Customer::select('customers.name', 'customers.mobile', 'customers.address')
                 ->orderBy('customers.name')
                 ->cursor();
