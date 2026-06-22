@@ -408,35 +408,8 @@ class CustomerController extends Controller
     public function exportCustomers()
     {
         try {
-            $user = Auth::user();
-
-            if ($user->role != 'admin') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list customers')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            } else {
-                $businessId = null;
-            }
-
-            $filename = 'customers-export-' . date('Y-m-d') . '.csv';
-            $csvHeaders = [
-                'name',
-                'phone',
-                'address',
-                'countryId',
-                'stateId',
-                'cityId',
-                'class',
-                'receivableOpeningBalance',
-            ];
 
             $customers = Customer::select('customers.name', 'customers.mobile', 'customers.address')
-                ->when($businessId, function ($query) use ($businessId) {
-                    return $query->where('customers.business_id', $businessId);
-                })
                 ->orderBy('customers.name')
                 ->cursor();
 
