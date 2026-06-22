@@ -458,15 +458,6 @@ class ProductController extends Controller
     public function exportProducts()
     {
         try {
-            $user = Auth::user();
-            if ($user->role != 'admin') {
-                $businessId = $user->login_business;
-                if (!$user->hasBusinessPermission($businessId, 'list products')) {
-                    return response()->json([
-                        'error' => 'User does not have the required permission.'
-                    ], 403);
-                }
-            }
 
             $filename = 'products-export-' . date('Y-m-d') . '.csv';
             $csvHeaders = [
@@ -496,10 +487,6 @@ class ProductController extends Controller
             ->orderBy('products.title')
             ->cursor();
 
-            Log::create([
-                'user_id' => $user->id,
-                'description' => 'User exported products via CSV',
-            ]);
 
             return Response::streamDownload(function () use ($csvHeaders, $products) {
                 $handle = fopen('php://output', 'w');
