@@ -14,6 +14,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use Illuminate\Support\Facades\Log as SysLog;
@@ -546,6 +547,109 @@ class PurchaseOrderController extends Controller
         $newMessage = new WhatsAppService();
         $res = $newMessage->sendTemplateMessage($data->vendor_phone, 'purchase_invoice_1', $body, 'document', url('public/storage/orders/' . $fileName), $fileName);
         return url('public/storage/orders/' . $fileName);
+    }
+
+    public function exportPurchaseOrders()
+    {
+        try {
+            $filename = 'purchase-orders-export-' . date('Y-m-d') . '.csv';
+            $warehouseId = 'daf0a48b-d31e-492d-bedc-398f687f34f5';
+            $csvHeaders = [
+                'code',
+                'vendorName',
+                'orderDate',
+                'warehouseId',
+            ];
+
+            $orders = PurchaseOrder::select(
+                'purchase_orders.order_code',
+                'purchase_orders.order_date',
+                'vendors.name as vendor_name'
+            )
+                ->join('vendors', 'purchase_orders.vendor_id', '=', 'vendors.id')
+                ->orderBy('purchase_orders.id', 'desc')
+                ->cursor();
+
+            return Response::streamDownload(function () use ($csvHeaders, $orders, $warehouseId) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $csvHeaders);
+                foreach ($orders as $order) {
+                    fputcsv($handle, [
+                        $order->order_code,
+                        $order->vendor_name,
+                        $order->order_date,
+                        $warehouseId,
+                    ]);
+                }
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+            ]);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    public function exportPurchaseOrderItems()
+    {
+        try {
+            $filename = 'purchase-order-items-export-' . date('Y-m-d') . '.csv';
+            $csvHeaders = [
+                'code',
+                'productTitle',
+                'quantity',
+                'measurementUnit',
+                'unitPrice',
+                'discount',
+                'discountInPercentage',
+                'tax',
+                'totalPrice',
+            ];
+
+            $items = PurchaseOrderItem::select(
+                'purchase_orders.order_code',
+                'products.title as product_title',
+                'purchase_order_items.quantity',
+                'purchase_order_items.measurement_unit',
+                'purchase_order_items.unit_price',
+                'purchase_order_items.discount',
+                'purchase_order_items.discount_in_percentage',
+                'purchase_order_items.tax',
+                'purchase_order_items.total_price'
+            )
+                ->join('purchase_orders', 'purchase_order_items.purchase_order_id', '=', 'purchase_orders.id')
+                ->join('products', 'purchase_order_items.product_id', '=', 'products.id')
+                ->orderBy('purchase_orders.id', 'desc')
+                ->orderBy('purchase_order_items.id', 'asc')
+                ->cursor();
+
+            return Response::streamDownload(function () use ($csvHeaders, $items) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $csvHeaders);
+                foreach ($items as $item) {
+                    fputcsv($handle, [
+                        $item->order_code,
+                        $item->product_title,
+                        $item->quantity,
+                        $item->measurement_unit,
+                        $item->unit_price,
+                        $item->discount,
+                        $item->discount_in_percentage,
+                        $item->tax,
+                        $item->total_price,
+                    ]);
+                }
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+            ]);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 
 }

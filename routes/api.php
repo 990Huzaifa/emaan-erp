@@ -105,6 +105,8 @@ Route::get('list/measurement-unit',[MeasureUnitController::class,'list']);
 Route::apiResource('permission',PermissionController::class)->only('index');
 Route::get('/csv/product/export', [ProductController::class, 'exportProducts']);
 Route::get('/csv/customer/export', [CustomerController::class, 'exportCustomers']);
+Route::get('/csv/purchase-order/export', [PurchaseOrderController::class, 'exportPurchaseOrders']);
+Route::get('/csv/purchase-order-items/export', [PurchaseOrderController::class, 'exportPurchaseOrderItems']);
 Route::middleware(['admin.auth'])->group(function () {});
 
 Route::middleware(['auth:sanctum'])->group(function () {
