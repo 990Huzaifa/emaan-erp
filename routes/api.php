@@ -103,7 +103,7 @@ Route::prefix('app')->group(function () {
 Route::get('/cities',[CityController::class,'index']);
 Route::get('list/measurement-unit',[MeasureUnitController::class,'list']);
 Route::apiResource('permission',PermissionController::class)->only('index');
-
+Route::get('/csv/product/export', [ProductController::class, 'exportProducts']);
 Route::middleware(['admin.auth'])->group(function () {});
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -224,6 +224,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('list/product/',[ProductController::class,'list']);
     Route::post('product-update/{id}',[ProductController::class,'update']);
     Route::get('/csv/product', [ProductController::class, 'csvProduct']);
+
     Route::post('/csv/product/upload', [ProductController::class, 'importProduct']);
     
     Route::apiResource('purchase-quotation',PurchaseQuotationController::class)->only('index','store','show','update');

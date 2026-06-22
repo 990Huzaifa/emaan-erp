@@ -454,6 +454,78 @@ class ProductController extends Controller
         // Return the file as a response
         return Response::download($filePath, 'product-sample.csv', $headers);
     }
+
+    public function exportProducts()
+    {
+        try {
+            $user = Auth::user();
+            if ($user->role != 'admin') {
+                $businessId = $user->login_business;
+                if (!$user->hasBusinessPermission($businessId, 'list products')) {
+                    return response()->json([
+                        'error' => 'User does not have the required permission.'
+                    ], 403);
+                }
+            }
+
+            $filename = 'products-export-' . date('Y-m-d') . '.csv';
+            $csvHeaders = [
+                'title',
+                'brand_name',
+                'description',
+                'category',
+                'sub_category',
+                'sale_price',
+                'sales_tax_rate',
+                'measurement_unit',
+            ];
+
+            $products = Product::select(
+                'products.title',
+                'products.brand_name',
+                'products.description',
+                'products.sale_price',
+                'products.sales_tax_rate',
+                'product_categories.name as category',
+                'product_sub_categories.name as sub_category',
+                'measurement_units.name as measurement_unit'
+            )
+            ->join('product_categories', 'products.category_id', '=', 'product_categories.id')
+            ->leftJoin('product_sub_categories', 'products.sub_category_id', '=', 'product_sub_categories.id')
+            ->leftJoin('measurement_units', 'products.measurement_unit_id', '=', 'measurement_units.id')
+            ->orderBy('products.title')
+            ->cursor();
+
+            Log::create([
+                'user_id' => $user->id,
+                'description' => 'User exported products via CSV',
+            ]);
+
+            return Response::streamDownload(function () use ($csvHeaders, $products) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $csvHeaders);
+                foreach ($products as $product) {
+                    fputcsv($handle, [
+                        $product->title,
+                        $product->brand_name ?? '',
+                        $product->description ?? '',
+                        $product->category,
+                        $product->sub_category ?? '',
+                        $product->sale_price,
+                        $product->sales_tax_rate,
+                        $product->measurement_unit ?? '',
+                    ]);
+                }
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+            ]);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
     
     public function importProduct(Request $request):JsonResponse
     {
