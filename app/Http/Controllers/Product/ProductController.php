@@ -462,19 +462,21 @@ class ProductController extends Controller
             $filename = 'products-export-' . date('Y-m-d') . '.csv';
             $csvHeaders = [
                 'title',
-                'brand_name',
+                'brandName',
                 'description',
                 'category',
-                'sub_category',
-                'sale_price',
-                'sales_tax_rate',
-                'measurement_unit',
+                'subCategory',
+                'purchasePrice',
+                'salePrice',
+                'salesTaxRate',
+                'measurementUnit',
             ];
 
             $products = Product::select(
                 'products.title',
                 'products.brand_name',
                 'products.description',
+                'products.purchase_price',
                 'products.sale_price',
                 'products.sales_tax_rate',
                 'product_categories.name as category',
@@ -498,8 +500,9 @@ class ProductController extends Controller
                         $product->description ?? '',
                         $product->category,
                         $product->sub_category ?? '',
+                        $product->purchase_price,
                         $product->sale_price,
-                        $product->sales_tax_rate,
+                        $product->sales_tax_rate ?? 0,
                         $product->measurement_unit ?? '',
                     ]);
                 }
