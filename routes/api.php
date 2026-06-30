@@ -109,6 +109,8 @@ Route::get('/csv/purchase-order/export', [PurchaseOrderController::class, 'expor
 Route::get('/csv/purchase-order-items/export', [PurchaseOrderController::class, 'exportPurchaseOrderItems']);
 Route::get('/csv/sale-order/export', [SaleOrderController::class, 'exportSaleOrders']);
 Route::get('/csv/sale-order-items/export', [SaleOrderController::class, 'exportSaleOrderItems']);
+Route::get('/csv/purchase-voucher/export', [PurchaseVoucherController::class, 'exportPurchaseVouchers']);
+Route::get('/csv/sale-voucher/export', [SaleVoucherController::class, 'exportSaleVouchers']);
 Route::middleware(['admin.auth'])->group(function () {});
 
 Route::middleware(['auth:sanctum'])->group(function () {

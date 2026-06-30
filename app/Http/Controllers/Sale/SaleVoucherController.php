@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Response;
 use App\Http\Controllers\Controller;
 
 
@@ -576,5 +577,67 @@ class SaleVoucherController extends Controller
             "class" => $class,
         ]);
         return true;
+    }
+
+    public function exportSaleVouchers()
+    {
+        try {
+            $filename = 'sale-vouchers-export-' . date('Y-m-d') . '.csv';
+            $csvHeaders = [
+                'code',
+                'customerName',
+                'voucherDate',
+                'amount',
+                'paymentMethod',
+                'accountName',
+                'transactionType',
+                'chequeNumber',
+                'ChequeDate',
+                'description',
+            ];
+
+            $vouchers = SaleVoucher::select(
+                'sale_vouchers.voucher_code',
+                'sale_vouchers.voucher_date',
+                'sale_vouchers.voucher_amount',
+                'sale_vouchers.payment_method',
+                'sale_vouchers.bank_transaction_type',
+                'sale_vouchers.cheque_no',
+                'sale_vouchers.cheque_date',
+                'sale_vouchers.description',
+                'customers.name as customer_name',
+                'chart_of_accounts.name as account_name'
+            )
+                ->join('customers', 'sale_vouchers.customer_id', '=', 'customers.id')
+                ->join('chart_of_accounts', 'sale_vouchers.acc_id', '=', 'chart_of_accounts.id')
+                ->orderBy('sale_vouchers.id', 'desc')
+                ->cursor();
+
+            return Response::streamDownload(function () use ($csvHeaders, $vouchers) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $csvHeaders);
+                foreach ($vouchers as $voucher) {
+                    fputcsv($handle, [
+                        $voucher->voucher_code,
+                        $voucher->customer_name,
+                        $voucher->voucher_date,
+                        $voucher->voucher_amount,
+                        $voucher->payment_method,
+                        $voucher->account_name,
+                        $voucher->bank_transaction_type ?? '',
+                        $voucher->cheque_no ?? '',
+                        $voucher->cheque_date ?? '',
+                        $voucher->description ?? '',
+                    ]);
+                }
+                fclose($handle);
+            }, $filename, [
+                'Content-Type' => 'text/csv',
+            ]);
+        } catch (QueryException $e) {
+            return response()->json(['DB error' => $e->getMessage()], 400);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
     }
 }
